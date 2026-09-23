@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Note 06 — Duration and Convexity: practice</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#5f6672; --line:#e2e5ea;
+    --card:#f7f8fa; --accent:#00205b; --accent-fg:#ffffff;
+    --ok-bg:#e8f5ec; --ok-line:#2e7d47; --ok-fg:#17532c;
+    --no-bg:#fdeceb; --no-line:#c0392b; --no-fg:#8e2b20;
+    --hint-bg:#fff8e6; --hint-line:#b8860b; --hint-fg:#6b4e00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161a; --fg:#e8eaed; --muted:#9aa3af; --line:#2b2f36;
+      --card:#1b1e24; --accent:#7f9cd4; --accent-fg:#0d1015;
+      --ok-bg:#132a1c; --ok-line:#4caf70; --ok-fg:#9fdcb4;
+      --no-bg:#2c1614; --no-line:#e06c5d; --no-fg:#f0a99f;
+      --hint-bg:#2a2313; --hint-line:#d4a017; --hint-fg:#e5c976;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 18px 64px}
+  header{border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:20px}
+  h1{font-size:1.35rem; margin:0 0 4px}
+  .sub{color:var(--muted); font-size:.9rem}
+  .topics{display:flex; flex-wrap:wrap; gap:7px; margin:18px 0}
+  .chip{
+    border:1px solid var(--line); background:var(--card); color:var(--fg);
+    padding:6px 12px; border-radius:999px; cursor:pointer; font-size:.85rem;
+    font-family:inherit;
+  }
+  .chip[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:var(--accent)}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:20px; margin-bottom:16px;
+  }
+  .qmeta{font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+  .qtext{font-size:1.05rem; margin-bottom:6px}
+  .qtext b{font-variant-numeric:tabular-nums}
+  .ask{margin-top:14px; font-weight:600}
+  .row{display:flex; gap:9px; margin-top:14px; flex-wrap:wrap}
+  input[type=text]{
+    flex:1 1 190px; min-width:0; padding:11px 13px; font-size:1rem; font-family:inherit;
+    border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg);
+  }
+  input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px}
+  button{
+    padding:11px 17px; font-size:.95rem; font-family:inherit; border-radius:8px;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-fg);
+    cursor:pointer; font-weight:600;
+  }
+  button.ghost{background:transparent; color:var(--fg); border-color:var(--line); font-weight:500}
+  button:disabled{opacity:.45; cursor:default}
+  .fb{border-radius:8px; padding:13px 15px; margin-top:15px; border-left:4px solid; font-size:.95rem}
+  .fb.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-fg)}
+  .fb.no{background:var(--no-bg); border-color:var(--no-line); color:var(--no-fg)}
+  .fb.hint{background:var(--hint-bg); border-color:var(--hint-line); color:var(--hint-fg)}
+  .fb strong{display:block; margin-bottom:3px}
+  details{margin-top:15px; border-top:1px solid var(--line); padding-top:13px}
+  summary{cursor:pointer; font-size:.9rem; color:var(--muted); font-weight:600}
+  .steps{margin-top:11px; font-size:.92rem}
+  .steps div{padding:5px 0; border-bottom:1px dashed var(--line)}
+  .steps div:last-child{border-bottom:none; font-weight:600}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em;
+    background:var(--bg); padding:1px 5px; border-radius:4px; border:1px solid var(--line);
+  }
+  .opts{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+  .opt{
+    text-align:left; padding:11px 14px; border:1px solid var(--line); background:var(--bg);
+    color:var(--fg); border-radius:8px; cursor:pointer; font-family:inherit;
+    font-size:.95rem; font-weight:400; line-height:1.55;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt.right{background:var(--ok-bg); border-color:var(--ok-line); border-width:2px}
+  .opt.wrong{background:var(--no-bg); border-color:var(--no-line)}
+  .opt:disabled{cursor:default}
+  .opt sup{font-size:.75em}
+  .stats{display:flex; gap:22px; font-size:.86rem; color:var(--muted); margin-top:22px;
+         border-top:1px solid var(--line); padding-top:14px; flex-wrap:wrap}
+  .stats b{color:var(--fg); font-variant-numeric:tabular-nums}
+  footer{margin-top:26px; font-size:.78rem; color:var(--muted); text-align:center}
+  /* The hidden attribute's UA rule is only [hidden]{display:none}, which loses
+     to author rules like .opts{display:flex} and .row{display:flex}. Without
+     this, hiding those panels silently does nothing. */
+  .modes{display:flex; gap:8px; align-items:center; margin-top:10px;
+         font-size:.84rem; color:var(--muted); flex-wrap:wrap}
+  .modes .chip{font-size:.84rem; padding:5px 12px}
+  .prog{margin-top:18px}
+  .progtop{display:flex; justify-content:space-between; align-items:baseline;
+           font-size:.86rem; color:var(--muted); margin-bottom:6px}
+  .progtop b{color:var(--fg); font-variant-numeric:tabular-nums}
+  .progbar{height:9px; border-radius:999px; background:var(--line); overflow:hidden}
+  .progfill{height:100%; width:0%; border-radius:999px; background:var(--accent);
+            transition:width .35s ease}
+  .progreset{background:none; border:none; color:var(--muted); font-size:.8rem;
+             padding:0; cursor:pointer; text-decoration:underline; font-weight:400}
+  .progreset:hover{color:var(--fg)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Note 06 — Duration and Convexity: practice</h1>
+  <div class="sub">Semiannual compounding unless a question says otherwise. Answers are matched within 0.25%, or more tightly where a question asks for four decimals.</div>
+</header>
+
+<div class="topics" id="topics" role="group" aria-label="Choose topics"></div>
+
+<div class="modes" id="modes" role="group" aria-label="Question order">
+  <span>Order</span>
+  <button class="chip" id="mShuffle" type="button" aria-pressed="true">Shuffle</button>
+  <button class="chip" id="mSeq" type="button" aria-pressed="false">In order</button>
+  <span id="seqPos"></span>
+</div>
+
+<div class="card" id="card">
+  <div class="qmeta" id="qmeta">—</div>
+  <div class="qtext" id="qtext">Loading…</div>
+  <div class="ask" id="qask"></div>
+  <div class="opts" id="opts" hidden></div>
+  <div class="row" id="inputrow">
+    <input type="text" id="ans" autocomplete="off" inputmode="decimal"
+           placeholder="Your answer" aria-label="Your answer">
+    <button id="check">Check</button>
+    <button id="next" class="ghost">New question</button>
+  </div>
+  <div id="fb"></div>
+  <details id="soldetails" hidden>
+    <summary>Show the worked solution</summary>
+    <div class="steps" id="steps"></div>
+  </details>
+</div>
+
+<div class="prog">
+  <div class="progtop">
+    <span>Templates solved unaided <b id="pDone">0</b> of <b id="pTotal">0</b></span>
+    <button class="progreset" id="pReset" type="button">reset</button>
+  </div>
+  <div class="progbar"><div class="progfill" id="progfill"></div></div>
+</div>
+
+<div class="stats">
+  <span>Attempted <b id="sAtt">0</b></span>
+  <span>Correct first try <b id="sFirst">0</b></span>
+  <span>Accuracy <b id="sAcc">—</b></span>
+  <span>Streak <b id="sStreak">0</b></span>
+  <span>Solutions opened <b id="sPeek">0</b></span>
+</div>
+
+<footer>Numbers are randomised, so every attempt is different. Nothing you type leaves this page.<br>Use the &rarr; and &larr; arrow keys to move between questions.</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ utils */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+/* stepped range, e.g. range(0.04,0.24,0.0025) -> 81 rates instead of a list of 6 */
+const range = (lo,hi,step) => {
+  const out=[]; for(let v=lo; v<=hi+1e-9; v+=step) out.push(Number(v.toFixed(8)));
+  return out;
+};
+const ORD = n => n + (["th","st","nd","rd"][(n%100-n%10!=10)*(n%10<4)*(n%10)]||"th");
+const money = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+const pct   = (v,d=4) => (v*100).toFixed(d).replace(/\.?0+$/,"") + "%";
+const pctS  = (v,d=2) => (v*100).toFixed(d) + "%";
+const REL_SEP  = 0.01;    // distractors must sit >1% from everything else
+const REL_MATCH= 0.0025;  // student answer counts as a match within 0.25%
+
+const near = (a,b,tol) =>
+  Number.isFinite(a) && Number.isFinite(b) &&
+  Math.abs(a-b) / Math.max(Math.abs(a), Math.abs(b), 1e-12) < tol;
+
+/* Drop distractors too close to the answer (or to each other) to diagnose.
+   Templates about small effects (perpetuity timing) pass a tighter `sep`. */
+function usable(correct, cands, sep){
+  const s = sep || REL_SEP;
+  const kept = [];
+  for (const c of cands){
+    if (!Number.isFinite(c.val)) continue;
+    if (near(c.val, correct, s)) continue;
+    if (kept.some(k => near(k.val, c.val, s))) continue;
+    kept.push(c);
+  }
+  return kept;
+}
+
+/* ------------------------------------------------------------- templates */
+/* ---------------------------------------------------------------- Note 06 ---
+   Duration and convexity.  Semiannual compounding unless a template says
+   otherwise, matching the note: a zero's duration is T/(1+y/2), never T/(1+y).
+   The cv/kc/ec1 templates drill section 10, where the convention changes.     */
+const zPrice = (F,T,y) => F/Math.pow(1+y/2, 2*T);
+const zDur   = (T,y)   => T/(1+y/2);
+const zDDur  = (F,T,y) => zPrice(F,T,y)*zDur(T,y);
+const zConv  = (T,y)   => (T*T + T/2)/Math.pow(1+y/2,2);
+const zDConv = (F,T,y) => zPrice(F,T,y)*zConv(T,y);
+const bp     = n => (n*100).toFixed(0);
+/* A coupon bond priced off a flat curve at its own ytm, as in section 7. */
+function couponBond(F,cpn,T,y){
+  const n=Math.round(2*T), c=F*cpn/2, legs=[];
+  for(let k=1;k<=n;k++){
+    const t=k/2, cf=(k===n? c+F : c);
+    legs.push({t, pv:cf/Math.pow(1+y/2,k), dur:t/(1+y/2)});
+  }
+  const price=legs.reduce((s,l)=>s+l.pv,0);
+  const dur=legs.reduce((s,l)=>s+l.pv*l.dur,0)/price;
+  return {price, dur, ddur:price*dur, legs};
+}
+/* Section 10: a yield compounded k times a year. Every 2 that divides something
+   in the semiannual formulas becomes k; k = Infinity is continuous compounding. */
+const kPrice = (F,T,y,k) => k===Infinity ? F*Math.exp(-y*T) : F/Math.pow(1+y/k, k*T);
+const kDur   = (T,y,k)   => k===Infinity ? T   : T/(1+y/k);
+const kConv  = (T,y,k)   => k===Infinity ? T*T : (T*T + T/k)/Math.pow(1+y/k,2);
+const kDiv   = k => k===1 ? "(1 + ytm)" : `(1 + ytm/${k})`;
+const KWORD  = {1:"annually", 2:"semiannually", 4:"quarterly", 12:"monthly", 365:"daily"};
+const KTIMES = {1:"once a year", 2:"twice a year", 4:"four times a year", 12:"twelve times a year"};
+/* Convention slips sit close to the key (ytm/12 is 0.25% at a 3% yield), so these
+   templates re-draw until every slip is at least `gap` away and none can score.  */
+const clear = (correct, vals, gap) => vals.every(v => Math.abs(v-correct) > gap*Math.abs(correct));
+const smoney = v => (v < 0 ? "&minus;" : "") + money(Math.abs(v));   // −$59.53, not $-59.53
+const commas = (v,d) => v.toLocaleString("en-US",{minimumFractionDigits:d, maximumFractionDigits:d});  // 108,623,117.62
+
+const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
+    const T=pick([2,3,5,7,10,15,20,30]);
+    const y=pick(range(.02,.09,.005));
+    const correct=zDur(T,y);
+    return {
+      unit:"number",
+      text:`A zero with <b>${T} years</b> to maturity trades at a yield to maturity of
+            <b>${pctS(y,2)} p.a.</b>, compounded semiannually.`,
+      ask:"What is its duration, in years?",
+      correct,
+      cands:[
+        {val:T, msg:`That is the maturity, which is the <em>approximation</em>. It is close because ${pctS(y,2)}/2 is small, but the exact duration is maturity divided by (1 + ytm/2) = ${T} / ${(1+y/2).toFixed(4)}.`},
+        {val:T/(1+y), msg:`You divided by (1 + ytm) rather than (1 + ytm/2). The yield is quoted per annum but compounds twice a year, so it is half of it that enters the denominator.`},
+        {val:T*(1+y/2), msg:`You multiplied where you should have divided. Duration is a little <em>shorter</em> than maturity, never longer.`},
+        {val:zDur(T,y)/2, msg:`That is half the duration. There is no further halving after dividing by (1 + ytm/2).`}
+      ],
+      steps:[
+        `Duration of a zero = maturity / (1 + ytm/2)`,
+        `= ${T} / (1 + ${pctS(y,2)}/2) = ${T} / ${(1+y/2).toFixed(4)}`,
+        `= <b>${correct.toFixed(4)} years</b> &mdash; just under the ${T}-year maturity, as it always is.`
+      ]};
+  }},
+
+{ id:"d2", topic:"dur", name:"Percentage price change from duration", gen(){
+    const D=pick(range(2,18,.5));
+    const dbp=pick([5,10,25,50]);
+    const dy=dbp/10000;
+    const correct=D*dy;
+    return {
+      unit:"percent",
+      text:`A bond has a duration of <b>${D.toFixed(1)}</b>. Its yield rises by
+            <b>${dbp} basis points</b>.`,
+      ask:"Using duration alone, by what percentage does its price fall?",
+      correct,
+      cands:[
+        {val:D*dbp/100, msg:`You treated the ${dbp} basis points as ${dbp} percent. A basis point is one hundredth of a percent, so ${dbp}bp = ${pctS(dy,2)}.`},
+        {val:dy, msg:`That is the yield change itself. Duration is the multiplier that turns a yield change into a price change.`},
+        {val:D*dy/2, msg:`You halved it. There is no halving here &mdash; the duration already carries the semiannual convention inside it.`},
+        {val:D*dy*2, msg:`You doubled it. The relationship is one times duration, not two.`}
+      ],
+      steps:[
+        `% change in price = duration &times; change in yields`,
+        `= ${D.toFixed(1)} &times; ${pctS(dy,2)} = <b>${pctS(correct,4)}</b>`,
+        `Yields rose, so this is a <em>fall</em>. The two ends of the see-saw move opposite ways.`
+      ]};
+  }},
+
+{ id:"d3", topic:"dur", name:"Back out the maturity", gen(){
+    // Distractors here differ from the key by factors near (1 + y/2), so at very low
+    // yields they collapse onto it. The floor keeps them at least ~2% apart.
+    const y=pick(range(.04,.09,.005));
+    const T0=pick([3,5,7,10,12,15,20]);
+    const D=+zDur(T0,y).toFixed(4);          // the figure the student is shown
+    const correct=D*(1+y/2);                 // derived from what is on the page
+    return {
+      unit:"number",
+      text:`A zero trades at a yield to maturity of <b>${pctS(y,2)} p.a.</b>, compounded semiannually, and its duration
+            is <b>${D.toFixed(4)}</b>.`,
+      ask:"What is its maturity, in years?",
+      correct,
+      cands:[
+        {val:D, msg:`That is the duration itself. Maturity is a little longer, since duration = maturity / (1 + ytm/2).`},
+        {val:D*(1+y), msg:`You multiplied by (1 + ytm) instead of (1 + ytm/2). The yield compounds semiannually.`},
+        {val:D/(1+y/2), msg:`Wrong direction. To undo a division you multiply, so maturity = duration &times; (1 + ytm/2).`},
+        {val:D/(1+y), msg:`Wrong direction and the wrong rate: you divided, and by the whole yield rather than half of it.`}
+      ],
+      steps:[
+        `Duration = maturity / (1 + ytm/2), so maturity = duration &times; (1 + ytm/2)`,
+        `= ${D.toFixed(4)} &times; ${(1+y/2).toFixed(4)} = <b>${correct.toFixed(2)} years</b>`
+      ]};
+  }},
+
+{ id:"dd1", topic:"ddur", name:"Dollar duration of a zero", gen(){
+    const F=pick([1000,10000]);
+    const T=pick([2,5,10,15,20,30]);
+    const y=pick(range(.03,.08,.005));
+    const P=+zPrice(F,T,y).toFixed(2), D=+zDur(T,y).toFixed(4);
+    const correct=P*D;                        // both factors as displayed
+    return {
+      unit:"number",
+      text:`A zero is worth <b>${money(P)}</b> and has a duration of
+            <b>${D.toFixed(4)}</b>.`,
+      ask:"What is its dollar duration?",
+      correct,
+      cands:[
+        {val:D, msg:`That is the duration, which answers a question about <em>percentage</em> changes. Dollar duration answers the same question in dollars, and is duration &times; price.`},
+        {val:P, msg:`That is the price. Multiply it by the duration to get the dollar duration.`},
+        {val:F*D, msg:`You used the face value rather than the price. Dollar duration scales the duration by what the bond is actually worth today, which is ${money(P)}.`},
+        {val:P/D, msg:`Divided instead of multiplied. $$duration = duration &times; price.`}
+      ],
+      steps:[
+        `\$\$duration = duration &times; price`,
+        `= ${D.toFixed(4)} &times; ${money(P)} = <b>${correct.toFixed(2)}</b>`,
+        `It says: for every 1 percentage point move in yields, the price moves about ${money(correct/100)}.`
+      ]};
+  }},
+
+{ id:"dd2", topic:"ddur", name:"Dollar change from dollar duration", gen(){
+    const DD=pick(range(500,9000,100));
+    const dbp=pick([10,20,50,100]);
+    const dy=dbp/10000;
+    const correct=DD*dy;
+    return {
+      unit:"money",
+      text:`A bond has a dollar duration of <b>${DD.toFixed(2)}</b>. Its yield rises by
+            <b>${dbp} basis points</b>.`,
+      ask:"Using dollar duration alone, by how many dollars does its price fall?",
+      correct,
+      cands:[
+        {val:DD*dbp/100, msg:`You read ${dbp} basis points as ${dbp} percent. ${dbp}bp = ${pctS(dy,2)}.`},
+        {val:DD, msg:`That is the dollar duration itself &mdash; the change for a full 100 basis point move, not for ${dbp}.`},
+        {val:DD*dy/2, msg:`No halving here. The dollar duration already accounts for the compounding convention.`}
+      ],
+      steps:[
+        `\$\$ change in price = \$\$duration &times; change in yields`,
+        `= ${DD.toFixed(2)} &times; ${pctS(dy,2)} = <b>${money(correct)}</b>`,
+        `Yields rose, so the price falls by that amount.`
+      ]};
+  }},
+
+{ id:"dd3", topic:"ddur", name:"Dollar value of a basis point", gen(){
+    // The DVBP must be a real dollar amount: the answer format is two decimals, so a
+    // $1,000 face would round 0.0177 to 0.02 and destroy the figure being asked about.
+    const F=pick([100000,1000000,10000000]);
+    const T=pick([2,3,5,10,20]);
+    const y=pick(range(.03,.07,.005));
+    const DD=+zDDur(F,T,y).toFixed(2);
+    const correct=DD*0.0001;
+    return {
+      unit:"money",
+      text:`A zero position has a dollar duration of <b>${commas(DD,2)}</b>.`,
+      ask:"What is its DVBP (the dollar value of one basis point)?",
+      correct,
+      cands:[
+        {val:DD*0.01, msg:`That is the change for one <em>percentage point</em>, a hundred times too big. One basis point is 0.01%, i.e. 0.0001.`},
+        {val:DD*0.001, msg:`Off by a factor of ten. A basis point is 0.0001, not 0.001.`},
+        {val:DD, msg:`That is the dollar duration &mdash; the move for a 100% change in yields in the formula's units. Scale it by 0.0001.`}
+      ],
+      steps:[
+        `DVBP = \$\$duration &times; 0.0001`,
+        `= ${commas(DD,2)} &times; 0.0001 = <b>${money(correct)}</b>`,
+        `So a 50 basis point move is worth about ${money(50*correct)} on this position.`
+      ]};
+  }},
+
+{ id:"p1", topic:"port", name:"Dollar duration of a portfolio", gen(){
+    const F=pick([100,1000]);
+    const T1=pick([1,2,3]), T2=T1+pick([2,4,7,12]);
+    const y1=pick(range(.03,.06,.005)), y2=y1+pick([.005,.01,.015]);
+    const dd1=+zDDur(F,T1,y1).toFixed(2), dd2=+zDDur(F,T2,y2).toFixed(2);
+    const correct=dd1+dd2;
+    return {
+      unit:"number",
+      text:`You hold one <b>${T1}-year</b> zero and one <b>${T2}-year</b> zero, both face
+            <b>${money(F)}</b>. Their dollar durations are <b>${dd1.toFixed(2)}</b> and
+            <b>${dd2.toFixed(2)}</b>.`,
+      ask:"What is the portfolio's dollar duration?",
+      correct,
+      cands:[
+        {val:(dd1+dd2)/2, msg:`You averaged. \$\$durations <em>add</em> &mdash; if you own two things, the dollar change in your wealth is the sum of the two dollar changes. It is plain <em>duration</em> that is a weighted average.`},
+        {val:dd2-dd1, msg:`That is the difference. You are long both bonds, so their sensitivities reinforce rather than offset.`},
+        {val:dd2, msg:`That is the longer zero alone. The short one contributes as well.`}
+      ],
+      steps:[
+        `Portfolio \$\$duration = sum of individual \$\$durations`,
+        `= ${dd1.toFixed(2)} + ${dd2.toFixed(2)} = <b>${correct.toFixed(2)}</b>`,
+        `This assumes the two yields move together &mdash; a parallel shift in the zero curve.`
+      ]};
+  }},
+
+{ id:"p2", topic:"port", name:"Duration of a portfolio", gen(){
+    const F=pick([100,1000]);
+    const T1=pick([1,2,3]), T2=T1+pick([2,5,10]);
+    const y1=pick(range(.03,.06,.005)), y2=y1+pick([.005,.01]);
+    const P1=+zPrice(F,T1,y1).toFixed(2), P2=+zPrice(F,T2,y2).toFixed(2);
+    const D1=+zDur(T1,y1).toFixed(4),     D2=+zDur(T2,y2).toFixed(4);
+    const correct=(D1*P1+D2*P2)/(P1+P2);
+    return {
+      unit:"number",
+      text:`A portfolio holds one <b>${T1}-year</b> zero worth <b>${money(P1)}</b> with duration
+            <b>${D1.toFixed(4)}</b>, and one <b>${T2}-year</b> zero worth <b>${money(P2)}</b> with
+            duration <b>${D2.toFixed(4)}</b>.`,
+      ask:"What is the portfolio's duration?",
+      correct,
+      cands:[
+        {val:D1+D2, msg:`You added. Durations are <em>percentage</em> sensitivities, so they average like returns do &mdash; weighted by each holding's value. It is \$\$durations that add.`},
+        {val:(D1+D2)/2, msg:`That is the simple average. The weights are the market values ${money(P1)} and ${money(P2)}, which are not equal.`},
+        {val:D2, msg:`That is the longer zero's duration alone.`}
+      ],
+      steps:[
+        `Portfolio duration = w<sub>1</sub> &times; D<sub>1</sub> + w<sub>2</sub> &times; D<sub>2</sub>, where each weight is that holding's share of the portfolio's value`,
+        `Portfolio value = ${money(P1)} + ${money(P2)} = ${money(P1+P2)}`,
+        `w<sub>1</sub> = ${money(P1)} / ${money(P1+P2)} = ${(P1/(P1+P2)).toFixed(4)}, &nbsp; w<sub>2</sub> = ${money(P2)} / ${money(P1+P2)} = ${(P2/(P1+P2)).toFixed(4)}`,
+        `Duration = ${(P1/(P1+P2)).toFixed(4)} &times; ${D1.toFixed(4)} + ${(P2/(P1+P2)).toFixed(4)} &times; ${D2.toFixed(4)} = <b>${(+(P1/(P1+P2)).toFixed(4)*D1 + +(P2/(P1+P2)).toFixed(4)*D2).toFixed(4)}</b>`
+      ]};
+  }},
+
+{ id:"p3", topic:"port", name:"Portfolio value change on a parallel shift", gen(){
+    const dd=pick(range(2000,40000,500));
+    const dbp=pick([10,20,25,50,75,100]);
+    const dy=dbp/10000;
+    const correct=dd*dy;
+    return {
+      unit:"money",
+      text:`A portfolio has a dollar duration of <b>${commas(dd,2)}</b>. The whole zero curve
+            shifts down by <b>${dbp} basis points</b>.`,
+      ask:"Using dollar duration alone, by how many dollars does the portfolio gain?",
+      correct,
+      cands:[
+        {val:dd*dbp/100, msg:`${dbp} basis points is ${pctS(dy,2)}, not ${dbp}%.`},
+        {val:dd, msg:`That is the \$\$duration, the sensitivity per unit of yield change, not the change itself.`},
+        {val:dd*dy/2, msg:`No halving. The \$\$duration already carries the convention.`}
+      ],
+      steps:[
+        `\$\$ change in portfolio value = \$\$duration &times; change in yields`,
+        `= ${commas(dd,2)} &times; ${pctS(dy,2)} = <b>${money(correct)}</b>`,
+        `Yields fell, so the portfolio gains. Note this assumes every maturity moved by the same ${dbp}bp.`
+      ]};
+  }},
+
+{ id:"c1", topic:"coupon", name:"Modified duration of a coupon bond", gen(){
+    const F=1000;
+    const cpn=pick([.04,.05,.06,.07,.08]);
+    const T=pick([1,1.5,2,2.5,3]);
+    const y=pick(range(.03,.08,.005));
+    const b=couponBond(F,cpn,T,y);
+    return {
+      unit:"number",
+      text:`A <b>${T}-year</b> Treasury note, face <b>${money(F)}</b>, pays a coupon of
+            <b>${pctS(cpn,2)} p.a.</b> semiannually and yields <b>${pctS(y,2)} p.a.</b>
+            Treat the zero curve as flat at the bond's own yield, as the note does.`,
+      ask:"What is its modified duration, in years?",
+      correct:b.dur,
+      cands:[
+        {val:T, msg:`That is the maturity. A coupon bond's duration is shorter than its maturity, because some of its value arrives before then &mdash; unlike a zero, where nothing does.`},
+        {val:zDur(T,y), msg:`That is the duration of a <em>zero</em> of the same maturity, ${zDur(T,y).toFixed(4)}. The coupons pull the average in shorter than that.`},
+        {val:b.dur*(1+y/2), msg:`That is the Macaulay-style figure before dividing by (1 + ytm/2).`},
+        {val:b.price/100, msg:`That is a price, not a duration.`}
+      ],
+      steps:[
+        `Break the bond into ${Math.round(2*T)} zeros: a coupon of ${money(F*cpn/2)} every six months, plus the face ${money(F)} at t = ${T}.`,
+        `Each zero maturing at t: PV = cash flow / (1 + ytm/2)<sup>2t</sup> and duration = t / (1 + ytm/2), with 1 + ytm/2 = ${(1+y/2).toFixed(4)}:<br>` +
+          b.legs.map(l=>`t = ${l.t}: PV ${l.pv.toFixed(2)}, duration ${l.dur.toFixed(4)}`).join(' &nbsp;|&nbsp; '),
+        `Price P = sum of the PVs = ${b.price.toFixed(2)}. Duration = &Sigma; (PV / P) &times; duration = (` +
+          b.legs.map(l=>`${l.pv.toFixed(2)} &times; ${l.dur.toFixed(4)}`).join(' + ') + `) / ${b.price.toFixed(2)}`,
+        `= <b>${b.dur.toFixed(4)} years</b>`
+      ]};
+  }},
+
+{ id:"c2", topic:"coupon", name:"Price change of a coupon bond", gen(){
+    const F=1000;
+    let cpn,T,y;
+    /* Never at par: with price = face the "scaled by the face value" slip is the key
+       (gridall06, 21 Sep 2026: 27 of 243 draws).                                       */
+    do {
+      cpn=pick([.04,.05,.06]);
+      T=pick([2,3,5]);
+      y=pick(range(.03,.07,.005));
+    } while (Math.abs(y-cpn) < 1e-9);
+    const b=couponBond(F,cpn,T,y);
+    const P=+b.price.toFixed(2), D=+b.dur.toFixed(4);
+    const dbp=pick([25,50,100]);
+    const correct=P*D*(dbp/10000);
+    return {
+      unit:"money",
+      text:`A coupon note is worth <b>${money(P)}</b> and has a modified duration of
+            <b>${D.toFixed(4)}</b>. Its yield rises <b>${dbp} basis points</b>.`,
+      ask:"Using duration alone, by how many dollars does its price fall?",
+      correct,
+      cands:[
+        {val:D*(dbp/10000), msg:`That is the fractional change, not a dollar amount. Multiply by the price ${money(P)}.`},
+        {val:F*D*(dbp/10000), msg:`You scaled by the face value. The dollar duration uses the bond's market price, ${money(P)}.`},
+        {val:P*D*(dbp/100), msg:`${dbp} basis points is ${pctS(dbp/10000,2)}, not ${dbp}%.`}
+      ],
+      steps:[
+        `\$\$duration = duration &times; price = ${D.toFixed(4)} &times; ${money(P)} = ${(P*D).toFixed(2)}`,
+        `\$\$ change = ${(P*D).toFixed(2)} &times; ${pctS(dbp/10000,2)} = <b>${money(correct)}</b>`
+      ]};
+  }},
+
+{ id:"x1", topic:"convex", name:"Convexity of a zero", gen(){
+    let T,y;
+    /* Maturity squared is the rule of thumb, and near T = 1/(2 ytm) it lands inside the
+       match (gridall06, 21 Sep 2026: 4 draws). Re-drawn until it is clear, as in cv2.  */
+    do {
+      T=pick([2,3,5,7,10,15,20,30]);
+      y=pick(range(.02,.08,.005));
+    } while (!clear(zConv(T,y), [T*T], .003));
+    const correct=zConv(T,y);
+    return {
+      unit:"number",
+      text:`A <b>${T}-year</b> zero yields <b>${pctS(y,2)} p.a.</b>, compounded semiannually.`,
+      ask:"What is its convexity?",
+      correct,
+      cands:[
+        {val:T*T, msg:`That is maturity squared &mdash; the useful rule of thumb, and close, but the exact figure is (T&sup2; + T/2) / (1 + ytm/2)&sup2;.`},
+        {val:(T*T+T/2), msg:`You have the numerator but not the denominator. Divide by (1 + ytm/2)&sup2;.`},
+        {val:T*T/Math.pow(1+y/2,2), msg:`You dropped the T/2 in the numerator. It is T&sup2; + T/2, not T&sup2; alone.`},
+        {val:zDur(T,y), msg:`That is the duration. Duration goes with maturity; convexity goes with maturity <em>squared</em>.`}
+      ],
+      steps:[
+        `Convexity = (T&sup2; + T/2) / (1 + ytm/2)&sup2;`,
+        `= (${T*T} + ${T/2}) / ${Math.pow(1+y/2,2).toFixed(6)}`,
+        `= <b>${correct.toFixed(2)}</b> &mdash; note how close it is to T&sup2; = ${T*T}.`
+      ]};
+  }},
+
+{ id:"x2", topic:"convex", name:"Dollar convexity of a zero", gen(){
+    const F=pick([1000,10000]);
+    const T=pick([5,10,15,20]);
+    const y=pick(range(.03,.07,.005));
+    const P=+zPrice(F,T,y).toFixed(2), C=+zConv(T,y).toFixed(2);
+    const correct=P*C;
+    return {
+      unit:"number",
+      text:`A zero is worth <b>${money(P)}</b> and has a convexity of
+            <b>${C.toFixed(2)}</b>.`,
+      ask:"What is its dollar convexity?",
+      correct,
+      cands:[
+        {val:C, msg:`That is the convexity itself, which speaks about percentage changes. \$\$convexity = convexity &times; price, exactly as \$\$duration = duration &times; price.`},
+        {val:P, msg:`That is the price.`},
+        {val:F*C, msg:`You used face rather than price. The scaling factor is what the bond is worth today, ${money(P)}.`}
+      ],
+      steps:[
+        `\$\$convexity = convexity &times; price`,
+        `= ${C.toFixed(2)} &times; ${money(P)} = <b>${correct.toFixed(0)}</b>`
+      ]};
+  }},
+
+{ id:"x3", topic:"convex", name:"The convexity adjustment", gen(){
+    const DC=pick(range(20000,200000,5000));
+    const dbp=pick([50,100,150,200]);
+    const dy=dbp/10000;
+    const correct=0.5*DC*dy*dy;
+    return {
+      unit:"money",
+      text:`A bond has a dollar convexity of <b>${commas(DC,0)}</b>. Its yield moves by
+            <b>${dbp} basis points</b>.`,
+      ask:"What is the convexity adjustment to the price change, in dollars?",
+      correct,
+      /* the key is a multiple of $0.125 and can be as small as $0.25, so an answer to the cent
+         was up to 2% off and marked wrong; accept anything within half a cent (22 Sep 2026) */
+      tol:Math.max(0.0025, 0.0051/correct), sep:Math.max(0.01, 0.0102/correct),
+      cands:[
+        {val:DC*dy*dy, msg:`You left out the one-half. The adjustment is 0.5 &times; \$\$convexity &times; (change in yields)&sup2;.`},
+        {val:0.5*DC*dy, msg:`You did not square the yield change. That squaring is why the adjustment is negligible for small moves and matters for large ones.`},
+        {val:DC*dy, msg:`Missing both the half and the square.`}
+      ],
+      steps:[
+        `Adjustment = 0.5 &times; \$\$convexity &times; (change in yields)&sup2;`,
+        `= 0.5 &times; ${commas(DC,0)} &times; (${pctS(dy,2)})&sup2;`,
+        `= <b>${money(correct)}</b>, and it is <em>positive</em> whichever way yields moved.`
+      ]};
+  }},
+
+{ id:"x4", topic:"convex", name:"Duration and convexity together", gen(){
+    const F=1000;
+    const T=pick([10,15,20,30]);
+    const y=pick(range(.03,.07,.005));
+    const dbp=pick([100,150,200]);
+    const dy=dbp/10000;
+    const DD=+zDDur(F,T,y).toFixed(2), DC=+zDConv(F,T,y).toFixed(0);
+    const correct=-DD*dy + 0.5*DC*dy*dy;
+    return {
+      unit:"money",
+      text:`A zero has a dollar duration of <b>${commas(DD,2)}</b> and a dollar convexity of
+            <b>${commas(DC,0)}</b>. Its yield rises <b>${dbp} basis points</b>.`,
+      ask:"Using both duration and convexity, what is the estimated change in price? (Negative for a fall.)",
+      correct,
+      cands:[
+        {val:-DD*dy, msg:`That is the duration-only estimate, ${smoney(-DD*dy)}. It overstates the fall, because the tangent line lies below the price curve. Adding the convexity term lifts it back towards the truth.`},
+        {val:-DD*dy - 0.5*DC*dy*dy, msg:`You subtracted the convexity adjustment. It is always added: convexity is positive, and it works in your favour whichever way yields move.`},
+        {val:DD*dy + 0.5*DC*dy*dy, msg:`Sign error on the duration term. Yields rose, so the price falls.`}
+      ],
+      steps:[
+        `Change = &minus;\$\$duration &times; &Delta;y + 0.5 &times; \$\$convexity &times; (&Delta;y)&sup2;`,
+        `= &minus;${commas(DD,2)} &times; ${pctS(dy,2)} + 0.5 &times; ${commas(DC,0)} &times; (${pctS(dy,2)})&sup2;`,
+        `Change = first-order term + convexity term = ${smoney(+(-DD*dy).toFixed(2))} + ${smoney(+(0.5*DC*dy*dy).toFixed(2))} = <b>${smoney(+(-DD*dy).toFixed(2) + +(0.5*DC*dy*dy).toFixed(2))}</b>`
+      ]};
+  }},
+
+{ id:"x5", topic:"convex", also:["dur"], name:"How far off is duration alone?", gen(){
+    const F=1000;
+    const T=pick([10,15,20,30]);
+    const y=pick(range(.04,.07,.005));
+    const dy=pick([.01,.015,.02]);
+    // The stem shows all three figures rounded, and the student subtracts what they see.
+    // Derive the key from the displayed values, never from the unrounded ones.
+    const P0=+zPrice(F,T,y).toFixed(2), P1=+zPrice(F,T,y+dy).toFixed(2);
+    const actual=+(P1-P0).toFixed(2);
+    const approx=+(-zDDur(F,T,y)*dy).toFixed(2);
+    const correct=Math.abs(approx-actual);
+    return {
+      unit:"money",
+      text:`A zero trades for <b>${money(P0)}</b>. Its yield rises, and it is then worth
+            <b>${money(P1)}</b>. The duration-only estimate of the change was
+            <b>${smoney(approx)}</b>.`,
+      ask:"By how many dollars did the duration-only estimate miss? (Give the size of the error.)",
+      correct,
+      cands:[
+        {val:Math.abs(actual), msg:`That is the actual change in price, ${smoney(actual)}. The error is the gap between that and the ${smoney(approx)} the duration estimate predicted.`},
+        {val:Math.abs(approx), msg:`That is the estimate itself, not its error.`},
+        {val:Math.abs(approx-actual)*2, msg:`Twice the error. Take the plain difference between ${smoney(approx)} and ${smoney(actual)}.`}
+      ],
+      steps:[
+        `Actual change = new price &minus; old price = ${money(P1)} &minus; ${money(P0)} = ${smoney(actual)}`,
+        `Duration-only estimate of the change = ${smoney(approx)}, as given`,
+        `Error = | estimate &minus; actual change | = | ${smoney(approx)} &minus; (${smoney(actual)}) | = <b>${money(correct)}</b> &mdash; the estimate overstated the fall, which is what the tangent line always does.`
+      ]};
+  }},
+
+{ id:"h1", topic:"hedge", name:"How much of the hedge do you short?", gen(){
+    const F=1000;
+    const Tl=pick([10,15,20,30]), Ts=pick([2,3,5]);
+    const yl=pick(range(.05,.09,.005)), ys=yl-pick([.01,.015,.02]);
+    const ddl=+zDDur(F,Tl,yl).toFixed(2), dds=+zDDur(F,Ts,ys).toFixed(2);
+    const correct=ddl/dds;
+    return {
+      unit:"number",
+      text:`You are long one <b>${Tl}-year</b> zero, face <b>${money(F)}</b>, whose dollar
+            duration is <b>${ddl.toFixed(2)}</b>. You want to hedge it by shorting
+            <b>${Ts}-year</b> zeros, face <b>${money(F)}</b>, whose dollar duration is
+            <b>${dds.toFixed(2)}</b>.`,
+      ask:"How many of the short-dated zeros must you short?",
+      correct,
+      cands:[
+        {val:dds/ddl, msg:`Upside down. You need <em>more</em> than one of the low-sensitivity bond to offset one of the high-sensitivity bond, so the ratio is the big \$\$duration over the small one.`},
+        {val:Tl/Ts, msg:`That is the ratio of maturities. It is close in spirit but the hedge must equate \$\$durations, which depend on price as well as maturity.`},
+        {val:ddl-dds, msg:`That is the difference in \$\$durations, not the number of bonds that closes it.`}
+      ],
+      steps:[
+        `Set the portfolio's \$\$duration to zero: ${ddl.toFixed(2)} &minus; ${dds.toFixed(2)}n = 0`,
+        `n = ${ddl.toFixed(2)} / ${dds.toFixed(2)} = <b>${correct.toFixed(4)}</b>`,
+        `The hedge holds for small parallel moves only &mdash; \$\$convexity is still wide open.`
+      ]};
+  }},
+
+{ id:"h2", topic:"hedge", name:"What is left after the hedge?", gen(){
+    let ddl,dds,n,correct;
+    /* Re-drawn when the answer equals a $$duration printed in the stem (all-draws report,
+       22 Sep 2026: 18 draws). An answer of zero -- a perfect hedge -- is kept.       */
+    do {
+      ddl=pick(range(4000,9000,250));
+      dds=pick(range(1200,2500,100));
+      n=pick([1,1.5,2,2.5]);
+      correct=ddl-dds*n;
+    } while (correct===ddl || correct===dds);
+    return {
+      unit:"number",
+      text:`You are long a bond with a dollar duration of <b>${ddl.toFixed(2)}</b> and you have
+            shorted <b>${n}</b> unit${n===1?"":"s"} of a bond whose dollar duration is <b>${dds.toFixed(2)}</b>.`,
+      ask:"What is the portfolio's remaining dollar duration? (Negative if the book is over-hedged.)",
+      correct,
+      cands:[
+        {val:ddl+dds*n, msg:`You added. The position is <em>short</em> the hedge, so its \$\$duration is subtracted.`},
+        ...(n===1 ? [] : [{val:ddl-dds, msg:`You subtracted one unit of the hedge rather than ${n}.`}]),
+        {val:ddl/(dds*n), msg:`That is a ratio, not a residual sensitivity.`}
+      ],
+      steps:[
+        `Portfolio \$\$duration = ${ddl.toFixed(2)} &minus; ${n} &times; ${dds.toFixed(2)}`,
+        `= <b>${correct.toFixed(2)}</b>`,
+        correct>0 ? `Still positive, so the book loses if yields rise. A full hedge needs ${(ddl/dds).toFixed(4)} of the short bond.`
+                  : `Now negative, so the book is over-hedged and gains if yields rise.`
+      ]};
+  }},
+
+{ id:"z1", topic:"port", also:["dur"], name:"Duration of a bank's net equity", gen(){
+    const A=pick([80,100,120,150,200])*1000;
+    const DA=pick([4,4.5,5,5.5,6,6.5,7]);
+    /* No 0.5: with liabilities half the assets, equity equals liabilities and dividing
+       by the wrong one lands on the key (blind sitting v11).                       */
+    const L=A*pick([.4,.6,.7]);
+    const DL=pick([1.5,2,2.5,3]);
+    const E=A-L;
+    const correct=(A*DA - L*DL)/E;
+    return {
+      unit:"number",
+      text:`A bank's <b>assets</b> are worth <b>${money(A)}</b> with a duration of <b>${DA}</b>.
+            Its <b>liabilities</b> are worth <b>${money(L)}</b> with a duration of <b>${DL}</b>. Its equity is
+            ${money(A)} &minus; ${money(L)}, so equity can be thought of as a portfolio that is long the
+            assets (${money(A)}) and short the liabilities (${money(L)}).`,
+      ask:"What is the duration of the bank's net equity?",
+      correct,
+      cands:[
+        {val:(A*DA + L*DL)/(A+L), msg:`You averaged as though the liabilities were a second asset. They are a short position: their \$\$duration is <em>subtracted</em>, and the equity base is ${money(A)} &minus; ${money(L)} = ${money(E)}.`},
+        {val:DA-DL, msg:`You subtracted the durations directly. Durations only net that way when the two sides are equal in value; here they are not.`},
+        {val:A*DA - L*DL, msg:`That is the equity's \$\$duration, ${money(A*DA-L*DL)}, not its duration. Divide by the equity value ${money(E)}.`}
+      ],
+      steps:[
+        `\$\$duration of equity = ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL} = ${money(A*DA-L*DL)}`,
+        `Equity value = ${money(A)} &minus; ${money(L)} = ${money(E)}`,
+        `Duration of equity = ${money(A*DA-L*DL)} / ${money(E)} = <b>${correct.toFixed(4)}</b>`,
+        `Notice it is larger than either side's duration &mdash; leverage magnifies it.`
+      ]};
+  }},
+
+{ id:"z2", topic:"port", also:["convex"], name:"Convexity of a bank's net equity", gen(){
+    const A=pick([80,100,120,150,200])*1000;
+    const CA=pick([30,35,40,45,50,55]);
+    const L=A*pick([.4,.6,.7]);      // no 0.5, as in z1
+    const CL=pick([4,5,6,8,10]);
+    const E=A-L;
+    const correct=(A*CA - L*CL)/E;
+    return {
+      unit:"number",
+      text:`A bank's <b>assets</b> are worth <b>${money(A)}</b> with a convexity of <b>${CA}</b>.
+            Its <b>liabilities</b> are worth <b>${money(L)}</b> with a convexity of <b>${CL}</b>. Its equity is
+            ${money(A)} &minus; ${money(L)}, so equity can be thought of as a portfolio that is long the
+            assets (${money(A)}) and short the liabilities (${money(L)}).`,
+      ask:"What is the convexity of the bank's net equity?",
+      correct,
+      cands:[
+        {val:(A*CA + L*CL)/(A+L), msg:`The liabilities are a short position: their \$\$convexity is subtracted, and the base is the equity ${money(E)}, not ${money(A+L)}.`},
+        {val:CA-CL, msg:`Convexities only net that way if the two sides are equal in value. Weight each by its value first.`},
+        {val:A*CA - L*CL, msg:`That is the equity's \$\$convexity, not its convexity. Divide by the equity value ${money(E)}.`}
+      ],
+      steps:[
+        `\$\$convexity of equity = ${money(A)} &times; ${CA} &minus; ${money(L)} &times; ${CL} = ${money(A*CA-L*CL)}`,
+        `Equity value = ${money(E)}`,
+        `Convexity of equity = <b>${correct.toFixed(4)}</b>`
+      ]};
+  }},
+
+{ id:"z3", topic:"port", also:["ddur"], name:"Change in equity from a rate move", gen(){
+    const A=pick([100,120,150,200])*1000;
+    const DA=pick([4.5,5,5.5,6,6.5]);
+    const L=A*pick([.5,.6,.7]);
+    const DL=pick([1.5,2,2.5]);
+    const dy=pick([.0025,.005,.01])*pick([1,-1]);
+    const ddE=A*DA - L*DL;
+    const correct=-ddE*dy;
+    return {
+      unit:"money",
+      text:`A bank holds <b>assets</b> of <b>${money(A)}</b> with duration <b>${DA}</b> and
+            <b>liabilities</b> of <b>${money(L)}</b> with duration <b>${DL}</b>. All yields
+            <b>${dy>0 ? "rise" : "fall"} by ${pctS(Math.abs(dy),2)}</b>.`,
+      ask:"Using duration alone, by how much does the bank's equity change? (Negative for a fall.)",
+      correct,
+      cands:[
+        {val:-(A*DA + L*DL)*dy, msg:`You added the two \$\$durations. The liabilities are a short position, so theirs is subtracted.`},
+        {val:-(A-L)*(DA-DL)*dy, msg:`You netted the values and the durations separately. Net the \$\$durations instead: value &times; duration on each side, then subtract.`},
+        {val:ddE*dy, msg:`Right size, wrong sign. Prices move against yields, so the change is &minus;\$\$duration &times; &Delta;y.`}
+      ],
+      steps:[
+        `\$\$duration of equity = ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL} = ${money(ddE)}`,
+        `Change = &minus;\$\$duration &times; &Delta;y = &minus;${money(ddE)} &times; (${dy<0?"&minus;":""}${pctS(Math.abs(dy),2)})`,
+        `= <b>${smoney(correct)}</b>`
+      ]};
+  }},
+
+{ id:"z4", topic:"hedge", also:["port"], name:"Immunize a balance sheet", gen(){
+    let A,DA,L,DL,Dh,ddE,correct;
+    /* Re-drawn when the answer equals the asset or liability value printed beside it
+       (all-draws report, 22 Sep 2026: 16 draws), which would look like a misprint.   */
+    do {
+      A=pick([100,120,150,200])*1000;
+      DA=pick([4.5,5,5.5,6,6.5]);
+      L=A*pick([.4,.5,.6,.7]);
+      DL=pick([1.5,2,2.5,3]);
+      Dh=pick([1.9,2.8,3.7,4.6]);
+      ddE=A*DA - L*DL;
+      correct=ddE/Dh;
+    } while (Math.abs(correct-A) < 0.5 || Math.abs(correct-L) < 0.5);
+    return {
+      unit:"money",
+      text:`A bank holds <b>assets</b> of <b>${money(A)}</b> with duration <b>${DA}</b> and
+            <b>liabilities</b> of <b>${money(L)}</b> with duration <b>${DL}</b>. It will hedge
+            with a T-note whose duration is <b>${Dh}</b>.`,
+      ask:"How much market value of the T-note must the bank short to bring the dollar duration of its net position to zero?",
+      correct,
+      cands:[
+        {val:(A*DA + L*DL)/Dh, msg:`You added the two \$\$durations instead of netting them. The liabilities already hedge part of the assets.`},
+        {val:ddE, msg:`That is the \$\$duration to be removed, ${money(ddE)}, not the market value that removes it. Divide by the hedge's duration, ${Dh}.`},
+        {val:(A-L)/Dh, msg:`You used the equity value rather than its \$\$duration. What has to be cancelled is ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL}.`}
+      ],
+      steps:[
+        `\$\$duration to cancel = ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL} = ${money(ddE)}`,
+        `A short position of market value V in the T-note contributes &minus;V &times; ${Dh}`,
+        `Set ${money(ddE)} &minus; V &times; ${Dh} = 0, so V = <b>${money(correct)}</b>`
+      ]};
+  }},
+
+{ id:"s1", topic:"hedge", also:["port"], name:"A self-financing hedge", gen(){
+    const F=100;
+    const Tt=pick([10,15,20]);
+    const T1=pick([1,2,3]);
+    const T2=pick([5,10,15].map(g=>Tt+g).filter(t=>t<=30));   // no zero beyond 30 years (22 Sep)
+    const yt=pick(range(.04,.06,.0005));
+    const y1=yt-pick([.001,.0015,.002]), y2=yt+pick([.0005,.001,.0015]);
+    /* Worked the way Anh teaches it in the case and in lecture (21 Sep 2026): x and y are
+       the market values put into the two zeros; one equation for the zero financing, one
+       for the $$duration. Everything is computed from the figures printed in the stem. */
+    const Pt=+zPrice(F,Tt,yt).toFixed(2), P1=+zPrice(F,T1,y1).toFixed(2), P2=+zPrice(F,T2,y2).toFixed(2);
+    const Dt=+zDur(Tt,yt).toFixed(4), D1=+zDur(T1,y1).toFixed(4), D2=+zDur(T2,y2).toFixed(4);
+    const x=+(Pt*(D2-Dt)/(D2-D1)).toFixed(4), y=+(Pt-x).toFixed(4);
+    const correct=x/P1;
+    return {
+      unit:"number",
+      text:`You short one <b>${Tt}-year</b> zero, price <b>${money(Pt)}</b>,
+            duration <b>${Dt.toFixed(4)}</b>. You must invest exactly the proceeds &mdash; no more,
+            no less &mdash; in the <b>${T1}-year</b> zero (price ${money(P1)}, duration
+            ${D1.toFixed(4)}) and the <b>${T2}-year</b> zero (price ${money(P2)}, duration
+            ${D2.toFixed(4)}), and the hedge must carry the same \$\$duration as the zero you shorted.`,
+      ask:`How many of the ${T1}-year zeros do you buy? Give it to four decimal places.`,
+      correct,
+      cands:[
+        {val:x/Pt, msg:`That is the <em>fraction of the proceeds</em> that goes into the ${T1}-year zero. To turn money into a number of bonds, divide the amount x by that zero's price, ${money(P1)}.`},
+        {val:y/P2, msg:`That is how many of the ${T2}-year zeros you need. The question asks about the ${T1}-year zero.`},
+        {val:x, msg:`That is the dollar amount going into the ${T1}-year zero, not a number of bonds. Divide it by that zero's price, ${money(P1)}.`}
+      ],
+      steps:[
+        `Let x and y be the amounts, in market value, invested in the ${T1}-year and the ${T2}-year zero.`,
+        `Zero financing: x + y = ${Pt.toFixed(2)}`,
+        `Same \$\$duration: ${Pt.toFixed(2)} &times; ${Dt.toFixed(4)} = x &times; ${D1.toFixed(4)} + y &times; ${D2.toFixed(4)}`,
+        `Substitute y = ${Pt.toFixed(2)} &minus; x: x = ${Pt.toFixed(2)} &times; (${D2.toFixed(4)} &minus; ${Dt.toFixed(4)}) / (${D2.toFixed(4)} &minus; ${D1.toFixed(4)}) = ${x.toFixed(4)}, and y = ${Pt.toFixed(2)} &minus; ${x.toFixed(4)} = ${y.toFixed(4)}`,
+        `Number of ${T1}-year zeros = x / price = ${x.toFixed(4)} / ${P1.toFixed(2)} = <b>${correct.toFixed(4)}</b>`
+      ]};
+  }},
+
+{ id:"f1", topic:"ddur", also:["port"], name:"Dollar duration of a forward", gen(){
+    const F=1000;
+    const T1=pick([0.5,1,1.5]), T2=T1+pick([0.5,1,1.5,2]);
+    const y1=pick(range(.03,.06,.005)), y2=y1+pick([.001,.002,.003]);
+    const ddLong=zDDur(F,T2,y2);
+    const K=F*zPrice(1,T2,y2)/zPrice(1,T1,y1);
+    const ddShort=zDDur(K,T1,y1);
+    const correct=ddLong-ddShort;
+    return {
+      unit:"number",
+      text:`A forward contract to buy, at <b>t = ${T1}</b>, a zero maturing at <b>t = ${T2}</b> can be
+            replicated by a long position in the zero maturing at t = ${T2} and a short position of equal
+            value in the zero maturing at t = ${T1}, so the position is worth nothing today. The long leg's
+            \$\$duration is <b>${ddLong.toFixed(2)}</b>; the short leg's, measured as if it were held long,
+            is <b>${ddShort.toFixed(2)}</b>.`,
+      ask:"What is the dollar duration of the forward?",
+      correct,
+      cands:[
+        {val:ddLong+ddShort, msg:`You added both legs. One leg is <em>short</em>, so its \$\$duration enters with a minus sign.`},
+        {val:ddLong, msg:`That is the long leg alone. The financing leg carries interest rate risk too, and it offsets.`},
+        {val:ddShort-ddLong, msg:`Right size, wrong sign. The forward is long the far zero and short the near one, so it is ${ddLong.toFixed(2)} &minus; ${ddShort.toFixed(2)}.`}
+      ],
+      steps:[
+        `A portfolio's \$\$duration is the sum of its parts, with short positions entering negative.`,
+        `\$\$duration = ${ddLong.toFixed(2)} &minus; ${ddShort.toFixed(2)}`,
+        `= <b>${correct.toFixed(2)}</b>`,
+        `Smaller than the bond itself: the financing leg hedges away the near-dated risk.`
+      ]};
+  }},
+
+{ id:"r1", topic:"dur", also:["concept"], name:"Back out the duration", gen(){
+    let V0,D,dbp;
+    /* The new value is shown to the cent, so draw only combinations where it is exact:
+       otherwise the price on the page implies a different duration from the key (13 of
+       96 grid points were more than 0.25% out, the worst 2.2%; found 21 Sep 2026).  */
+    do {
+      V0=pick([250,500,1000]);   // not $100: its dollar and % changes coincide (v12)
+      D=pick([3,4.5,6,7.5,9,12]);
+      dbp=pick([5,10,20,25]);
+    } while (Math.abs(V0*D*dbp/100 - Math.round(V0*D*dbp/100)) > 1e-9);
+    const dy=dbp/10000;
+    const V1=V0*(1-D*dy);
+    const correct=D;
+    return {
+      unit:"number",
+      text:`A fixed income security is worth <b>${money(V0)}</b>. Your valuation model says that if
+            all yields rise by <b>${dbp} basis points</b>, it will be worth
+            <b>${money(V1)}</b>.`,
+      ask:"Ignoring convexity, what duration does that imply?",
+      correct,
+      cands:[
+        {val:(V0-V1)/V0, msg:`That is the fractional fall, ${pct((V0-V1)/V0,4)}. Duration is that divided by the yield change, ${pctS(dy,2)}.`},
+        {val:(V0-V1)/dy, msg:`That is the \$\$duration, ${((V0-V1)/dy).toFixed(2)}. Divide by the price ${money(V0)} to get duration.`},
+        {val:V0/(V0-V1), msg:`That inverts the ratio. Duration is the <em>proportional</em> fall per unit of yield change.`}
+      ],
+      steps:[
+        `&Delta;V/V = new value / old value &minus; 1 = ${money(V1)} / ${money(V0)} &minus; 1 = &minus;${pct((V0-V1)/V0,4)}`,
+        `Duration = &minus;(&Delta;V/V) / &Delta;y = ${pct((V0-V1)/V0,4)} / ${pctS(dy,2)}`,
+        `= <b>${correct.toFixed(4)}</b>`,
+        `A small move is used on purpose: at ${dbp}bp the convexity term is negligible, so what is left is duration.`
+      ]};
+  }},
+
+{ id:"r2", topic:"convex", also:["concept"], name:"Back out the convexity", gen(){
+    const V0=pick([248,375,512,640]);
+    const D=pick([6,8,10,12,15]);
+    const yImp=pick([.03,.04,.05]);
+    const Timp=D*(1+yImp/2);
+    const C=+((Timp*Timp + Timp/2)/Math.pow(1+yImp/2,2)).toFixed(2);
+    const dy=-pick([.01,.015,.02]);
+    /* The new value is shown to the cent, and the key is what that figure implies
+       (blind sitting v11: 68.00 from the page against a key of 67.94).           */
+    const V1=Math.round(V0*(1 - D*dy + 0.5*C*dy*dy)*100)/100;
+    const correct=2*((V1-V0)/V0 + D*dy)/(dy*dy);
+    return {
+      unit:"number",
+      text:`A fixed income security is worth <b>${money(V0)}</b> and has a duration of <b>${D}</b>. Yields
+            <b>fall by ${pctS(-dy,2)}</b> and the model says it will be worth <b>${money(V1)}</b>
+            &mdash; more than duration alone predicts.`,
+      /* One decimal: the price is printed to the cent, which pins the convexity only to about
+         +/-0.04 (blind sitting v13, all five readers). */
+      ask:"What convexity does that imply? Give it to one decimal place.",
+      correct,
+      cands:[
+        {val:((V1-V0)/V0 + D*dy)/(dy*dy), msg:`You dropped the factor of 2. The convexity term is <em>0.5</em> &times; C &times; (&Delta;y)&sup2;, so solving for C multiplies by 2.`},
+        {val:2*((V1-V0)/V0)/(dy*dy), msg:`You used the whole price change. Take the duration term out first &mdash; what convexity explains is only the part duration missed.`},
+        {val:-2*((V1-V0)/V0 + D*dy)/(dy*dy), msg:`Sign slip. Convexity is positive for these bonds: it lifts the price above the duration line whichever way yields move.`}
+      ],
+      steps:[
+        `Start from &Delta;V/V = &minus;D &times; &Delta;y + &frac12; &times; C &times; (&Delta;y)&sup2;`,
+        `Everything but C is known: &Delta;V/V = (${money(V1)} &minus; ${money(V0)}) / ${money(V0)} = ${((V1-V0)/V0*100).toFixed(4)}%, D = ${D}, &Delta;y = &minus;${pctS(-dy,2)}`,
+        `So ${((V1-V0)/V0*100).toFixed(4)}% = &minus;${D} &times; (&minus;${pctS(-dy,2)}) + &frac12; &times; C &times; (${pctS(-dy,2)})&sup2; = ${(-D*dy*100).toFixed(4)}% + ${(0.5*dy*dy).toFixed(7)} &times; C`,
+        /* The last step divides the price change itself, not a rounding of it: from the
+           rounded 0.061935 the printed chain gives 38.70 against a key of 38.71, and a
+           1.50% yield move makes 1/2 (dy)^2 = 0.0001125, which six decimals rounds away
+           (gridall 06, 22 Sep 2026).                                                   */
+        `C = (&Delta;V/V + D &times; &Delta;y) / (&frac12; &times; (&Delta;y)&sup2;) = ((${money(V1)} &minus; ${money(V0)}) / ${money(V0)} + ${D} &times; (&minus;${pctS(-dy,2)})) / ${(0.5*dy*dy).toFixed(7)} = <b>${correct.toFixed(2)}</b>`
+      ]};
+  }},
+
+{ id:"cv1", topic:"conv", also:["dur"], name:"Duration under another convention", gen(){
+    const k=pick([1,4,12]);
+    let T,y,correct;
+    do {
+      T=pick([2,3,5,7,10,15,20,25,30]);
+      y=pick(range(.03,.08,.0025));
+      correct=kDur(T,y,k);
+    } while(!clear(correct, [zDur(T,y), T, T*(1+y/k)], .003));
+    return {
+      unit:"number",
+      /* Using T alone misses by only ytm/12 when the yield compounds monthly, so the
+         default 0.25% match would score it. Four decimals asked; rounding stays
+         under 0.003%.                                                               */
+      tol:0.0005, sep:0.002,
+      text:`A <b>${T}-year</b> zero yields <b>${pctS(y,2)} p.a.</b>, compounded <b>${KWORD[k]}</b>.`,
+      ask:"What is its modified duration, in years? Give it to four decimal places.",
+      correct,
+      cands:[
+        {val:zDur(T,y), msg:`That is the semiannual formula. This yield compounds ${KTIMES[k]}, so the 2 in (1 + ytm/2) becomes ${k}: ${T} / ${kDiv(k)}.`},
+        {val:T, msg:`That is the maturity itself, which is exact only when the yield compounds continuously. This one compounds ${KWORD[k]}, so divide by ${kDiv(k)}.`},
+        {val:T*(1+y/k), msg:`You multiplied by ${kDiv(k)} instead of dividing. Duration is the maturity <em>over</em> ${kDiv(k)}, a little under ${T}.`}
+      ],
+      steps:[
+        `The yield compounds ${KTIMES[k]}, so the 2 in (1 + ytm/2) becomes ${k}`,
+        `Duration = maturity / ${kDiv(k)} = ${T} / ${(1+y/k).toFixed(6)}`,
+        `= <b>${correct.toFixed(4)}</b>`
+      ]};
+  }},
+
+{ id:"cv2", topic:"conv", also:["convex"], name:"Convexity under another convention", gen(){
+    const k=pick([1,4,12]);
+    let T,y,correct;
+    /* A zero's convexity is close to T^2 whenever T is near 1/(2 ytm) -- the note's
+       "convexity ~ maturity squared" -- so the continuous-compounding slip can land
+       on the key. Re-drawn until every slip sits clear of it.                      */
+    do {
+      T=pick([2,3,5,7,10,15,20,25,30]);
+      y=pick(range(.03,.08,.0025));
+      correct=kConv(T,y,k);
+    } while(!clear(correct, [zConv(T,y), (T*T+T/2)/Math.pow(1+y/k,2), T*T, (T*T+T/k)/(1+y/k)], .003));
+    const tk = k===1 ? `T` : `T/${k}`;
+    return {
+      unit:"number",
+      tol:0.0005, sep:0.002,
+      text:`A <b>${T}-year</b> zero yields <b>${pctS(y,2)} p.a.</b>, compounded <b>${KWORD[k]}</b>.`,
+      ask:"What is its convexity? Give it to four decimal places.",
+      correct,
+      cands:[
+        {val:zConv(T,y), msg:`That is the semiannual formula. This yield compounds ${KTIMES[k]}, so every 2 that divides something becomes ${k} &mdash; in the numerator as well as the denominator.`},
+        {val:(T*T+T/2)/Math.pow(1+y/k,2), msg:`You changed the denominator but left T/2 in the numerator. That 2 divides T, so it changes too: T&sup2; + ${tk}.`},
+        {val:T*T, msg:`That is maturity squared, the answer only when the yield compounds continuously. This one compounds ${KWORD[k]}, so the numerator keeps its ${tk} and the denominator stays.`},
+        {val:(T*T+T/k)/(1+y/k), msg:`The denominator is <em>squared</em>: ${kDiv(k)}&sup2;. The squares are exponents and stay where they are; only the 2's that divide change.`}
+      ],
+      steps:[
+        `The yield compounds ${KTIMES[k]}, so every 2 that divides something becomes ${k}`,
+        `Numerator = T&sup2; + ${tk} = ${T*T} + ${(T/k).toFixed(4)} = ${(T*T+T/k).toFixed(4)}`,
+        `Denominator = ${kDiv(k)}&sup2; = ${Math.pow(1+y/k,2).toFixed(8)}`,
+        `Convexity = <b>${correct.toFixed(4)}</b>`
+      ]};
+  }},
+
+{ id:"cv3", topic:"conv", also:["ddur"], name:"Dollar duration, continuously compounded", gen(){
+    const F=pick([1000,10000]);
+    let T,y,P,correct;
+    /* Two slips can cancel: semiannual discounting raises the price by about
+       T ytm^2/4 while the semiannual divisor cuts the duration by about ytm/2, so
+       doing both lands near the key when T is near 2/ytm. Re-drawn until clear.    */
+    do {
+      T=pick([10,15,20,25,30]);
+      y=pick(range(.04,.08,.0025));
+      P=kPrice(F,T,y,Infinity);
+      correct=P*T;
+    } while(!clear(correct, [zPrice(F,T,y)*T, P*zDur(T,y), zDDur(F,T,y), F*T], .003));
+    return {
+      unit:"number",
+      tol:0.0005, sep:0.002,
+      text:`A <b>${T}-year</b> zero with face <b>${money(F)}</b> yields <b>${pctS(y,2)} p.a.</b>,
+            compounded <b>continuously</b>.`,
+      ask:"What is its dollar duration? Give it to two decimal places.",
+      correct,
+      cands:[
+        {val:zPrice(F,T,y)*T, msg:`Right duration, wrong price. You discounted semiannually. With a continuously compounded yield the discounting moves too: price = ${money(F)} &times; e<sup>&minus;ytm &times; T</sup> = ${money(P)}.`},
+        {val:P*zDur(T,y), msg:`Right price, wrong duration. When the yield compounds continuously the divisor is exactly 1, so the duration is the maturity, ${T}, not ${T} / (1 + ytm/2).`},
+        {val:zDDur(F,T,y), msg:`That is the semiannual answer from start to finish. Both the price and the duration change when the yield compounds continuously.`},
+        {val:F*T, msg:`You multiplied the face value by the duration. \$\$duration is duration times <em>price</em>.`}
+      ],
+      steps:[
+        `Price = ${money(F)} &times; e<sup>&minus;${y.toFixed(4)} &times; ${T}</sup> = ${P.toFixed(4)}`,
+        `Compounded continuously, duration is the maturity exactly: ${T}`,
+        `\$\$duration = ${P.toFixed(4)} &times; ${T} = <b>${(+P.toFixed(4)*T).toFixed(2)}</b>`
+      ]};
+  }},
+
+{ id:"cv4", topic:"conv", also:["dur"], name:"From Macaulay duration to a price change", gen(){
+    const k=pick([1,2,4]);
+    const other = k===2 ? 1 : 2;
+    const Dm=pick(range(3,15,.25));
+    const y=pick(range(.03,.08,.0025));
+    const dbp=pick([25,50,100]);
+    const dy=dbp/10000;
+    const Dmod=Dm/(1+y/k);
+    const correct=Dmod*dy;
+    return {
+      unit:"percent",
+      /* Using the Macaulay figure unconverted misses by ytm/k, 0.75% at 3% quarterly.
+         Four decimals asked, so honest rounding stays under 0.01%.                 */
+      tol:0.0005, sep:0.003,
+      text:`A bond yields <b>${pctS(y,2)} p.a.</b>, compounded <b>${KWORD[k]}</b>, and its
+            <b>Macaulay</b> duration is <b>${Dm.toFixed(2)} years</b>. Its yield rises by
+            <b>${dbp} basis points</b>.`,
+      ask:"Using modified duration alone, by what percentage does its price fall? Give it to four decimal places.",
+      correct,
+      cands:[
+        {val:Dm*dy, msg:`You used the Macaulay duration as it stands. Divide it by ${kDiv(k)} first: modified duration is the one that goes straight into % change in price = &minus;duration &times; &Delta;y.`},
+        {val:Dm/(1+y/other)*dy, msg:`Wrong divisor. This yield compounds ${KTIMES[k]}, so the Macaulay duration is divided by ${kDiv(k)}, not ${kDiv(other)}.`},
+        {val:Dm*(1+y/k)*dy, msg:`You multiplied by ${kDiv(k)} instead of dividing. Modified duration is Macaulay duration <em>over</em> ${kDiv(k)}, so it is the smaller of the two.`}
+      ],
+      steps:[
+        `Modified duration = Macaulay duration / ${kDiv(k)} = ${Dm.toFixed(2)} / ${(1+y/k).toFixed(6)} = ${Dmod.toFixed(4)}`,
+        `% change in price = &minus;${Dmod.toFixed(4)} &times; ${pctS(dy,2)} = &minus;${pct(correct,4)}`,
+        `So the price falls by <b>${pct(correct,4)}</b>`
+      ]};
+  }}
+
+];
+
+/* ======================= CHOICE-MODE ITEMS ==============================
+   Auto-graded by which option is clicked, not by a typed number.
+     topic "error"   — a worked solution with one planted mistake
+     topic "concept" — reason about the direction of an effect, no arithmetic
+   Directional items shuffle their own options so position carries no
+   information; spot-the-error items must stay in step order.            */
+
+function shuffle(a){
+  const out = a.slice();
+  for (let i=out.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [out[i],out[j]] = [out[j],out[i]];
+  }
+  return out;
+}
+
+const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["dur"], name:"Why duration is roughly maturity", gen(){
+    const opts=shuffle([
+      {html:`Because the divisor (1 + ytm/2) is close to 1 when yields are small`, correct:true,
+       msg:`Right. Duration = maturity / (1 + ytm/2). At a 5% yield the divisor is 1.025, so the duration of a 10-year zero is 9.76 &mdash; near enough to 10 for a trader thinking on their feet.`},
+      {html:`Because a zero pays no coupons, so the divisor does not apply to it`, correct:false,
+       msg:`Not exactly. Having no coupons is why a zero's duration is <em>close</em> to its maturity, but the yield still shortens it a little through the (1 + ytm/2) divisor.`},
+      {html:`Because face value and duration are proportional`, correct:false,
+       msg:`Face value does not enter the duration formula at all. A \$100 zero and a \$1m zero of the same maturity and yield have identical durations.`},
+      {html:`Because the approximation only holds for maturities under ten years`, correct:false,
+       msg:`It holds at any maturity. A 100-year zero has a duration near 100 for the same reason a 10-year zero has one near 10.`}
+    ]);
+    return {mode:"choice",
+      text:`The note says the duration of a zero is <em>roughly</em> its maturity, whatever its
+            face value.`,
+      ask:"Why is that a good approximation?",
+      options:opts,
+      steps:[
+        `Duration of a zero = maturity / (1 + ytm/2).`,
+        `Yields are small, so the divisor is barely above 1.`,
+        `Face value cancels out entirely: it scales price, not sensitivity.`
+      ]};
+  }},
+
+{ id:"k2", topic:"concept", also:["convex"], name:"Which way does duration err?", gen(){
+    const opts=shuffle([
+      {html:`It overestimates price falls and underestimates price rises`, correct:true,
+       msg:`Right, and both follow from one fact: the tangent line lies below the price curve on <em>both</em> sides. So the straight-line estimate is always too low, which understates a rise and overstates a fall.`},
+      {html:`It underestimates price falls and overestimates price rises`, correct:false,
+       msg:`The other way round. The tangent lies below the curve everywhere, so the estimate is always too low in level terms.`},
+      {html:`It overestimates the size of the move in both directions`, correct:false,
+       msg:`No. It overstates a fall but understates a rise &mdash; because the tangent sits below the curve in both directions, not because it exaggerates.`},
+      {html:`It errs only when yields rise, since the curve is flat below the current yield`, correct:false,
+       msg:`The curve is convex on both sides. Moving left from a 5% yield to 2%, the true price is \$741.92 against the tangent's \$686.04 &mdash; a sizeable error.`}
+    ]);
+    return {mode:"choice",
+      text:`Duration approximates the price curve by its tangent at today's yield.`,
+      ask:"Which way does that approximation err?",
+      options:opts,
+      steps:[
+        `The price-yield curve is convex, so it bends away above its own tangent.`,
+        `The tangent therefore lies below the curve for moves in either direction.`,
+        `Below the curve on the right means the predicted fall is too big; below it on the left means the predicted rise is too small.`
+      ]};
+  }},
+
+{ id:"k3", topic:"concept", also:["ddur"], name:"Duration or dollar duration?", gen(){
+    const opts=shuffle([
+      {html:`Duration answers in percentage terms, dollar duration in dollars`, correct:true,
+       msg:`Right. It is the same relationship as between a 20% return and the \$20 you made on \$100 &mdash; the percentage becomes dollars once you say how much you started with.`},
+      {html:`They are the same number expressed in different units`, correct:false,
+       msg:`They are not the same number. One is a multiple of a few years; the other is that multiple scaled by the bond's price, so it runs into the thousands.`},
+      {html:`Dollar duration applies to portfolios, duration to individual bonds`, correct:false,
+       msg:`Both apply to either. The real split is that \$\$durations <em>add</em> across a portfolio while durations must be value-weighted.`},
+      {html:`Dollar duration uses face value where duration uses price`, correct:false,
+       msg:`\$\$duration uses the market <em>price</em>, not face. A bond trading at \$476.74 has its duration scaled by 476.74.`}
+    ]);
+    return {mode:"choice",
+      text:`Duration and dollar duration answer closely related questions.`,
+      ask:"What is the relationship?",
+      options:opts,
+      steps:[
+        `% change in price = duration &times; change in yields.`,
+        `\$\$ change in price = \$\$duration &times; change in yields.`,
+        `\$\$duration = duration &times; price.`
+      ]};
+  }},
+
+{ id:"k4", topic:"concept", also:["port"], name:"Add them or average them?", gen(){
+    const opts=shuffle([
+      {html:`\$\$durations add; durations are averaged`, correct:true,
+       msg:`Right. A dollar change in your wealth is the sum of the dollar changes in each holding. A <em>percentage</em> change, like a return, has to be weighted by how much each holding is worth.`},
+      {html:`Both simply add across the portfolio`, correct:false,
+       msg:`If durations added, a portfolio of two 10-year zeros would have a duration of 20 &mdash; and a 10 basis point move would shift it 0.2%, which is twice the truth.`},
+      {html:`Both are value-weighted averages`, correct:false,
+       msg:`Averaging \$\$durations would understate the portfolio: owning two bonds makes you more exposed in dollars, not equally exposed.`},
+      {html:`\$\$durations are averaged; durations add`, correct:false,
+       msg:`Exactly backwards.`}
+    ]);
+    return {mode:"choice",
+      text:`You combine several bonds into one portfolio.`,
+      ask:"How do their durations and dollar durations combine?",
+      options:opts,
+      steps:[
+        `Portfolio \$\$duration = sum of individual \$\$durations.`,
+        `Portfolio duration = weighted average of individual durations, weights being market values.`,
+        `Convexity behaves the same way: \$\$convexities add, convexities average.`
+      ]};
+  }},
+
+{ id:"k5", topic:"concept", also:["port"], name:"What the portfolio number assumes", gen(){
+    const opts=shuffle([
+      {html:`That every yield moves by the same amount`, correct:true,
+       msg:`Right. Without that assumption the question "what is the change in yields?" has no single answer, since the 1-year and the 30-year need not move together.`},
+      {html:`That all the bonds have the same maturity`, correct:false,
+       msg:`No &mdash; the whole point is to summarise a portfolio of different maturities in one number.`},
+      {html:`That the zero yield curve is flat today`, correct:false,
+       msg:`The curve can slope however it likes. What is assumed is how it <em>moves</em>, not its shape.`},
+      {html:`That the bonds are held to maturity`, correct:false,
+       msg:`Duration is about marking to market today, which is precisely what matters when you are not holding to maturity.`}
+    ]);
+    return {mode:"choice",
+      text:`A portfolio of a 1-year zero and a 30-year zero is summarised by a single dollar
+            duration, and you are told the value change is minus that number times "the change in
+            yields".`,
+      ask:"What has to be assumed for that phrase to mean anything?",
+      options:opts,
+      steps:[
+        `The portfolio spans several maturities, each with its own yield.`,
+        `One \$\$duration times one yield change only works if those yields move together.`,
+        `That is the parallel shift assumption, and it is the main thing the measure hides.`
+      ]};
+  }},
+
+{ id:"k6", topic:"concept", also:["convex"], name:"The sign of the convexity term", gen(){
+    const opts=shuffle([
+      {html:`Always added, since convexity is positive for these bonds`, correct:true,
+       msg:`Right. It lifts the tangent's estimate up towards the curve whichever way yields moved, which is why convexity is something a bondholder wants.`},
+      {html:`Added when yields fall, subtracted when they rise`, correct:false,
+       msg:`No. The term carries (&Delta;y)&sup2;, which is positive either way, and the correction is needed in the same direction both times.`},
+      {html:`Subtracted, because it corrects an overestimate`, correct:false,
+       msg:`It corrects an estimate that is too <em>low</em> in level terms. For a yield rise that means a predicted fall that is too big, so adding a positive number is the fix.`},
+      {html:`Its sign depends on whether the bond trades above or below par`, correct:false,
+       msg:`Convexity does not change sign with the price. For an ordinary bond it is always positive.`}
+    ]);
+    return {mode:"choice",
+      /* The stem used to print the whole formula, "+" sign included, and then ask for
+         the sign (blind sitting v9, 21 Sep 2026). It now gives only the term. It names
+         the signed estimate, since against the *size* of a fall the term is subtracted,
+         and B and D would be defensible (v10).                                        */
+      text:`You estimate the change in a Treasury zero's price as &minus;\$\$duration &times; &Delta;y,
+            then refine it with a second term, 0.5 &times; \$\$convexity &times; (&Delta;y)&sup2;.`,
+      ask:"Is that second term added to &minus;$$duration &times; &Delta;y or subtracted from it?",
+      options:opts,
+      steps:[
+        `\$\$convexity is positive and (&Delta;y)&sup2; is positive, so the whole term is positive.`,
+        `The tangent lies below the curve on both sides, so the estimate needs lifting on both sides.`,
+        `Hence it is always added.`
+      ]};
+  }},
+
+{ id:"k7", topic:"concept", also:["convex"], name:"Convexity and maturity", gen(){
+    const opts=shuffle([
+      {html:`Duration goes with maturity; convexity with maturity squared`, correct:true,
+       msg:`Right. Convexity = (T&sup2; + T/2)/(1 + ytm/2)&sup2;, so a 20-year zero has a convexity near 400 while its duration is near 20.`},
+      {html:`Duration and convexity both go roughly with maturity`, correct:false,
+       msg:`Then a 30-year zero would have a convexity near 30. The formula's leading term is T&sup2;, so it is nearer 900.`},
+      {html:`Convexity goes with the square root of maturity`, correct:false,
+       msg:`The opposite direction. Convexity grows faster than maturity, not slower.`},
+      {html:`Convexity is independent of maturity and depends only on yield`, correct:false,
+       msg:`Yield enters only through the (1 + ytm/2)&sup2; divisor. Maturity dominates.`}
+    ]);
+    return {mode:"choice",
+      text:`There is little intuition to offer for the convexity formula, but there is one
+            useful rule of thumb.`,
+      ask:"What is it?",
+      options:opts,
+      steps:[
+        `Duration of a zero &asymp; T.`,
+        `Convexity of a zero &asymp; T&sup2;.`,
+        `Which is why convexity matters far more for long bonds than short ones.`
+      ]};
+  }},
+
+{ id:"k8", topic:"concept", also:["hedge"], name:"What a zero-duration hedge does not do", gen(){
+    const opts=shuffle([
+      /* v12: "eliminates convexity" was not a risk and credit risk was ruled out by
+         "Treasury", so the key fell out by elimination; and non-parallel moves, a second
+         real answer, were only kept out by not offering them. Now every option is a
+         risk, and the stem fixes parallel moves.                                      */
+      {html:`Large moves: its \$\$convexity is not zero`, correct:true,
+       msg:`Right. Setting \$\$duration to zero flattens the first-order term only. To be safe against reasonably large moves you must zero the \$\$convexity too, which needs a third instrument.`},
+      {html:`None: with \$\$duration at zero its value cannot change`, correct:false,
+       msg:`Only to first order. The 0.5 &times; \$\$convexity &times; (&Delta;y)&sup2; term is still there, and for large moves it is not small.`},
+      {html:`Small parallel moves in yields`, correct:false,
+       msg:`Those are exactly what a zero \$\$duration removes. What it leaves is the curvature, which only bites on larger moves.`},
+      {html:`Reinvesting the zeros' coupons at new rates`, correct:false,
+       msg:`Zeros pay no coupons, so there is nothing to reinvest. The gap is convexity.`}
+    ]);
+    return {mode:"choice",
+      text:`You short the 2-year Treasury zero against one 15-year Treasury zero in the ratio
+            that sets the portfolio's dollar duration to zero. Yields only ever move in parallel.`,
+      ask:"What exposure have you not removed?",
+      options:opts,
+      steps:[
+        `\$\$duration zero means little change in value for <em>small</em> moves.`,
+        `The second-order term, 0.5 &times; \$\$convexity &times; (&Delta;y)&sup2;, survives.`,
+        `Zeroing both needs more than one hedging instrument.`
+      ]};
+  }},
+
+{ id:"k9", topic:"concept", also:["coupon"], name:"Why a coupon bond's duration is shorter", gen(){
+    const opts=shuffle([
+      {html:`Because some of its value arrives before maturity`, correct:true,
+       msg:`Right. A coupon bond is a portfolio of zeros, and its duration is the value-weighted average of theirs. Every coupon is a short-dated zero dragging the average down.`},
+      {html:`Because coupon bonds are less risky than zeros`, correct:false,
+       msg:`That is the consequence, not the reason. The reason is the timing of the cash flows.`},
+      {html:`Because the coupon rate is subtracted from the maturity`, correct:false,
+       msg:`No such rule. The duration comes from weighting each cash flow's date by its present value.`},
+      {html:`Because coupon bonds usually trade at or near par`, correct:false,
+       msg:`They often do not, and it would not matter if they did. What matters is that cash arrives early.`}
+    ]);
+    return {mode:"choice",
+      /* Against the maturity, 2 -> 1.86 has two causes: the coupons, and the (1 + ytm/2)
+         divisor every zero carries too (blind sitting v9). Against a 2-year zero at the
+         same yield (2/1.03 = 1.9417) only the coupons are left.                        */
+      text:`A 2-year note paying a 6% p.a. coupon, paid semiannually, yields 6% and has a
+            modified duration of about 1.86. A 2-year zero yielding the same 6% has a modified
+            duration of about 1.94.`,
+      ask:"Why is the note's duration shorter than the zero's?",
+      options:opts,
+      steps:[
+        `Treat the note as four zeros: 0.5, 1.0, 1.5 and 2.0 years.`,
+        `Its duration is the value-weighted average of those four durations.`,
+        `The three coupon legs sit before maturity, so the average lands below the 2-year zero's 1.94.`
+      ]};
+  }},
+
+{ id:"k10", topic:"concept", also:["coupon"], name:"What makes it *modified*", gen(){
+    const opts=shuffle([
+      {html:`It is the Macaulay duration divided by (1 + ytm/k)`, correct:true,
+       msg:`Right. Macaulay duration is the value-weighted average time to the cash flows. Dividing it by (1 + ytm/k), where k is how many times a year the yield compounds (2 here), gives the number that goes straight into % change in price = &minus;duration &times; change in yield.`},
+      {html:`It is computed assuming the zero curve is flat at the bond's own yield to maturity`, correct:false,
+       msg:`That is a real distinction, but a different one. Discounting off the actual zero curve instead gives <em>Fisher&ndash;Weil</em> duration. Whether a duration is <em>modified</em> is about dividing the Macaulay figure by (1 + ytm/2), not about which curve you discounted with.`},
+      {html:`It is the duration after adjusting for convexity`, correct:false,
+       msg:`Convexity is a separate, second-order correction. Modified duration is still a first-order measure.`},
+      {html:`It is the duration measured in half-years rather than years`, correct:false,
+       msg:`The units are years either way.`}
+    ]);
+    return {mode:"choice",
+      text:`Every duration in this note &mdash; including the <b>T / (1 + ytm/2)</b> we use for a
+            zero &mdash; is a <em>modified</em> duration.`,
+      ask:"What makes a duration modified?",
+      options:opts,
+      steps:[
+        `Macaulay duration is the value-weighted average time to the bond's cash flows.`,
+        `Modified duration = Macaulay duration / (1 + ytm/2).`,
+        `That is the version that turns a yield change into a price change, which is why every duration here is a modified one.`
+      ]};
+  }},
+
+{ id:"e1", topic:"error", also:["dur"], name:"Find the mistake — duration of a zero", gen(){
+    const T=pick([5,10,15,20]);
+    const y=pick(range(.04,.08,.005));
+    const F=1000;
+    const fault=pick(["wholeYield","noDivide","timesPrice"]);
+    /* Every step works from the figures printed before it: Step 4 used to multiply the
+       unrounded price and print a product the student could not reproduce (blind
+       sittings v9 and v12).                                                           */
+    const P=+zPrice(F,T,y).toFixed(2);
+    const D = +(fault==="wholeYield" ? T/(1+y)
+              : fault==="noDivide"   ? T
+              :                        zDur(T,y)).toFixed(4);
+    const Dok=+zDur(T,y).toFixed(4);
+    const s=[
+      `<b>Step 1.</b> The zero matures in ${T} years and yields ${pctS(y,2)} p.a., compounded semiannually`,
+      fault==="wholeYield"
+        ? `<b>Step 2.</b> Duration = maturity / (1 + ytm) = ${T} / ${(1+y).toFixed(4)} = ${D.toFixed(4)}`
+        : (fault==="noDivide"
+            ? `<b>Step 2.</b> A zero has one cash flow, so its duration is its maturity = ${D.toFixed(4)}`
+            : `<b>Step 2.</b> Duration = maturity / (1 + ytm/2) = ${T} / ${(1+y/2).toFixed(4)} = ${D.toFixed(4)}`),
+      `<b>Step 3.</b> The price is ${money(P)}`,
+      fault==="timesPrice"
+        ? `<b>Step 4.</b> \$\$duration = duration / price = ${D.toFixed(4)} / ${money(P)} = ${(D/P).toFixed(6)}`
+        : `<b>Step 4.</b> \$\$duration = duration &times; price = ${D.toFixed(4)} &times; ${money(P)} = ${(D*P).toFixed(2)}`
+    ];
+    const fine=[
+      `Step 1 is fine &mdash; those are the terms of the bond.`,
+      `Step 2 is fine &mdash; a zero's duration is its maturity divided by (1 + ytm/2).`,
+      `Step 3 is fine &mdash; that is the zero discounted over ${2*T} half-years.`,
+      `Step 4 is fine &mdash; \$\$duration scales the duration by what the bond is worth.`
+    ];
+    let at,why;
+    if(fault==="wholeYield"){
+      at=1; why=`The yield is quoted per annum but compounds twice a year, so it is <em>half</em> of it in the denominator: ${T} / (1 + ${pctS(y,2)}/2) = ${zDur(T,y).toFixed(4)}.`;
+    } else if(fault==="noDivide"){
+      at=1; why=`That is the Macaulay duration, which for a zero is its maturity. Every duration in the note is a modified duration: maturity / (1 + ytm/2) = ${zDur(T,y).toFixed(4)}, a little under ${T}.`;
+    } else {
+      at=3; why=`\$\$duration <em>multiplies</em> the duration by the price: ${D.toFixed(4)} &times; ${money(P)} = ${(D*P).toFixed(2)}. Dividing gives a number with no meaning.`;
+    }
+    return {mode:"choice",
+      text:`A student is working out the duration and dollar duration of a <b>${T}-year</b>
+            zero, face <b>${money(F)}</b>, yielding <b>${pctS(y,2)} p.a.</b>, compounded semiannually.
+            Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options:s.map((html,q)=>({html, correct:q===at, msg:q===at?why:fine[q]})),
+      steps:[
+        `Duration = ${T} / (1 + ${pctS(y,2)}/2) = ${zDur(T,y).toFixed(4)}`,
+        `Price = ${money(P)}`,
+        `\$\$duration = ${Dok.toFixed(4)} &times; ${money(P)} = ${(Dok*P).toFixed(2)}`
+      ]};
+  }},
+
+{ id:"e2", topic:"error", also:["convex"], name:"Find the mistake — the convexity adjustment", gen(){
+    const DD=pick([4000,6000,8000]);
+    const DC=pick([60000,100000,140000]);
+    const dy=pick([.01,.02]);
+    const fault=pick(["noHalf","noSquare","subtract"]);
+    const adj = fault==="noHalf"   ? DC*dy*dy
+              : fault==="noSquare" ? 0.5*DC*dy
+              :                      0.5*DC*dy*dy;
+    const first=-DD*dy;
+    const total = fault==="subtract" ? first-adj : first+adj;
+    const s=[
+      `<b>Step 1.</b> Yields rise by ${pctS(dy,2)}, and the \$\$duration is ${DD}`,
+      `<b>Step 2.</b> First-order term = &minus;${DD} &times; ${pctS(dy,2)} = ${smoney(first)}`,
+      fault==="noHalf"
+        ? `<b>Step 3.</b> Convexity term = ${DC} &times; (${pctS(dy,2)})&sup2; = ${money(adj)}`
+        : (fault==="noSquare"
+            ? `<b>Step 3.</b> Convexity term = 0.5 &times; ${DC} &times; ${pctS(dy,2)} = ${money(adj)}`
+            : `<b>Step 3.</b> Convexity term = 0.5 &times; ${DC} &times; (${pctS(dy,2)})&sup2; = ${money(adj)}`),
+      fault==="subtract"
+        ? `<b>Step 4.</b> Total = ${smoney(first)} &minus; ${money(adj)} = ${smoney(total)}`
+        : `<b>Step 4.</b> Total = ${smoney(first)} + ${money(adj)} = ${smoney(total)}`
+    ];
+    const fine=[
+      `Step 1 is fine &mdash; those are the inputs.`,
+      `Step 2 is fine &mdash; the first-order term is minus the \$\$duration times the yield change.`,
+      `Step 3 is fine &mdash; the adjustment is one half of the \$\$convexity times the squared yield change.`,
+      `Step 4 is fine &mdash; the convexity term is added, whichever way yields moved.`
+    ];
+    let at,why;
+    if(fault==="noHalf"){
+      at=2; why=`The one-half is missing. The adjustment is 0.5 &times; \$\$convexity &times; (&Delta;y)&sup2; = ${money(0.5*DC*dy*dy)}, half of what is shown.`;
+    } else if(fault==="noSquare"){
+      at=2; why=`The yield change must be <em>squared</em>. That squaring is exactly why this term is negligible for a 10 basis point move and material for a 100 basis point one.`;
+    } else {
+      at=3; why=`The convexity term is <em>added</em>, not subtracted. It is positive whichever way yields moved, and it lifts the tangent's estimate back up towards the true price.`;
+    }
+    return {mode:"choice",
+      text:`A student estimates the price change on a bond with \$\$duration <b>${DD}</b> and
+            \$\$convexity <b>${DC}</b> when yields rise <b>${pctS(dy,2)}</b>. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options:s.map((html,q)=>({html, correct:q===at, msg:q===at?why:fine[q]})),
+      steps:[
+        `First-order term = &minus;\$\$duration &times; &Delta;y = &minus;${DD} &times; ${pctS(dy,2)} = ${smoney(-DD*dy)}`,
+        `Convexity term = 0.5 &times; \$\$convexity &times; (&Delta;y)&sup2; = 0.5 &times; ${DC} &times; (${pctS(dy,2)})&sup2; = ${money(0.5*DC*dy*dy)}`,
+        `Total = first-order term + convexity term = ${smoney(-DD*dy)} + ${money(0.5*DC*dy*dy)} = <b>${smoney(-DD*dy + 0.5*DC*dy*dy)}</b>`
+      ]};
+  }},
+
+{ id:"ktrade06", topic:"error", also:["concept"], name:"Which trader is wrong?", gen(){
+    const claims=[
+      {html:`"For a yield compounded semiannually, a zero's duration is its maturity divided by one plus half its yield, so it is a little shorter than maturity whenever the yield is positive."`,
+       bad:false, why:``, ok:`right &mdash; that is the formula, and the divisor above 1 is what makes duration shorter.`},
+      {html:`"Dollar durations add across a portfolio, but plain durations have to be value-weighted."`,
+       bad:false, why:``, ok:`right. Dollars add; percentages average.`},
+      {html:`"For an option-free bond, the convexity adjustment lifts the price above what duration alone predicts, whichever way yields move."`,
+       bad:false, why:``, ok:`right. The tangent lies below the curve on both sides, so the correction is positive both times.`},
+      {html:`"A bond's duration depends on its face value: double the face and you double the duration."`,
+       bad:true, why:`Wrong. Face value does not appear in the duration formula at all. Doubling the face doubles the <em>dollar</em> duration, because it doubles the price, but the duration itself is unchanged.`,
+       ok:`right &mdash; duration scales with face value.`},
+      {html:`"Setting a portfolio's dollar duration to zero removes its interest rate risk entirely."`,
+       bad:true, why:`Wrong on two counts. It removes only the first-order exposure, leaving the convexity term live for large moves; and it works only if the curve shifts in parallel.`,
+       ok:`right &mdash; a zero \$\$duration is a complete hedge.`},
+      {html:`"Duration overstates how far a price rises when yields fall."`,
+       bad:true, why:`Backwards. Duration <em>under</em>states price rises and overstates price falls, because the tangent sits below the curve in both directions.`,
+       ok:`right &mdash; duration overstates rallies.`},
+      {html:`"The convexity adjustment matters little for a 10 basis point move but a lot for a 100 basis point move."`,
+       bad:false, why:``, ok:`right. The term carries the square of the yield change, so shrinking the move by ten shrinks the adjustment by a hundred.`}
+    ];
+    const wrong=pick(claims.filter(c=>c.bad));
+    const rights=shuffle(claims.filter(c=>!c.bad)).slice(0,3);
+    // Label them only after the four are chosen, so the numbering runs 1-4 with no gaps.
+    const opts=shuffle([wrong,...rights]).map((c,i)=>({
+      html:`<b>Trader ${i+1}.</b> ${c.html}`,
+      correct:c===wrong,
+      msg:c===wrong ? c.why : `Trader ${i+1} is ${c.ok}` }));
+    return {mode:"choice",
+      text:`Four traders are talking on a desk. Exactly one of them has said something false.`,
+      ask:"Which one?",
+      options:opts,
+      steps:[
+        `Duration does not depend on face value; \$\$duration does.`,
+        `A zero \$\$duration hedge leaves convexity and curve-reshaping risk behind.`,
+        `Duration understates rises and overstates falls.`
+      ]};
+  }},
+
+{ id:"kc1", topic:"conv", also:["concept"], name:"Where the 2 comes from", gen(){
+    const opts=shuffle([
+      {html:`The number of times a year the yield compounds`, correct:true,
+       msg:`Right. Treasury yields are quoted compounded semiannually, and every 2 that divides something in these formulas is that convention and nothing else. Quote the yield monthly and each one becomes a 12.`},
+      {html:`The 0.5 from the convexity term, moved inside`, correct:false,
+       msg:`No. That 0.5 multiplies \$\$convexity &times; (&Delta;y)&sup2; in the price-change equation, and it stays put whatever the convention. These 2's change when the compounding changes.`},
+      {html:`The bond's two cash flows, price paid and face received`, correct:false,
+       msg:`No. A zero pays once, at maturity. The 2's come from how its yield is quoted: compounded twice a year.`},
+      {html:`Nothing in particular: they are an artefact of the maths`, correct:false,
+       msg:`No. Each one means something: it is the number of times a year the yield compounds. Change the convention and every one of them changes with it.`}
+    ]);
+    return {mode:"choice",
+      text:`A zero's duration is T / (1 + ytm/2) and its convexity is (T&sup2; + T/2) / (1 + ytm/2)&sup2;.
+            Leave the squares aside &mdash; they are exponents.`,
+      ask:"What do the three 2's that divide something stand for?",
+      options:opts,
+      steps:[
+        `The yield is quoted the way the Treasury market quotes it: p.a., compounded semiannually.`,
+        `The discounting matches, (1 + ytm/2)<sup>2T</sup>, and so do the two formulas.`,
+        `Compound the yield more often and each of those 2's changes with it.`
+      ]};
+  }},
+
+{ id:"kc2", topic:"conv", also:["concept"], name:"What changes with the convention", gen(){
+    const to=pick(["annually","quarterly","monthly","daily","continuously"]);
+    /* Rewritten 21 Sep 2026 (Anh: "SUPER unclear"): the stem now lists the spreadsheet's
+       columns, so every option refers to something on the page.                       */
+    const opts=shuffle([
+      {html:`Columns 3, 4 and 5`, correct:true,
+       msg:`Right. Columns 3, 4 and 5 are written in terms of the yield, so they are the only formulas that know how often it compounds. Columns 6 and 7 refer to columns 3 to 5: their values update by themselves, but their formulas stay.`},
+      {html:`Columns 4 and 5 only`, correct:false,
+       msg:`The duration and convexity formulas do change, but so does the price: a yield compounded ${to} discounts with its own convention, not with (1 + y/2)<sup>2T</sup>.`},
+      {html:`Columns 4, 5 and 6`, correct:false,
+       msg:`Column 6 refers to columns 3 and 4, so its formula stays. And the price formula in column 3 does change: the discounting runs on the new convention too.`},
+      {html:`Columns 3 to 7`, correct:false,
+       msg:`One step too far. Columns 6 and 7 never mention the yield: they refer to columns 3, 4 and 5. Their values change because those columns change, but their formulas do not.`}
+    ]);
+    return {mode:"choice",
+      /* 22 Sep 2026 (Anh): say which columns are typed in and which are formulas, and what
+         each formula refers to -- a column 7 written directly in terms of the yield would
+         need rewriting too, so the stem must rule that reading out.                     */
+      text:`A spreadsheet has one row per zero. Columns 1 and 2 are typed in: (1) maturity T and
+            (2) the yield y, p.a., compounded semiannually. Columns 3 to 7 are formulas:
+            (3) price per \$100 of face = 100 / (1 + y/2)<sup>2T</sup>;
+            (4) duration = T / (1 + y/2);
+            (5) convexity = (T&sup2; + T/2) / (1 + y/2)&sup2;;
+            (6) \$\$duration = column 3 &times; column 4;
+            (7) estimated % price change if yields rise 1% = &minus;column 4 &times; 1% + 0.5 &times;
+            column 5 &times; (1%)&sup2;.
+            You now realize that the yields are actually <b>${to}</b> compounded instead, not semiannually
+            compounded as you thought.`,
+      ask:"Which columns' formulas must you rewrite?",
+      options:opts,
+      steps:[
+        `The rule: wherever a 2 divides something, put how many times a year the yield compounds.`,
+        `Columns 3, 4 and 5 are written in terms of y, so each of their 2's becomes the new number of times a year.`,
+        `Columns 6 and 7 refer only to columns 3, 4 and 5, so their formulas stay the same and their values update.`
+      ]};
+  }},
+
+{ id:"kc3", topic:"conv", also:["concept","dur"], name:"When duration is exactly maturity", gen(){
+    const T=pick([5,10,20,30]);
+    /* "Modified" is explicit: the note's Macaulay duration is T under every convention,
+       so plain "duration" had three defensible answers (blind sitting v10). The yield
+       and two sample durations it used to quote went unused, so they are gone.        */
+    const opts=shuffle([
+      {html:`Continuous compounding`, correct:true,
+       msg:`Right. Divide the yield by an ever larger number of periods and ytm/k goes to zero, so the divisor becomes exactly 1: modified duration = ${T}, and convexity = ${T*T}, maturity squared.`},
+      {html:`Daily compounding`, correct:false,
+       msg:`Close, but not exact: ${T} / (1 + ytm/365) is a hair under ${T}. Only in the continuous limit does the divisor become exactly 1.`},
+      {html:`Annual compounding`, correct:false,
+       msg:`That goes the other way: ${T} / (1 + ytm) is further below ${T} than under any other convention here.`},
+      {html:`None: a zero's modified duration is always below its maturity`, correct:false,
+       msg:`True for any finite number of compounding periods, but not in the limit. Compound continuously and the divisor is exactly 1, so modified duration equals maturity.`}
+    ]);
+    return {mode:"choice",
+      text:`A <b>${T}-year</b> zero's modified duration depends on how often its yield compounds.`,
+      ask:`Under which convention is its modified duration exactly ${T}?`,
+      options:opts,
+      steps:[
+        `Modified duration = T / (1 + ytm/k), where k is the number of times a year the yield compounds.`,
+        `The more often it compounds, the smaller ytm/k, and the closer the divisor gets to 1.`,
+        `Only when it compounds continuously is ytm/k zero, so modified duration = T exactly.`
+      ]};
+  }},
+
+{ id:"ec1", topic:"error", also:["conv","convex"], name:"Find the mistake — convexity under another convention", gen(){
+    const k=pick([1,4,12]);
+    const T=pick([5,10,15,20,25,30]);
+    const y=pick(range(.03,.08,.005));
+    const fault=pick(["durTwo","numTwo","noSquare"]);
+    const tk = k===1 ? `T` : `T/${k}`;
+    /* Every figure is computed from the one printed before it, so the planted slip
+       shows in exactly one step and the arithmetic elsewhere checks out.            */
+    const den=+(1+y/k).toFixed(6), den2=+Math.pow(1+y/k,2).toFixed(8);
+    const half=+(1+y/2).toFixed(6);
+    const D = fault==="durTwo" ? T/half : T/den;
+    const num=+(fault==="numTwo" ? T*T+T/2 : T*T+T/k).toFixed(4);
+    const C = fault==="noSquare" ? num/den : num/den2;
+    const s=[
+      `<b>Step 1.</b> The yield compounds ${KWORD[k]}, so every 2 that divides something in the formulas becomes ${k}`,
+      fault==="durTwo"
+        ? `<b>Step 2.</b> Duration = T / (1 + ytm/2) = ${T} / ${half.toFixed(6)} = ${D.toFixed(4)}`
+        : `<b>Step 2.</b> Duration = T / ${kDiv(k)} = ${T} / ${den.toFixed(6)} = ${D.toFixed(4)}`,
+      fault==="numTwo"
+        ? `<b>Step 3.</b> Convexity numerator = T&sup2; + T/2 = ${T*T} + ${(T/2).toFixed(4)} = ${num.toFixed(4)}`
+        : `<b>Step 3.</b> Convexity numerator = T&sup2; + ${tk} = ${T*T} + ${(T/k).toFixed(4)} = ${num.toFixed(4)}`,
+      fault==="noSquare"
+        ? `<b>Step 4.</b> Convexity = numerator / ${kDiv(k)} = ${num.toFixed(4)} / ${den.toFixed(6)} = ${C.toFixed(4)}`
+        : `<b>Step 4.</b> Convexity = numerator / ${kDiv(k)}&sup2; = ${num.toFixed(4)} / ${den2.toFixed(8)} = ${C.toFixed(4)}`
+    ];
+    const fine=[
+      `Step 1 is fine &mdash; that is the note's whole rule for changing the convention.`,
+      `Step 2 is fine &mdash; duration is the maturity over ${kDiv(k)}.`,
+      `Step 3 is fine &mdash; the 2 under T in the numerator becomes ${k} along with the others.`,
+      `Step 4 is fine &mdash; the denominator is squared, and that square is an exponent, so it stays.`
+    ];
+    let at,why;
+    if(fault==="durTwo"){
+      at=1; why=`Step 1 said every 2 becomes ${k}, and Step 2 kept one: the duration is ${T} / ${kDiv(k)} = ${(T/den).toFixed(4)}.`;
+    } else if(fault==="numTwo"){
+      at=2; why=`The T/2 in the numerator is one of the 2's that divides something, so it becomes ${tk}: T&sup2; + ${tk} = ${(T*T+T/k).toFixed(4)}.`;
+    } else {
+      at=3; why=`The denominator is <em>squared</em>: ${kDiv(k)}&sup2; = ${den2.toFixed(8)}. Squares are exponents and stay where they are.`;
+    }
+    return {mode:"choice",
+      text:`A student is working out the duration and convexity of a <b>${T}-year</b> zero yielding
+            <b>${pctS(y,2)} p.a., compounded ${KWORD[k]}</b>. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options:s.map((html,q)=>({html, correct:q===at, msg:q===at?why:fine[q]})),
+      steps:[
+        `Duration = T / ${kDiv(k)} = ${T} / ${k===1 ? `(1 + ${pctS(y,2)})` : `(1 + ${pctS(y,2)}/${k})`} = ${T} / ${den.toFixed(6)} = ${(T/den).toFixed(4)}`,
+        `Convexity = (T&sup2; + ${tk}) / ${kDiv(k)}&sup2; = (${T*T} + ${k===1 ? T : `${T}/${k}`}) / ${k===1 ? `(1 + ${pctS(y,2)})` : `(1 + ${pctS(y,2)}/${k})`}&sup2;`,
+        `= ${(+(T*T+T/k).toFixed(4)).toFixed(4)} / ${den2.toFixed(8)} = ${(+(T*T+T/k).toFixed(4)/den2).toFixed(4)}`
+      ]};
+  }},
+
+{ id:"b1", topic:"beta", also:["concept"], name:"What duration and beta share", gen(){
+    const opts=shuffle([
+      {html:`Both multiply one sensitivity by one change in a benchmark`, correct:true,
+       msg:`Right. Strip the notation away and both say the same short sentence: impact = sensitivity &times; change in the benchmark.`},
+      {html:`Both hold exactly rather than as approximations`, correct:false,
+       msg:`Neither is. The duration equation carries a &asymp; because it ignores curvature, and the CAPM relation is about <em>expected</em> returns.`},
+      {html:`Both are estimated by regressing past returns on the market`, correct:false,
+       msg:`Beta typically is. Duration is typically computed from the bond's own cash flows and today's yield &mdash; no history required.`},
+      {html:`Both need a price history for the security itself`, correct:false,
+       msg:`Duration needs none. You can write down a 15-year zero's duration before the market opens.`}
+    ]);
+    return {mode:"choice",
+      text:`<b>&Delta;P/P &asymp; &minus;Duration &times; &Delta;y</b> and
+            <b>E[R<sub>i</sub>] &minus; r<sub>f</sub> = &beta;<sub>i</sub>(E[R<sub>m</sub>] &minus; r<sub>f</sub>)</b>
+            are models serving distinct markets.`,
+      ask:"What do the two equations have in common?",
+      options:opts,
+      steps:[
+        `Both put a single sensitivity in front of a single change in a benchmark.`,
+        `For a bond the benchmark is the level of interest rates; for a stock it is the market risk premium.`,
+        `impact = sensitivity &times; change in the benchmark.`
+      ]};
+  }},
+
+{ id:"b2", topic:"beta", also:["concept"], name:"Where the sensitivity comes from", gen(){
+    const opts=shuffle([
+      {html:`Duration from the bond's own cash flows; beta is estimated from past returns`, correct:true,
+       msg:`Right. That is the deepest difference between them: one is read off a contract, the other is estimated from history.`},
+      {html:`Both come from the security's own contractual cash flows`, correct:false,
+       msg:`A share promises nothing on any date, so there are no dated cash flows to build a sensitivity out of. Beta has to be estimated.`},
+      {html:`Both are typically estimated from a long history of returns`, correct:false,
+       msg:`Beta typically is, but duration is typically computed from the bond's cash flows and its yield today. It could be estimated by regressing past bond returns, but that is not how it is normally obtained.`},
+      {html:`Duration is regressed from past bond prices; beta comes from a pricing formula`, correct:false,
+       msg:`That is the wrong way round.`}
+    ]);
+    return {mode:"choice",
+      text:`A bond comes with a duration; a stock comes with a beta.`,
+      ask:"Where does each number come from?",
+      options:opts,
+      steps:[
+        `Duration: the security's own cash flows and today's yield.`,
+        `Beta: a history of returns for the stock and for the market.`,
+        `Two analysts with the same term sheet get the same duration; two data providers can hand you two betas.`
+      ]};
+  }},
+
+{ id:"b3", topic:"beta", also:["concept"], name:"Which benchmark moves?", gen(){
+    /* v11 printed both equations in the stem, which let the answer be read off (v12).
+       The stem is conceptual again; it presupposes b1's answer, so never put b3 and b1
+       on the same paper (see _tools/README.md). Every option names a real quantity.   */
+    const opts=shuffle([
+      {html:`&Delta;y for duration; the market risk premium for beta`, correct:true,
+       msg:`Right. &Delta;y on one side, E[R<sub>m</sub>] &minus; r<sub>f</sub> on the other.`},
+      {html:`&Delta;y for duration; the risk-free rate for beta`, correct:false,
+       msg:`The risk-free rate appears in the CAPM relation, but as the level returns are measured from. What beta multiplies is the market risk premium, E[R<sub>m</sub>] &minus; r<sub>f</sub>.`},
+      {html:`The bond's coupon rate for duration; the market risk premium for beta`, correct:false,
+       msg:`Half right. The coupon is fixed by the contract and never moves; what duration multiplies is the change in yields, &Delta;y.`},
+      {html:`The bond's price for duration; the stock's own excess return for beta`, correct:false,
+       msg:`Those are the impacts, the left-hand sides. What the sensitivity multiplies has to be something outside the security &mdash; otherwise the equation explains a thing by itself.`}
+    ]);
+    return {mode:"choice",
+      text:`Duration and beta are each a sensitivity, and each multiplies a change in a market-wide
+            benchmark.`,
+      ask:"What is that benchmark on each side?",
+      options:opts,
+      steps:[
+        `Duration equation: the benchmark is the level of interest rates, &Delta;y.`,
+        `CAPM: the benchmark is the market risk premium, E[R<sub>m</sub>] &minus; r<sub>f</sub>.`,
+        `One number, one change, on each side.`
+      ]};
+  }},
+
+{ id:"s2", topic:"hedge", also:["concept"], name:"Is a self-financed book already hedged?", gen(){
+    const opts=shuffle([
+      {html:`No &mdash; \$\$duration sums the legs, and need not be zero`, correct:true,
+       msg:`Right. Long \$100 of a 30-year zero against \$100 of a 2-year zero: the value is zero, but the \$\$duration is about 2,700. You still have to set it to zero, which is the same as matching the two legs.`},
+      {html:`Yes &mdash; \$\$duration is duration times value, and the value is zero`, correct:false,
+       msg:`That is the trap. \$\$duration is built up leg by leg, not by multiplying a portfolio value that happens to be zero. What <em>is</em> undefined for such a book is its percentage duration, which would be 0/0.`},
+      {html:`No &mdash; a book that costs nothing can never be hedged`, correct:false,
+       msg:`It can: choose the legs so their \$\$durations cancel, and it is hedged to first order. What it cannot have is a percentage duration, since that would be 0/0.`},
+      {html:`Yes, provided the yield curve shifts in parallel`, correct:false,
+       msg:`Parallel shifts are assumed throughout here. Even under a perfectly parallel shift this book loses money, because its \$\$duration is not zero.`}
+    ]);
+    return {mode:"choice",
+      text:`You short a 15-year zero and invest <em>exactly</em> the proceeds in other zeros, so the
+            book costs nothing to put on. A colleague says that a book worth nothing must already be
+            hedged.`,
+      ask:"Is the colleague right?",
+      options:opts,
+      steps:[
+        `A portfolio's \$\$duration is the sum of its legs': \$\$dur = n<sub>1</sub>P<sub>1</sub>D<sub>1</sub> + n<sub>2</sub>P<sub>2</sub>D<sub>2</sub> + ...`,
+        `Making the values cancel does nothing to that sum.`,
+        `What the zero value does break is the <em>percentage</em> duration, 0/0. So work in \$\$duration, and match the legs.`
+      ]};
+  }}
+
+];
+
+const TOPICS = [
+  {key:"all", label:"Mixed"},
+  {key:"dur", label:"Duration"},
+  {key:"ddur", label:"Dollar duration"},
+  {key:"port", label:"Portfolios"},
+  {key:"coupon", label:"Coupon bonds"},
+  {key:"convex", label:"Convexity"},
+  {key:"hedge", label:"Hedging"},
+  {key:"conv", label:"Compounding conventions"},
+  {key:"beta", label:"Duration and beta"},
+  {key:"concept", label:"Reason it out"},
+  {key:"error", label:"Find the mistake"}
+];
+
+/* ----------------------------------------------------------------- state */
+let active = "all", current = null, tries = 0;
+let peeked = false, solved = false, tallied = false;  // tallied = already counted in `attempted`
+const stats = {att:0, first:0, streak:0, peek:0};
+
+const $ = id => document.getElementById(id);
+
+function buildTopics(){
+  const box = $("topics");
+  TOPICS.forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = t.label;
+    b.setAttribute("aria-pressed", String(t.key===active));
+    b.onclick = ()=>{
+      active = t.key;
+      [...box.children].forEach(c=>c.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");
+      seqIdx = 0;                 // a new topic restarts the sequence
+      newQuestion();
+    };
+    box.appendChild(b);
+  });
+}
+
+const ALL_TEMPLATES = TEMPLATES.concat(CHOICE_TEMPLATES);
+
+/* A template's primary topic is `topic`; it may also list secondary topics in
+   `also`, so one item can appear under several chips. */
+function inTopic(t, key){
+  return t.topic === key || (Array.isArray(t.also) && t.also.includes(key));
+}
+
+/* ---- progress: distinct templates solved without opening the solution ---- */
+const PROG_KEY = "practice-progress:" + document.title;
+let mastered = new Set();
+try { mastered = new Set(JSON.parse(localStorage.getItem(PROG_KEY) || "[]")); }
+catch (e) { mastered = new Set(); }
+
+function saveProgress(){
+  try { localStorage.setItem(PROG_KEY, JSON.stringify([...mastered])); } catch (e) {}
+}
+function markMastered(id){
+  if (!id || mastered.has(id)) return;
+  mastered.add(id);
+  saveProgress();
+}
+
+/* Templates are drawn WITHOUT immediate repeats. Sampling with replacement
+   looks fine on the full bank, but a topic holding only three or four
+   templates repeats roughly one press in three, which reads as the button
+   being broken. Hold the most recent half of the pool out of the draw. */
+let recentIds = [];
+/* Questions seen this session, so the arrow keys can step back and forth through them. */
+let history = [], histIdx = -1;
+let navKey = false;      // true while an arrow key is doing the rendering
+let order = "shuffle";   // "shuffle" | "seq"
+let seqIdx = 0;
+
+function newQuestion(replay){
+  let q;
+  if (replay){ q = replay.q; }
+  else {
+  const pool = active==="all" ? ALL_TEMPLATES : ALL_TEMPLATES.filter(t=>inTopic(t,active));
+  let tpl;
+  if (order === "seq"){
+    /* walk the bank in order, wrapping at the end */
+    if (seqIdx >= pool.length) seqIdx = 0;
+    tpl = pool[seqIdx];
+    seqIdx = (seqIdx + 1) % pool.length;
+    $("seqPos").textContent = `${seqIdx === 0 ? pool.length : seqIdx} of ${pool.length}`;
+  } else {
+    const hold = Math.max(1, Math.floor(pool.length / 2));
+    let choices = pool.filter(t => !recentIds.slice(0, hold).includes(t.id));
+    if (!choices.length) choices = pool;        // pool of one, or all held out
+    tpl = pick(choices);
+    recentIds.unshift(tpl.id);
+    if (recentIds.length > 40) recentIds.length = 40;
+    $("seqPos").textContent = "";
+  }
+  q = tpl.gen();
+  q.name = tpl.name;
+  q.id   = tpl.id;
+  q.seqPos = $("seqPos").textContent;   // carried so stepping back shows its own position
+  if (q.mode !== "choice") q.distractors = usable(q.correct, q.cands, q.sep);
+  }
+  current = q;
+  if (replay){
+    tries = replay.tries; peeked = replay.peeked; solved = replay.solved; tallied = replay.tallied;
+  } else {
+    tries = 0; peeked = false; solved = false; tallied = false;
+    history = history.slice(0, histIdx + 1);           // a new draw discards anything ahead
+    history.push({q, tries:0, peeked:false, solved:false, tallied:false, fb:"", ans:""});
+    if (history.length > 50){ history.shift(); }
+    histIdx = history.length - 1;
+  }
+
+  const isChoice = q.mode === "choice";
+  $("qmeta").textContent = q.name;
+  $("qtext").innerHTML   = q.text;
+  $("qask").innerHTML    = q.ask;
+  /* Hide the input and Check individually, NOT the whole row -- the
+     "New question" button lives in that row and must stay reachable
+     on choice questions. */
+  $("ans").hidden   = isChoice;
+  $("check").hidden = isChoice;
+  $("opts").hidden     = !isChoice;
+  const box = $("opts");
+  box.innerHTML = "";              // always clear, even when the panel is hidden
+  if (isChoice){
+    q.options.forEach((o,k)=>{
+      const btn = document.createElement("button");
+      btn.className = "opt"; btn.innerHTML = o.html;
+      btn.onclick = () => pickOption(k);
+      box.appendChild(btn);
+    });
+  }
+  $("ans").value = "";
+  $("ans").placeholder = q.unit==="money" ? "e.g. 1234.56"
+                     : q.unit==="percent" ? "e.g. 12.34  (percent)"
+                     : "e.g. 18";
+  $("ans").disabled = false;
+  $("check").disabled = false;
+  $("fb").innerHTML = "";
+  $("steps").innerHTML = q.steps.map(s=>`<div>${s}</div>`).join("");
+  const d = $("soldetails"); d.hidden = false; d.open = false;
+  if (replay){
+    /* Put the question back exactly as it was left --- the feedback, what was typed, and
+       whether it had already been answered. The tallied/solved flags come back with it,
+       so revisiting a question never re-counts an attempt or re-awards mastery. */
+    $("fb").innerHTML = replay.fb || "";
+    $("ans").value    = replay.ans || "";
+    $("seqPos").textContent = q.seqPos || "";
+    if (isChoice && q.wrong){
+      [...$("opts").children].forEach((b,j)=>{
+        if (q.wrong.indexOf(j) >= 0){ b.classList.add("wrong"); b.disabled = true; }
+      });
+    }
+    if (solved || q.done){
+      if (isChoice){
+        [...$("opts").children].forEach((b,j)=>{ b.disabled = true;
+          if (q.options[j].correct) b.classList.add("right"); });
+      } else { $("ans").disabled = true; $("check").disabled = true; }
+    }
+    d.open = peeked || solved;
+  }
+  /* Arriving by arrow key must not park the cursor in the answer box: a restored answer
+     sitting there would swallow the next arrow press and strand the student. */
+  if (navKey) $("ans").blur();
+  else if (!isChoice && !$("ans").disabled) $("ans").focus();
+}
+
+function parseInput(raw){
+  const cleaned = raw.replace(/[$,%\s,]/g,"");
+  if (cleaned === "" ) return NaN;
+  return Number(cleaned);
+}
+
+function say(kind, title, body){
+  $("fb").innerHTML = `<div class="fb ${kind}"><strong>${title}</strong>${body}</div>`;
+}
+
+function pickOption(k){
+  const q = current;
+  if (q.done) return;
+  const o    = q.options[k];
+  const btns = [...$("opts").children];
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }
+
+  if (o.correct){
+    q.done = true; solved = true;
+    btns.forEach((b2,j)=>{ b2.disabled = true; if (q.options[j].correct) b2.classList.add("right"); });
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "It still counts as attempted, just not toward first-try accuracy or your streak. " + o.msg);
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok", tries===1 ? "Correct — first try." : "Correct.", o.msg);
+    }
+    $("soldetails").open = true;
+  } else {
+    stats.streak = 0;
+    btns[k].classList.add("wrong");
+    btns[k].disabled = true;
+    (q.wrong || (q.wrong = [])).push(k);   // remembered so a revisit keeps it eliminated
+    say("no","Not that one.", o.msg);
+  }
+  render();
+}
+
+function check(){
+  const raw = $("ans").value;
+  const parsed = parseInput(raw);
+  if (!Number.isFinite(parsed)){
+    say("hint","Enter a number","Type your answer as a number — you can include $ , or % and it will be ignored.");
+    return;
+  }
+  const q = current;
+  const val = q.unit==="percent" ? parsed/100 : parsed;
+  const TOL = q.tol || REL_MATCH;
+
+  /* Unit slips are formatting mistakes, not wrong answers, so they cost
+     neither an attempt nor first-try credit. Guarded so a genuinely
+     correct entry can never be mistaken for one. */
+  if (!near(val, q.correct, TOL)){
+    if (q.unit==="percent" && near(parsed, q.correct, TOL)){
+      say("hint","Right number, wrong units.",
+          `You entered <code>${raw}</code> as a decimal. This box wants a percent — enter <code>${(q.correct*100).toFixed(4).replace(/\.?0+$/,"")}</code> instead.`);
+      return;
+    }
+    if (near(val*100, q.correct, TOL) || near(val/100, q.correct, TOL)){
+      say("hint","Check your units.","Your figure is off by a factor of 100. Re-read what the box is asking for.");
+      return;
+    }
+  }
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }   // count each question once, right or wrong
+
+  if (near(val, q.correct, TOL)){
+    solved = true;
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "That is a perfectly good way to learn, and it still counts as attempted. It does " +
+          "not count toward first-try accuracy or your streak, so those numbers stay honest. " +
+          "Try the next one before opening the solution.");
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok","Correct.", tries===1 ? "First try — well done." : "Got there.");
+    }
+    $("check").disabled = true; $("ans").disabled = true;
+    $("soldetails").open = true;
+    render(); return;
+  }
+
+  stats.streak = 0;
+  const hit = q.distractors.find(d => near(val, d.val, TOL));
+  say("no", hit ? "Not quite — and I can see why." : "Not quite.",
+      hit ? hit.msg
+          : "That does not match any of the usual slips, so it may be an arithmetic error. Try again, or open the worked solution below.");
+  render();
+}
+
+function render(){
+  $("sAtt").textContent    = stats.att;
+  $("sFirst").textContent  = stats.first;
+  $("sAcc").textContent    = stats.att ? Math.round(stats.first/stats.att*100)+"%" : "—";
+  $("sStreak").textContent = stats.streak;
+  $("sPeek").textContent   = stats.peek;
+  const total = ALL_TEMPLATES.length;
+  $("pTotal").textContent  = total;
+  $("pDone").textContent   = mastered.size;
+  $("progfill").style.width = (total ? 100*mastered.size/total : 0).toFixed(1) + "%";
+}
+
+$("check").onclick = check;
+$("next").onclick  = () => newQuestion();   // arrow fn: never pass the click Event as `replay`
+
+/* ---- arrow keys: right for the next question, left for the previous one -------------
+   Ignored while the answer box is being typed in, where the arrows move the caret, and
+   ignored with a modifier held so the browser's own shortcuts still work.            */
+function snapshotQuestion(){
+  const h = history[histIdx];
+  if (!h) return;
+  h.tries = tries; h.peeked = peeked; h.solved = solved; h.tallied = tallied;
+  h.fb = $("fb").innerHTML; h.ans = $("ans").value;
+}
+function goBack(){
+  if (histIdx <= 0) return;
+  snapshotQuestion(); histIdx--;
+  navKey = true; newQuestion(history[histIdx]); navKey = false;
+}
+function goForward(){
+  snapshotQuestion();
+  navKey = true;
+  if (histIdx < history.length - 1){ histIdx++; newQuestion(history[histIdx]); }
+  else newQuestion();
+  navKey = false;
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  const t = e.target;
+  if (t && (t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  /* Inside the answer box the arrows belong to the caret --- but only while it still has
+     somewhere to go. Once it sits at the end you are pressing toward, the press is free,
+     so a half-typed answer never traps a student in the field. */
+  if (t && t.tagName === "INPUT" && !t.disabled){
+    const at = t.selectionStart, to = t.selectionEnd, n = String(t.value).length;
+    if (at === null || at !== to) return;                       // a selection: leave it alone
+    if (e.key === "ArrowRight" ? at < n : at > 0) return;
+  }
+  e.preventDefault();
+  if (e.key === "ArrowRight") goForward(); else goBack();
+});
+$("ans").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("check").disabled) check(); });
+$("soldetails").addEventListener("toggle", ()=>{
+  if ($("soldetails").open && !solved && !peeked){
+    peeked = true;
+    stats.peek++;
+    if (!tallied){ tallied = true; stats.att++; }  // opening it counts as engaging with the question
+    render();
+  }
+});
+
+function setOrder(o){
+  order = o; seqIdx = 0;
+  $("mShuffle").setAttribute("aria-pressed", String(o === "shuffle"));
+  $("mSeq").setAttribute("aria-pressed",     String(o === "seq"));
+  newQuestion();
+}
+$("mShuffle").onclick = () => setOrder("shuffle");
+$("mSeq").onclick     = () => setOrder("seq");
+
+$("pReset").onclick = () => {
+  if (!mastered.size) return;
+  mastered.clear(); saveProgress(); render();
+};
+
+buildTopics();
+newQuestion();
+render();
+</script>
+</body>
+</html>
