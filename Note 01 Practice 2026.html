@@ -1,0 +1,2346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Value of Money — Practice</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#5f6672; --line:#e2e5ea;
+    --card:#f7f8fa; --accent:#00205b; --accent-fg:#ffffff;
+    --ok-bg:#e8f5ec; --ok-line:#2e7d47; --ok-fg:#17532c;
+    --no-bg:#fdeceb; --no-line:#c0392b; --no-fg:#8e2b20;
+    --hint-bg:#fff8e6; --hint-line:#b8860b; --hint-fg:#6b4e00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161a; --fg:#e8eaed; --muted:#9aa3af; --line:#2b2f36;
+      --card:#1b1e24; --accent:#7f9cd4; --accent-fg:#0d1015;
+      --ok-bg:#132a1c; --ok-line:#4caf70; --ok-fg:#9fdcb4;
+      --no-bg:#2c1614; --no-line:#e06c5d; --no-fg:#f0a99f;
+      --hint-bg:#2a2313; --hint-line:#d4a017; --hint-fg:#e5c976;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 18px 64px}
+  header{border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:20px}
+  h1{font-size:1.35rem; margin:0 0 4px}
+  .sub{color:var(--muted); font-size:.9rem}
+  .topics{display:flex; flex-wrap:wrap; gap:7px; margin:18px 0}
+  .chip{
+    border:1px solid var(--line); background:var(--card); color:var(--fg);
+    padding:6px 12px; border-radius:999px; cursor:pointer; font-size:.85rem;
+    font-family:inherit;
+  }
+  .chip[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:var(--accent)}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:20px; margin-bottom:16px;
+  }
+  .qmeta{font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+  .qtext{font-size:1.05rem; margin-bottom:6px}
+  .qtext b{font-variant-numeric:tabular-nums}
+  .ask{margin-top:14px; font-weight:600}
+  .row{display:flex; gap:9px; margin-top:14px; flex-wrap:wrap}
+  input[type=text]{
+    flex:1 1 190px; min-width:0; padding:11px 13px; font-size:1rem; font-family:inherit;
+    border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg);
+  }
+  input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px}
+  button{
+    padding:11px 17px; font-size:.95rem; font-family:inherit; border-radius:8px;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-fg);
+    cursor:pointer; font-weight:600;
+  }
+  button.ghost{background:transparent; color:var(--fg); border-color:var(--line); font-weight:500}
+  button:disabled{opacity:.45; cursor:default}
+  .fb{border-radius:8px; padding:13px 15px; margin-top:15px; border-left:4px solid; font-size:.95rem}
+  .fb.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-fg)}
+  .fb.no{background:var(--no-bg); border-color:var(--no-line); color:var(--no-fg)}
+  .fb.hint{background:var(--hint-bg); border-color:var(--hint-line); color:var(--hint-fg)}
+  .fb strong{display:block; margin-bottom:3px}
+  details{margin-top:15px; border-top:1px solid var(--line); padding-top:13px}
+  summary{cursor:pointer; font-size:.9rem; color:var(--muted); font-weight:600}
+  .steps{margin-top:11px; font-size:.92rem}
+  .steps div{padding:5px 0; border-bottom:1px dashed var(--line)}
+  .steps div:last-child{border-bottom:none; font-weight:600}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em;
+    background:var(--bg); padding:1px 5px; border-radius:4px; border:1px solid var(--line);
+  }
+  .opts{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+  .opt{
+    text-align:left; padding:11px 14px; border:1px solid var(--line); background:var(--bg);
+    color:var(--fg); border-radius:8px; cursor:pointer; font-family:inherit;
+    font-size:.95rem; font-weight:400; line-height:1.55;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt.right{background:var(--ok-bg); border-color:var(--ok-line); border-width:2px}
+  .opt.wrong{background:var(--no-bg); border-color:var(--no-line)}
+  .opt:disabled{cursor:default}
+  .opt sup{font-size:.75em}
+  .stats{display:flex; gap:22px; font-size:.86rem; color:var(--muted); margin-top:22px;
+         border-top:1px solid var(--line); padding-top:14px; flex-wrap:wrap}
+  .stats b{color:var(--fg); font-variant-numeric:tabular-nums}
+  footer{margin-top:26px; font-size:.78rem; color:var(--muted); text-align:center}
+  /* The hidden attribute's UA rule is only [hidden]{display:none}, which loses
+     to author rules like .opts{display:flex} and .row{display:flex}. Without
+     this, hiding those panels silently does nothing. */
+  .modes{display:flex; gap:8px; align-items:center; margin-top:10px;
+         font-size:.84rem; color:var(--muted); flex-wrap:wrap}
+  .modes .chip{font-size:.84rem; padding:5px 12px}
+  .prog{margin-top:18px}
+  .progtop{display:flex; justify-content:space-between; align-items:baseline;
+           font-size:.86rem; color:var(--muted); margin-bottom:6px}
+  .progtop b{color:var(--fg); font-variant-numeric:tabular-nums}
+  .progbar{height:9px; border-radius:999px; background:var(--line); overflow:hidden}
+  .progfill{height:100%; width:0%; border-radius:999px; background:var(--accent);
+            transition:width .35s ease}
+  .progreset{background:none; border:none; color:var(--muted); font-size:.8rem;
+             padding:0; cursor:pointer; text-decoration:underline; font-weight:400}
+  .progreset:hover{color:var(--fg)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Time Value of Money — Practice</h1>
+  <div class="sub">Companion drills for Note 01 · Professor Anh Le</div>
+</header>
+
+<div class="topics" id="topics" role="group" aria-label="Choose topics"></div>
+
+<div class="modes" id="modes" role="group" aria-label="Question order">
+  <span>Order</span>
+  <button class="chip" id="mShuffle" type="button" aria-pressed="true">Shuffle</button>
+  <button class="chip" id="mSeq" type="button" aria-pressed="false">In order</button>
+  <span id="seqPos"></span>
+</div>
+
+<div class="card" id="card">
+  <div class="qmeta" id="qmeta">—</div>
+  <div class="qtext" id="qtext">Loading…</div>
+  <div class="ask" id="qask"></div>
+  <div class="opts" id="opts" hidden></div>
+  <div class="row" id="inputrow">
+    <input type="text" id="ans" autocomplete="off" inputmode="decimal"
+           placeholder="Your answer" aria-label="Your answer">
+    <button id="check">Check</button>
+    <button id="next" class="ghost">New question</button>
+  </div>
+  <div id="fb"></div>
+  <details id="soldetails" hidden>
+    <summary>Show the worked solution</summary>
+    <div class="steps" id="steps"></div>
+  </details>
+</div>
+
+<div class="prog">
+  <div class="progtop">
+    <span>Templates solved unaided <b id="pDone">0</b> of <b id="pTotal">0</b></span>
+    <button class="progreset" id="pReset" type="button">reset</button>
+  </div>
+  <div class="progbar"><div class="progfill" id="progfill"></div></div>
+</div>
+
+<div class="stats">
+  <span>Attempted <b id="sAtt">0</b></span>
+  <span>Correct first try <b id="sFirst">0</b></span>
+  <span>Accuracy <b id="sAcc">—</b></span>
+  <span>Streak <b id="sStreak">0</b></span>
+  <span>Solutions opened <b id="sPeek">0</b></span>
+</div>
+
+<footer>Numbers are randomised, so every attempt is different. Nothing you type leaves this page.<br>Use the &rarr; and &larr; arrow keys to move between questions.</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ utils */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+/* stepped range, e.g. range(0.04,0.24,0.0025) -> 81 rates instead of a list of 6 */
+const range = (lo,hi,step) => {
+  const out=[]; for(let v=lo; v<=hi+1e-9; v+=step) out.push(Number(v.toFixed(8)));
+  return out;
+};
+const ORD = n => n + (["th","st","nd","rd"][(n%100-n%10!=10)*(n%10<4)*(n%10)]||"th");
+const money = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+/* a negative amount reads &minus;$50.00, never $-50.00 (house rule, 22 Sep 2026) */
+const smoney = v => (v < 0 ? "&minus;" : "") + money(Math.abs(v));
+const pct   = (v,d=4) => (v*100).toFixed(d).replace(/\.?0+$/,"") + "%";
+const pctS  = (v,d=2) => (v*100).toFixed(d) + "%";
+/* "a 8.75%" is wrong: eight takes "an". Pick the article from the spoken form. */
+const art = v => { const i = Math.floor(v*100);
+  return (i===8 || i===11 || i===18 || (i>=80 && i<=89)) ? "an" : "a"; };
+const REL_SEP  = 0.01;    // distractors must sit >1% from everything else
+const REL_MATCH= 0.0025;  // student answer counts as a match within 0.25%
+
+const near = (a,b,tol) =>
+  Number.isFinite(a) && Number.isFinite(b) &&
+  Math.abs(a-b) / Math.max(Math.abs(a), Math.abs(b), 1e-12) < tol;
+
+/* Drop distractors too close to the answer (or to each other) to diagnose.
+   Templates about small effects (perpetuity timing) pass a tighter `sep`. */
+function usable(correct, cands, sep){
+  const s = sep || REL_SEP;
+  const kept = [];
+  for (const c of cands){
+    if (!Number.isFinite(c.val)) continue;
+    if (near(c.val, correct, s)) continue;
+    if (kept.some(k => near(k.val, c.val, s))) continue;
+    kept.push(c);
+  }
+  return kept;
+}
+
+/* ------------------------------------------------------------- templates */
+const TEMPLATES = [
+
+{ id:"t1", topic:"discount", name:"Discounting a single cash flow", gen(){
+    let FV,r,n;
+    do { FV=pick(range(500,6000,250)); r=pick(range(.02,.12,.0025)); n=pick([3,4,5,6,7,8,9,10,12,15]); }
+    while (r*n < 0.20);
+    const correct = FV/Math.pow(1+r,n);
+    return {
+      unit:"money",
+      text:`You will receive <b>${money(FV)}</b> in <b>${n} years</b>. The interest rate is
+            <b>${pctS(r)} per year, compounded annually</b>.`,
+      ask:"What is that payment worth today?",
+      correct,
+      cands:[
+        {val:FV/(1+r), msg:`You discounted once instead of ${n} times. Each year of waiting needs its own division by (1+r), so the denominator is (1+r)<sup>${n}</sup>, not (1+r).`},
+        {val:FV/(1+r*n), msg:`That is simple interest — you used (1 + r×n) in the denominator. Compounding means interest earns interest, so you need (1+r)<sup>${n}</sup>.`},
+        {val:FV*Math.pow(1+r,n), msg:`You grew the money forward instead of discounting it back. Present value is smaller than future value, so divide rather than multiply.`}
+      ],
+      steps:[
+        `Discount ${n} times at ${pctS(r)}: PV = FV / (1+r)<sup>${n}</sup>`,
+        `PV = ${money(FV)} / (1 + ${r})<sup>${n}</sup> = ${money(FV)} / ${Math.pow(1+r,n).toFixed(6)}`,
+        `PV = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"t2", topic:"ear", name:"APR to effective annual rate", gen(){
+    let apr,m,correct;
+    /* Re-drawn when the continuous answer e^APR - 1 sits within 0.3% of the EAR (22 Sep 2026,
+       gridall.js 01): monthly quotes from 4.00% to 5.75% put it inside the 0.25% match, so that
+       slip was marked correct. Monthly APRs of 4.00% to 6.75% are lost; 0.3% leaves a margin. */
+    do {
+      apr = pick(range(.04,.26,.0025));
+      m   = pick([2,4,12]);
+      correct = Math.pow(1+apr/m,m)-1;
+    } while (Math.abs(Math.exp(apr)-1-correct) < 0.003*correct);
+    const label = {2:"semiannually",4:"quarterly",12:"monthly"}[m];
+    return {
+      unit:"percent",
+      text:`A loan is quoted at an APR of <b>${pctS(apr)}</b>, compounded <b>${label}</b> (${m} times a year).`,
+      ask:"What is the effective annual rate (EAR)?",
+      correct,
+      cands:[
+        {val:apr, msg:`That is the quoted APR, not the EAR. The APR is a <em>nominal</em> rate — the periodic rate multiplied by ${m}. It ignores that interest itself earns interest.`},
+        {val:Math.pow(1+apr,m)-1, msg:`You compounded the full APR ${m} times. Divide by ${m} first: the rate per period is ${pctS(apr/m,4)}, not ${pctS(apr)}.`},
+        {val:apr/m, msg:`That is the rate per period (${pctS(apr)} ÷ ${m}), which is one step along. Now compound it ${m} times over the year.`},
+        {val:Math.exp(apr)-1, msg:`That is the continuously compounded answer, e<sup>r</sup> − 1. Here interest compounds ${label} — only ${m} times a year, not continuously.`}
+      ],
+      steps:[
+        `Rate per period = APR / m = ${pctS(apr)} / ${m} = ${pctS(apr/m,4)}`,
+        `EAR = (1 + APR/m)<sup>m</sup> − 1 = (1 + ${(apr/m).toFixed(6)})<sup>${m}</sup> − 1`,
+        `EAR = ${pctS(correct,4)}`
+      ]};
+  }},
+
+{ id:"t3", topic:"cont", also:["discount"], name:"Continuous compounding", gen(){
+    let FV,r,t;
+    do { FV=pick(range(500,5000,250)); r=pick(range(.04,.14,.0025)); t=pick([2,3,4,5,6,7,8,10,12,15]); }
+    while (r*t < 0.30);
+    const correct = FV*Math.exp(-r*t);
+    /* the worked solution multiplies by the factor as printed, so its last line reproduces
+       from the page (22 Sep 2026) */
+    const df = +Math.exp(-r*t).toFixed(6);
+    return {
+      unit:"money",
+      text:`You will receive <b>${money(FV)}</b> in <b>${t} years</b>. The <b>continuously
+            compounded</b> interest rate is <b>${pctS(r)} per year</b>.`,
+      ask:"What is that payment worth today?",
+      correct,
+      cands:[
+        {val:FV*Math.exp(-r), msg:`You left out the time. The exponent is −r×t = −${r}×${t} = ${(-r*t).toFixed(3)}, not just −r.`},
+        {val:FV*Math.exp(r*t), msg:`Sign error — you used e<sup>+rt</sup> and grew the money forward. Discounting back needs e<sup>−rt</sup>.`},
+        {val:FV*(1-r*t), msg:`That is the linear approximation (1 − rt). It is close for small rt but not correct — you need the exponential e<sup>−rt</sup>.`}
+      ],
+      steps:[
+        `Under continuous compounding: PV = FV × e<sup>−rt</sup>`,
+        `−rt = −${r} × ${t} = ${(-r*t).toFixed(4)}, so e<sup>−rt</sup> = ${df.toFixed(6)}`,
+        `PV = FV × e<sup>−rt</sup> = ${money(FV)} × ${df.toFixed(6)} = ${money(FV*df)}`
+      ]};
+  }},
+
+{ id:"t4", topic:"compare", name:"Indifference rate", gen(){
+    let X,Y;
+    do { X=pick(range(700,1500,25)); Y=pick(range(320,700,5)); }
+    while (!(X/Y-2 >= 0.08 && X/Y-2 <= 0.40));
+    const correct = X/Y - 2;
+    return {
+      unit:"percent",
+      text:`Two ways to pay the same bill. <b>Option A:</b> one payment of <b>${money(X)}</b>
+            at the end of period 2. <b>Option B:</b> two payments of <b>${money(Y)}</b>,
+            one at the end of period 1 and one at the end of period 2.`,
+      ask:"At what interest rate per period are the two options exactly equal in present value?",
+      correct,
+      cands:[
+        {val:X/Y-1, msg:`Check the algebra. Setting the two present values equal and multiplying through by (1+r)<sup>2</sup> gives X = Y(1+r) + Y = Y(2+r), so r = X/Y − <b>2</b>, not X/Y − 1.`},
+        {val:X/(2*Y)-1, msg:`You treated Option B as a single payment of ${money(2*Y)}. But its two payments arrive at different times, so they cannot simply be added together.`},
+        {val:X/Y, msg:`That is just the ratio X/Y — you have not solved for r yet. Subtract 2.`}
+      ],
+      steps:[
+        `Set the present values equal: X/(1+r)<sup>2</sup> = Y/(1+r) + Y/(1+r)<sup>2</sup>`,
+        `Multiply through by (1+r)<sup>2</sup>: X = Y(1+r) + Y = Y(2+r)`,
+        `r = X/Y − 2 = ${X}/${Y} − 2 = ${pctS(correct,4)}`
+      ]};
+  }},
+
+{ id:"t5", topic:"bond", name:"Pricing a coupon bond", gen(){
+    let c,y;
+    do { c=pick(range(.02,.10,.0025)); y=pick(range(.02,.10,.0025)); }
+    while (Math.abs(c-y) < 0.015);
+    const F=1000, m=2, T=pick([2,3,4,5,6,7,8,10]), n=m*T, cpn=F*c/m;
+    const px=(cf,rate,N)=>{let s=0; for(let k=1;k<=N;k++) s+=cf/Math.pow(1+rate,k); return s+F/Math.pow(1+rate,N);};
+    const correct = px(cpn,y/m,n);
+    /* 22 Sep 2026: the half-year rate is printed to five decimals, which is exact here (y is a
+       multiple of 0.25%, so y/2 is a multiple of 0.125%), and the price is summed at that rate.
+       Printed to four decimals it was a rounded rate, and the price worked from it was up to
+       $1.24 from the key. */
+    const i5 = (y/m).toFixed(5);
+    let noDisc=0; for(let k=1;k<=n;k++) noDisc+=cpn/Math.pow(1+y/m,k); noDisc+=F;
+    return {
+      unit:"money",
+      text:`A <b>${T}-year</b> bond with face value <b>${money(F)}</b> pays ${art(c)}
+            <b>${pctS(c)} p.a.</b> coupon, paid semiannually. The discount rate is
+            <b>${pctS(y)} per year, compounded semiannually</b>.`,
+      ask:"What is the price of the bond?",
+      correct,
+      cands:[
+        {val:px(cpn,y,n), msg:`You used ${pctS(y)} as the rate <em>per period</em>. With semiannual compounding the periodic rate is ${pctS(y)} ÷ 2 = ${pctS(y/2,3)}.`},
+        {val:px(F*c,y/m,n), msg:`Your coupon is too big. ${pctS(c)} is the <em>annual</em> rate, so each semiannual payment is ${pctS(c)} × ${money(F)} ÷ 2 = ${money(cpn)}, not ${money(F*c)}.`},
+        {val:px(F*c,y,n), msg:`Two errors at once: you used the annual coupon <em>and</em> the annual rate as the periodic rate. Halve both — ${money(cpn)} per period, discounted at ${pctS(y/2,3)}.`},
+        {val:noDisc, msg:`You discounted the coupons but added the ${money(F)} face value undiscounted. The principal arrives in ${T} years too, so it needs dividing by (1+${i5})<sup>${n}</sup>.`}
+      ],
+      steps:[
+        `Each coupon = coupon rate × face ÷ 2 = ${pctS(c)} × ${money(F)} ÷ 2 = ${money(cpn)}, paid ${n} times`,
+        `Periodic rate = ${pctS(y)} ÷ 2 = ${pctS(y/2,3)}, i.e. ${i5}`,
+        `Price = Σ C/(1+y/2)<sup>k</sup> for k = 1…n, plus F/(1+y/2)<sup>n</sup>`,
+        `Price = Σ ${money(cpn)}/(1+${i5})<sup>k</sup> for k = 1…${n},  plus ${money(F)}/(1+${i5})<sup>${n}</sup>`,
+        `Price = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"t6", topic:"annuity", name:"Present value of an annuity", gen(){
+    let C,r,n;
+    do { C=pick(range(100,1500,25)); r=pick(range(.015,.09,.0025)); n=pick([3,4,5,6,7,8,9,10,12,15,18,20,25]); }
+    while (Math.abs(n - 1/r) < 3);
+    const correct = C/r*(1-1/Math.pow(1+r,n));
+    return {
+      unit:"money",
+      text:`An investment pays <b>${money(C)}</b> at the end of each period for
+            <b>${n} periods</b>. The interest rate is <b>${pctS(r)} per period</b>.`,
+      ask:"What is the present value of that stream?",
+      correct,
+      cands:[
+        {val:C*n, msg:`You added the payments without discounting: ${money(C)} × ${n}. Money arriving later is worth less, so each payment must be discounted first.`},
+        {val:C/r, msg:`That is the <em>perpetuity</em> formula C/r, which assumes the payments never stop. This stream ends after ${n} periods, so you need the bracket (1 − 1/(1+r)<sup>${n}</sup>).`},
+        {val:C/r*(1-1/Math.pow(1+r,n))*(1+r), msg:`That is an annuity <em>due</em> — it assumes the first payment arrives today. Here the first payment comes at the end of period 1, so do not multiply by (1+r).`}
+      ],
+      steps:[
+        `PV = (C/r) × (1 − 1/(1+r)<sup>n</sup>)`,
+        `= (${money(C)} / ${r}) × (1 − 1/(1+${r})<sup>${n}</sup>)`,
+        `= ${money(C/r)} × ${(1-1/Math.pow(1+r,n)).toFixed(6)}`,
+        `PV = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"t7", topic:"perp", name:"Perpetuities", gen(){
+    const C=pick(range(50,900,10)), r=pick(range(.02,.12,.0025)), due=Math.random()<0.5;
+    const ord=C/r, imm=C+C/r;
+    const correct = due ? imm : ord;
+    return {
+      unit:"money",
+      text:`A trust pays <b>${money(C)}</b> every year, forever. The interest rate is
+            <b>${pctS(r)} per year, compounded annually</b>. ` +
+            (due ? `The <b>first payment is made today</b>.`
+                 : `The <b>first payment arrives one year from today</b>.`),
+      ask:"What is this perpetuity worth?",
+      correct,
+      cands:[
+        {val: due?ord:imm, msg: due
+            ? `You used the ordinary perpetuity C/r, which assumes the first payment is a year away. Here the first ${money(C)} arrives <em>today</em>, so add it: C + C/r.`
+            : `You added an extra payment up front. The first payment is a year away, so the plain formula C/r already covers every payment — do not add another ${money(C)}.`},
+        {val:C*r, msg:`You multiplied by the rate instead of dividing. A bigger rate makes the perpetuity <em>less</em> valuable, so r belongs in the denominator.`},
+        {val:C/r/(1+r), msg:`You discounted C/r by one extra period. The formula C/r already values the stream as of today when the first payment is one period away.`}
+      ],
+      steps: due
+        ? [`First payment is today, so it is not discounted at all.`,
+           `The remaining payments start in one year and are worth C/r = ${money(C)} / ${r} = ${money(ord)}`,
+           `Total = ${money(C)} + ${money(ord)} = ${money(correct)}`]
+        : [`First payment is one period away, so use the ordinary perpetuity.`,
+           `P = C / r = ${money(C)} / ${r}`,
+           `P = ${money(correct)}`]};
+  }},
+
+/* ---- adapted from HW_01 Q4: perpetuity whose first payment is deferred ---- */
+{ id:"t8", topic:"perp", name:"Deferred perpetuity", gen(){
+    let C,apr,k,i;
+    do {                                     // deferral must move the answer >2.5%,
+      C   = pick(range(25,400,5));           // otherwise "forgot to defer" is
+      apr = pick(range(.125,.18,.0025));     // indistinguishable from the right answer.
+                                             // Floor is .125 so the monthly rate exceeds 1%:
+                                             // the "anchored a period late" distractor sits
+                                             // exactly i away from the key and is otherwise
+                                             // dropped by usable().
+      k   = pick([4,5,6,7,8,9,10,12,13,15,18]); // first cash flow at end of month k
+      i   = apr/12;
+    } while (Math.pow(1+i,k-1) < 1.025);
+    const correct = (C/i)/Math.pow(1+i,k-1);
+    /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules). C/i used to
+       divide by i rounded to six decimals ($400.00 / 0.010417 printed as $38,400.00; the figures
+       give $38,398.77), so the monthly rate is written as APR/12, and the last line divides the
+       C/i printed above it. */
+    const Ci = +(C/i).toFixed(2);
+    return {
+      unit:"money",
+      text:`A perpetuity pays <b>${money(C)}</b> every month forever. The interest rate is
+            <b>${pctS(apr)} p.a. compounded monthly</b>, and the <b>first cash flow occurs at
+            the end of month ${k}</b>.`,
+      ask:"What is the price of this perpetuity?",
+      correct,
+      cands:[
+        {val:C/i, msg:`That is the price of a perpetuity whose first payment lands at the end of month 1. Yours does not start until month ${k} — ${k-1} extra months of discounting, so divide by (1+i)<sup>${k-1}</sup>.`},
+        {val:C/apr, msg:`You used the annual rate. Cash flows are monthly, so the rate must be monthly too: ${pctS(apr)} ÷ 12 = ${pctS(i,4)}.`},
+        {val:(C/i)*Math.pow(1+i,k-1), msg:`You compounded forward instead of discounting back. A payment stream that starts later is worth <em>less</em>, so divide by (1+i)<sup>${k-1}</sup>, do not multiply.`},
+        {val:(C/i)/Math.pow(1+i,k), msg:`You discounted ${k} periods instead of ${k-1}. The formula C/i already values the stream <em>one period before</em> its first payment &mdash; so with the first payment at the end of month ${k}, C/i sits at month ${k-1}, and only ${k-1} months of discounting remain.`}
+      ],
+      steps:[
+        `Monthly rate i = APR / 12 = ${pctS(apr)} / 12 = ${pctS(i,4)}`,
+        `A perpetuity starting at the end of month 1 is worth C/i = ${money(C)} / (${apr}/12) = ${money(Ci)}`,
+        `That figure is valued at month 0. Yours starts at month ${k}, so discount ${k-1} extra month${k>2?'s':''}:`,
+        `P = (C/i) / (1+i)<sup>${k-1}</sup> = ${money(Ci)} / (1 + ${apr}/12)<sup>${k-1}</sup> = ${money(Ci/Math.pow(1+i,k-1))}`
+      ]};
+  }},
+
+/* ---- adapted from HW_01 Q-A: annuity vs two lump sums, rate given as APR ---- */
+{ id:"t9", topic:"compare", also:["car"], name:"Monthly plan versus lump sums", gen(){
+    const M   = pick(range(120,400,5));
+    const apr = pick(range(.05,.15,.0025));
+    const n   = 12, i = apr/12;
+    const L   = Math.round(M*n/2*0.92/25)*25;   // roughly comparable, kept off ties
+    const correct = M/i*(1 - 1/Math.pow(1+i,n));
+    return {
+      unit:"money",
+      text:`To pay your annual car insurance you are offered two plans. <b>Plan A:</b>
+            <b>${money(M)}</b> at the end of every month for <b>12 months</b>.
+            <b>Plan B:</b> <b>${money(L)}</b> now and another <b>${money(L)}</b> in six months.
+            The interest rate is <b>${pctS(apr)} p.a. compounded monthly</b>.`,
+      ask:"What is the present value of Plan A?",
+      correct,
+      cands:[
+        {val:M/apr*(1 - 1/Math.pow(1+apr,n)), msg:`You used ${pctS(apr)} as the <em>monthly</em> rate. It is an annual rate compounded monthly, so the rate per month is ${pctS(apr)} ÷ 12 = ${pctS(i,4)}.`},
+        {val:M*n, msg:`You added the twelve payments without discounting: ${money(M)} × 12. Payments arriving later are worth less today.`},
+        {val:M/i, msg:`That is the perpetuity formula C/i, which never stops paying. Plan A stops after 12 months, so you need the factor (1 − 1/(1+i)<sup>12</sup>).`},
+        {val:M/i*(1 - 1/Math.pow(1+i,n))*(1+i), msg:`That treats the first payment as due today. Plan A pays at the <em>end</em> of each month, so do not multiply by (1+i).`}
+      ],
+      /* 22 Sep 2026: the monthly rate is substituted as APR/12 rather than as a six-decimal
+         decimal, so the line reproduces from the page (it was off by a cent). */
+      steps:[
+        `Monthly rate i = APR / 12 = ${pctS(apr)} / 12 = ${pctS(i,4)}`,
+        `Plan A is an ordinary annuity: PV = (M/i)(1 − 1/(1+i)<sup>12</sup>)`,
+        `PV = (${money(M)} / (${apr}/12)) × (1 − 1/(1 + ${apr}/12)<sup>12</sup>) = ${money(correct)}`,
+        `PV of Plan A = ${money(correct)}   (for comparison, Plan B = ${money(L + L/Math.pow(1+i,6))})`
+      ]};
+  }},
+
+/* ---- generalised from HW_01 Q-C: pays every k months, first payment month j ---- */
+{ id:"t10", topic:"perp", name:"Perpetuity at a different frequency", gen(){
+    let X,apr,k,j,im,ik;
+    do {
+      X   = pick(range(50,600,10));
+      apr = pick(range(.05,.18,.0025));
+      k   = pick([2,3,4,6,12]);
+      j   = pick(Array.from({length:k},(_,q)=>q+1));   // first payment at month j
+      im  = apr/12;
+      ik  = Math.pow(1+im,k) - 1;
+    } while (ik/(im*k) - 1 < 0.012 || (j<k && Math.pow(1+im,k-j) < 1.012) ||
+             /* 22 Sep 2026 (gridall.js 01): with the first payment at j = (k+1)/2 the simple-rate
+                slip X/(k*i) agrees with the key to second order in i, and it was marked correct on
+                every k = 3, j = 2 draw. Those draws are re-drawn. */
+             2*j === k+1);
+    const correct = (X/ik)*Math.pow(1+im,k-j);
+    /* the last line multiplies the X/i_k printed above it, so it reproduces from the page;
+       i and i_k are written from the APR rather than as rounded decimals (22 Sep 2026) */
+    const Xik = +(X/ik).toFixed(2);
+    const when = j===k ? `at the end of month ${k}`
+               : (k===2 && j===1) ? `at the end of month 1 — so payments land in the <b>odd</b> months`
+               : `at the end of month ${j}`;
+    return {
+      unit:"money", sep:0.006, tol:0.0015,
+      text:`A bank account earns <b>${pctS(apr)} p.a. compounded monthly</b>. You want it to pay
+            you <b>${money(X)}</b> every <b>${k} months</b> forever. The first payment comes ${when}.`,
+      ask:"How much do you need to deposit today?",
+      correct,
+      /* when j = k the first and last of these equal the key, so they are left out (22 Sep 2026) */
+      cands:[
+        ...(j<k ? [{val:X/ik, msg:`That prices the stream as if the first payment were ${k} months away. Yours starts at month ${j}, which is ${k-j} month${k-j===1?'':'s'} earlier — so it is worth <em>more</em>. Multiply by (1+i)<sup>${k-j}</sup>.`}] : []),
+        {val:X/(im*k), msg:`You multiplied the monthly rate by ${k}. That ignores compounding within the ${k} months: the true ${k}-month rate is (1+i)<sup>${k}</sup> − 1 = ${pctS(ik,4)}, not ${pctS(im*k,4)}.`},
+        {val:X/im, msg:`That funds ${money(X)} every <em>month</em>. You only pay out every ${k} months, so the account has time to accumulate — you need less.`},
+        {val:X/apr, msg:`You used the annual rate. Convert to a ${k}-month rate first: (1 + ${pctS(apr)}/12)<sup>${k}</sup> − 1 = ${pctS(ik,4)}.`},
+        ...(j<k ? [{val:(X/ik)/Math.pow(1+im,k-j), msg:`Right idea, wrong direction. An earlier first payment makes the stream more valuable, so multiply by (1+i)<sup>${k-j}</sup> rather than divide.`}] : [])
+      ],
+      steps:[
+        `Monthly rate i = APR / 12 = ${pctS(apr)} / 12 = ${pctS(im,4)}`,
+        `Rate earned over ${k} months: i<sub>${k}</sub> = (1+i)<sup>${k}</sup> − 1 = (1 + ${apr}/12)<sup>${k}</sup> − 1 = ${pctS(ik,4)}`,
+        `Valued one full ${k}-month period before its first payment, the stream is worth X / i<sub>${k}</sub> = ${money(X)} / ((1 + ${apr}/12)<sup>${k}</sup> − 1) = ${money(Xik)}`,
+        ...(j<k
+          ? [`The first payment is at month ${j}, i.e. ${k-j} month${k-j===1?'':'s'} earlier than that, so bring it forward ${k-j} month${k-j===1?'':'s'}:`,
+             `P = (X / i<sub>${k}</sub>) × (1+i)<sup>${k-j}</sup> = ${money(Xik)} × (1 + ${apr}/12)<sup>${k-j}</sup> = ${money(Xik*Math.pow(1+im,k-j))}`]
+          : [`The first payment is at month ${k}, one full period away, so that is already the price: P = ${money(Xik)}`])
+      ]};
+  }},
+
+/* ---- comparing two quotes on different conventions: the note's central lesson ---- */
+{ id:"t11", topic:"ear", name:"Which quote is more expensive?", gen(){
+    let aprA, aprB, earA, earB, gap;
+    do {                                   // build it so the HIGHER APR is the CHEAPER loan
+      aprA = pick(range(.08,.18,.0005));   // quoted annually
+      gap  = pick(range(.0005,.005,.0005));
+      aprB = aprA - gap;                   // lower APR, but compounded monthly
+      earA = aprA;
+      earB = Math.pow(1+aprB/12,12)-1;
+    } while (!(earB > earA*1.006) || gap < 0.010*aprA);
+    const correct = earB;
+    return {
+      unit:"percent", sep:0.004, tol:0.001,
+      text:`Two lenders quote you a rate. <b>Lender A:</b> ${pctS(aprA,3)} p.a., <b>compounded
+            annually</b>. <b>Lender B:</b> ${pctS(aprB,3)} p.a., <b>compounded monthly</b>.`,
+      ask:"Which loan actually costs more? Enter the effective annual rate of the more expensive one.",
+      correct,
+      cands:[
+        {val:earA, msg:`You picked Lender A, presumably because its quoted rate is higher. But A compounds only once a year, so its EAR <em>is</em> ${pctS(aprA,3)}. B compounds monthly, which lifts its EAR to ${pctS(earB,3)} — above A despite the lower quote.`},
+        {val:aprB, msg:`That is B's quoted APR, not its effective rate. Compounded monthly it grows to (1 + ${pctS(aprB,3)}/12)<sup>12</sup> − 1 = ${pctS(earB,3)}.`},
+        {val:Math.pow(1+aprA/12,12)-1, msg:`You compounded A monthly, but A is quoted as compounding <em>annually</em> — its EAR is simply ${pctS(aprA,3)}. It is B that compounds monthly.`}
+      ],
+      steps:[
+        `Lender A compounds annually, so EAR<sub>A</sub> = ${pctS(aprA,3)}`,
+        `Lender B compounds monthly: EAR<sub>B</sub> = (1 + ${pctS(aprB,3)}/12)<sup>12</sup> − 1 = ${pctS(earB,4)}`,
+        `${pctS(earB,4)} > ${pctS(aprA,3)}, so <b>Lender B is more expensive</b> — even though it quotes the lower rate.`,
+        `Answer: ${pctS(correct,4)}`
+      ]};
+  }},
+
+/* ---- solve for the payment: the inverse annuity behind every car loan ---- */
+{ id:"t12", topic:"payment", also:["annuity"], name:"Solving for the payment", gen(){
+    const L   = pick(range(8000,45000,500));
+    /* From 3.25% (22 Sep 2026, gridall.js 01): the annuity-due payment is the key over (1+i),
+       i/(1+i) below it, and at 3.00% that is 0.249%, inside the 0.25% match. */
+    const apr = pick(range(.0325,.14,.0025));
+    const yrs = pick([2,3,4,5,6]);
+    const n = yrs*12, i = apr/12;
+    const correct = L*i/(1-1/Math.pow(1+i,n));
+    return {
+      unit:"money",
+      text:`You borrow <b>${money(L)}</b> to be repaid in equal monthly instalments over
+            <b>${yrs} years</b> (${n} payments). The loan rate is <b>${pctS(apr)} p.a.
+            compounded monthly</b>.`,
+      ask:"What is the monthly payment?",
+      correct,
+      cands:[
+        {val:L/n, msg:`That splits the principal evenly and charges no interest at all. You must also cover ${pctS(apr)} a year on the outstanding balance.`},
+        {val:L*i, msg:`That is one month's interest on the full balance — an interest-only payment. It never repays any principal, so the loan would never be retired.`},
+        {val:L*apr/(1-1/Math.pow(1+apr,n)), msg:`You used ${pctS(apr)} as the <em>monthly</em> rate. It is annual, compounded monthly, so the rate per month is ${pctS(apr)} ÷ 12 = ${pctS(i,4)}.`},
+        {val:L*i/(1-1/Math.pow(1+i,n))/(1+i), msg:`That is the payment for an annuity <em>due</em>, with the first payment today. A standard loan pays at the end of each month.`}
+      ],
+      /* 22 Sep 2026: the monthly rate and the annuity factor are substituted from the APR rather
+         than as six-decimal decimals, so the line reproduces from the page (it was up to 23
+         cents from the key). */
+      steps:[
+        `Monthly rate i = APR / 12 = ${pctS(apr)} / 12 = ${pctS(i,4)},  n = ${n} payments`,
+        `The payments must have a present value equal to the loan: (C/i)(1 − 1/(1+i)<sup>n</sup>) = ${money(L)}`,
+        `Rearranged: C = L × i / (1 − 1/(1+i)<sup>n</sup>)`,
+        `C = ${money(L)} × (${apr}/12) / (1 − 1/(1 + ${apr}/12)<sup>${n}</sup>) = ${money(correct)}`
+      ]};
+  }},
+
+/* ---- running the EAR formula backwards ---- */
+{ id:"t13", topic:"ear", name:"From EAR back to APR", gen(){
+    let ear,m,correct;
+    /* Re-drawn when the continuous rate ln(1+EAR) sits within 0.3% of the APR (22 Sep 2026,
+       gridall.js 01): monthly compounding at EARs of 5.00% to 6.00% put it inside the 0.25%
+       match, so that slip was marked correct. Monthly EARs of 5.00% to 7.25% are lost. */
+    do {
+      ear = pick(range(.05,.26,.0025));
+      m   = pick([2,4,12]);
+      correct = m*(Math.pow(1+ear,1/m)-1);
+    } while (Math.abs(Math.log(1+ear)-correct) < 0.003*correct);
+    const label = {2:"semiannually",4:"quarterly",12:"monthly"}[m];
+    /* the periodic rate as printed (four decimals of a percent), so APR = m x that reproduces
+       from the page; it is within 0.0006 of a point of the key (22 Sep 2026) */
+    const per = +(Math.pow(1+ear,1/m)-1).toFixed(6);
+    return {
+      unit:"percent",
+      text:`A savings product advertises an <b>effective annual rate of ${pctS(ear)}</b>.
+            Interest is compounded <b>${label}</b>.`,
+      ask:"What nominal annual rate (APR) is being quoted?",
+      correct,
+      cands:[
+        {val:ear, msg:`That is the effective rate you were given. Because interest compounds ${label}, the nominal rate that produces it must be <em>lower</em>.`},
+        {val:ear/m, msg:`That is roughly the rate per period, not the annual nominal rate. Multiply the periodic rate by ${m} to get the APR.`},
+        {val:ear*m, msg:`You multiplied the effective annual rate by ${m}. The APR is ${m} times the <em>periodic</em> rate, and the periodic rate is (1+EAR)<sup>1/${m}</sup> − 1, not the EAR itself.`},
+        {val:Math.log(1+ear), msg:`That is the continuously compounded equivalent, ln(1+EAR). Here compounding is ${label}, only ${m} times a year.`}
+      ],
+      steps:[
+        `Undo the compounding to get the periodic rate: (1 + EAR)<sup>1/${m}</sup> − 1`,
+        `= (1 + ${ear.toFixed(4)})<sup>1/${m}</sup> − 1 = ${pctS(per,4)} per period`,
+        `APR = m × periodic rate = ${m} × ${pctS(per,4)} = ${pctS(m*per,4)}`
+      ]};
+  }},
+
+/* ---- Case 01 in miniature: cash rebate versus subsidised financing ---- */
+{ id:"t14", topic:"car", name:"Rebate or dealer financing?", gen(){
+    let price, rebate, promo, cof, yrs, n, ip, ic, C, correct, cash;
+    /* Re-drawn when the rebate option's value, price - rebate, sits within 1% of the answer
+       (22 Sep 2026, gridall.js 01): near break-even it fell inside the 0.25% match on 52,982
+       draws and a student who gave the rebate price was told "Correct"; between 0.25% and 1%
+       usable() dropped it, so that slip went undiagnosed. About 12% of draws are lost. */
+    do {
+      price  = pick(range(24000,52000,500));
+      rebate = pick(range(500,3000,250));
+      promo  = pick(range(0,.06,.0025));      // dealer's subsidised rate
+      cof    = pick(range(.03,.12,.0025));    // your own cost of funds
+      yrs    = pick([2,3,4,5]);
+      n = yrs*12; ip = promo/12; ic = cof/12;
+      C  = promo===0 ? price/n : price*ip/(1-1/Math.pow(1+ip,n));
+      correct = C/ic*(1-1/Math.pow(1+ic,n));
+      cash = price - rebate;
+    } while (Math.abs(cof-promo) < 0.02 || near(cash, correct, REL_SEP));
+    /* 22 Sep 2026: Step 1 substitutes the dealer's rate as promo/12 rather than as a six-decimal
+       decimal, and Step 2 values the payment as Step 1 prints it, to the cent, so both lines
+       reproduce from the page. The key stays exact; the PV worked from the printed payment is
+       at most a few tens of cents from it, far inside the 0.25% match. */
+    const Cp = +C.toFixed(2);
+    return {
+      unit:"money",
+      text:`A dealer offers the same car two ways. <b>Take the rebate:</b> pay
+            <b>${money(price)}</b> today less a <b>${money(rebate)}</b> cash rebate.
+            <b>Take the financing:</b> pay <b>${money(price)}</b> financed at
+            <b>${pctS(promo)} p.a. compounded monthly</b>, in equal monthly instalments over <b>${yrs} years</b>.
+            Your own cost of funds is <b>${pctS(cof)} p.a. compounded monthly</b>.`,
+      ask:"What is the present value of the financing option?",
+      correct,
+      cands:[
+        {val:price, msg:`That is the sticker price — what you would get if you discounted the payments at the dealer's own ${pctS(promo)} rate. But you must discount at <em>your</em> cost of funds, ${pctS(cof)}, which is what the money is actually worth to you.`},
+        {val:cash, msg:`That is the value of the <em>rebate</em> option, ${money(price)} − ${money(rebate)}. The question asks for the financing option.`},
+        {val:C*n, msg:`That adds up all ${n} payments without discounting: ${money(C)} × ${n}. Payments spread over ${yrs} years are worth less than their face total.`},
+        {val:(price/n)/ic*(1-1/Math.pow(1+ic,n)), msg:`You split the price evenly over ${n} months, as if the financing were at 0%. It is at ${pctS(promo)}, so the dealer's payment is higher than ${money(price)}/${n}.`},
+        {val:C/cof*(1-1/Math.pow(1+cof,yrs)), msg:`You discounted with annual periods. There are ${n} monthly payments, not ${yrs} annual ones, so use the monthly rate ${pctS(ic,4)} over ${n} periods.`}
+      ],
+      steps:[
+        `Step 1 — the dealer sets the payment at their rate, ${pctS(promo)} ÷ 12 = ${pctS(ip,4)}:`,
+        promo===0 ? `C = price / n = ${money(price)} / ${n} = ${money(C)}`
+                  : `C = price × i / (1 − 1/(1+i)<sup>n</sup>) = ${money(price)} × (${promo}/12) / (1 − 1/(1 + ${promo}/12)<sup>${n}</sup>) = ${money(C)}`,
+        `Step 2 — you value that stream at <em>your</em> cost of funds, ${pctS(cof)} ÷ 12 = ${pctS(ic,4)}:`,
+        `PV = (C / i) × (1 − 1/(1+i)<sup>n</sup>) = (${money(Cp)} / (${cof}/12)) × (1 − 1/(1 + ${cof}/12)<sup>${n}</sup>) = ${money(Cp/ic*(1-1/Math.pow(1+ic,n)))}`,
+        `Compare with the rebate option at ${money(cash)} → <b>${correct < cash ? 'financing' : 'the rebate'} wins</b>.`
+      ]};
+  }}
+,
+
+/* ============================ ADDITIONS ============================== */
+
+/* -------------------------------------------- growing money forward (S1) */
+{ id:"g1", topic:"grow", also:["simple"], name:"Growing a single sum forward", gen(){
+    let P,r,n;
+    do { P=pick(range(500,8000,250)); r=pick(range(.03,.14,.0025)); n=pick([3,4,5,6,8,10,12,15,20]); }
+    while (r*n < 0.30);
+    const correct = P*Math.pow(1+r,n);
+    return {
+      unit:"money",
+      text:`You deposit <b>${money(P)}</b> today at <b>${pctS(r)} per year, compounded annually</b>,
+            and leave it alone for <b>${n} years</b>.`,
+      ask:"What is the balance at the end?",
+      correct,
+      cands:[
+        {val:P*(1+r*n), msg:`That is simple interest &mdash; ${pctS(r)} of the <em>original</em> ${money(P)} each year, ${n} times. Compounding means each year's interest joins the principal and earns interest of its own from then on.`},
+        {val:P/Math.pow(1+r,n), msg:`You discounted instead of growing. Money moving <em>forward</em> in time is multiplied by (1+r) each year; only money moving backward is divided.`},
+        {val:P*r*n, msg:`That is the interest alone under simple interest, and it leaves out the ${money(P)} you started with.`},
+        {val:P*(1+Math.pow(r,n)), msg:`The exponent belongs on (1+r), not on r by itself. Each year multiplies the balance by ${(1+r).toFixed(4)}, so after ${n} years the factor is ${(1+r).toFixed(4)}<sup>${n}</sup>.`}
+      ],
+      steps:[
+        `Each year multiplies the balance by (1 + ${r}) = ${(1+r).toFixed(6)}`,
+        `After ${n} years: FV = ${money(P)} &times; ${(1+r).toFixed(6)}<sup>${n}</sup> = ${money(P)} &times; ${Math.pow(1+r,n).toFixed(6)}`,
+        `FV = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"g2", topic:"grow", name:"Solving for the rate", gen(){
+    const P=pick(range(500,5000,250));
+    const n=pick([3,4,5,6,8,10,12,15,20]);
+    const r=pick(range(.03,.15,.0025));
+    const FV=P*Math.pow(1+r,n);
+    const correct=r;
+    /* the growth factor is worked from the balance as printed, to the cent, so the step
+       reproduces from the page (22 Sep 2026) */
+    const g=+FV.toFixed(2)/P;
+    return {
+      unit:"percent",
+      tol:0.0015,
+      text:`You put <b>${money(P)}</b> into an account and <b>${n} years</b> later it is worth
+            <b>${money(FV)}</b>. Interest compounded annually throughout.`,
+      ask:"What annual rate did the account earn?",
+      correct,
+      cands:[
+        {val:FV/P-1, msg:`That is the <em>total</em> growth over the whole ${n} years, not the annual rate. To get the yearly rate you have to undo ${n} years of compounding: take the ${ORD(n)} root.`},
+        {val:(FV/P-1)/n, msg:`You divided the total growth by ${n}, which is the simple-interest answer. Because interest compounds, the annual rate that produces this growth is smaller than a straight average would suggest.`},
+        {val:Math.pow(FV/P,n)-1, msg:`The exponent is upside down. Growth of ${(FV/P).toFixed(4)} over ${n} years means the annual factor is the ${ORD(n)} <em>root</em>: (FV/PV)<sup>1/${n}</sup>.`},
+        {val:Math.log(FV/P)/n, msg:`That is the continuously compounded rate. Here interest compounds annually, so the rate you want solves (1+r)<sup>${n}</sup> = ${(FV/P).toFixed(4)}.`}
+      ],
+      steps:[
+        `Total growth factor = FV / PV = ${money(FV)} / ${money(P)} = ${g.toFixed(6)}`,
+        `Undo ${n} years of compounding: r = (FV/PV)<sup>1/${n}</sup> &minus; 1 = ${g.toFixed(6)}<sup>1/${n}</sup> &minus; 1`,
+        `r = ${pctS(correct,3)}`
+      ]};
+  }},
+
+{ id:"g3", topic:"grow", name:"Solving for how long it takes", gen(){
+    let P,r,mult,exact,correct,gap,sep;
+    /* Interest is credited annually, so the answer is a whole number of years.
+       Reject draws where the un-rounded solve sits too close to that whole
+       number to be told apart from it. */
+    /* Also re-drawn when the simple-interest count (mult-1)/r or the Rule of 72 lands within
+       sep of that whole number (22 Sep 2026, gridall.js 01): 5 at 10% and 4 at 12.5% for 1.5
+       times, 12 at 6% for doubling, all marked correct. */
+    do {
+      P=pick(range(500,5000,250));
+      r=pick(range(.05,.20,.0025));
+      mult=pick([1.5,2,2.5,3,4]);
+      exact=Math.log(mult)/Math.log(1+r);
+      correct=Math.ceil(exact);
+      gap=(correct-exact)/correct;
+      sep=Math.min(0.01, gap*0.45);
+    } while (gap < 0.006 || [(mult-1)/r, 72/(r*100)].some(v => near(v, correct, sep)));
+    const FV=P*mult;
+    return {
+      unit:"number",
+      tol:Math.min(0.004, gap*0.45),
+      sep,
+      text:`You deposit <b>${money(P)}</b> at <b>${pctS(r)} per year, compounded annually</b>, and want
+            it to grow to <b>${money(FV)}</b> &mdash; ${mult} times what you put in.`,
+      ask:"Interest is credited once a year, at year end. How many whole years must you wait?",
+      correct,
+      cands:[
+        {val:exact, msg:`That is the exact solution of (1+${r})<sup>n</sup> = ${mult}, which is ${exact.toFixed(3)}. But nothing is credited part-way through a year, so after ${correct-1} years you are still short of ${money(FV)}. You have to wait the whole ${correct} years.`},
+        {val:(mult-1)/r, msg:`That is the simple-interest answer: how long it takes to earn ${((mult-1)*100).toFixed(0)}% at ${pctS(r)} a year with no interest on interest. Compounding gets there sooner.`},
+        {val:Math.log(mult)/r, msg:`Close, but you divided by r instead of by ln(1+r). Dividing by r is the continuously compounded version; with annual compounding the denominator is ln(1 + ${r}) = ${Math.log(1+r).toFixed(6)}.`},
+        {val:mult/r, msg:`That divides the multiple itself by the rate. What you need is how many times ${(1+r).toFixed(4)} must multiply itself to reach ${mult} &mdash; a logarithm, not a division.`},
+        {val:72/(r*100), msg:`That is the Rule of 72, a mental shortcut for <em>doubling</em> time. It is an approximation, and it only answers the doubling question.`}
+      ],
+      steps:[
+        `We need (1+${r})<sup>n</sup> = ${mult}`,
+        `Take logs: n = ln(${mult}) / ln(1+${r}) = ${exact.toFixed(3)}`,
+        `Interest lands only at year end, so ${correct-1} years leaves you short &mdash; round up.`,
+        `n = ${correct} years`
+      ]};
+  }},
+
+/* --------------------------- simple versus compound: the gap (S5) */
+{ id:"s1", topic:"simple", name:"How much interest on interest is worth", gen(){
+    let P,r,n,comp,simp,correct;
+    /* Re-drawn when Account B's balance, or B's interest, sits within 1% of the gap (22 Sep
+       2026, gridall.js 01): at 9% over 20 years B's $2,800.00 was inside the match of the
+       $2,804.41 key. Three rate-and-term pairs are lost. */
+    do {
+      P=pick([1000,2000,5000,10000]); r=pick(range(.05,.12,.0025)); n=pick([10,15,20,25,30,40,50]);
+      comp=P*Math.pow(1+r,n); simp=P*(1+r*n);
+      correct=comp-simp;
+    } while (r*n < 0.8 || [simp, P*r*n].some(v => near(v, correct, REL_SEP)));
+    return {
+      unit:"money",
+      tol:0.002,
+      text:`Two accounts each start with <b>${money(P)}</b> and each pay <b>${pctS(r)} per year</b> for
+            <b>${n} years</b>. Account A <b>compounds annually</b>: interest is added to the balance and earns
+            interest thereafter. Account B pays <b>simple</b> interest &mdash; ${pctS(r)} of the original
+            ${money(P)} every year, nothing more.`,
+      ask:"How much more does Account A end with?",
+      correct,
+      cands:[
+        {val:comp, msg:`That is Account A's whole balance. The question asks for the <em>gap</em> &mdash; subtract Account B's ${money(simp)}.`},
+        {val:simp, msg:`That is Account B's balance, the account that does worse. Subtract it from Account A's ${money(comp)}.`},
+        {val:P*r*n, msg:`That is the total interest Account B earns. Interest on interest is what A earns <em>beyond</em> that.`},
+        {val:comp-P, msg:`That is all the interest Account A earns, including the ordinary interest B earns too. The gap is only the part B misses.`}
+      ],
+      steps:[
+        `Account A: ${money(P)} &times; ${(1+r).toFixed(4)}<sup>${n}</sup> = ${money(comp)}`,
+        `Account B: ${money(P)} &times; (1 + ${pctS(r)} &times; ${n}) = ${money(simp)}`,
+        `Gap = ${money(comp)} &minus; ${money(simp)} = ${money(correct)}`,
+        `Over ${n} years at ${pctS(r)}, interest on interest is worth ${(correct/simp*100).toFixed(0)}% of everything the simple account manages.`
+      ]};
+  }},
+
+/* --------------------------- discounting with an APR and a frequency (S4) */
+{ id:"q1", topic:"ear", also:["discount"], name:"Discounting when the rate is an APR", gen(){
+    const FV=pick(range(1000,20000,500));
+    const apr=pick(range(.12,.24,.0025));
+    const m=pick([4,12]);
+    const label={2:"semiannually",4:"quarterly",12:"monthly"}[m];
+    const t=pick([3,4,5,6,8,10]);
+    const correct=FV/Math.pow(1+apr/m, m*t);
+    return {
+      unit:"money",
+      tol:0.002,
+      text:`You will receive <b>${money(FV)}</b> in <b>${t} years</b>. The rate is quoted as an
+            <b>APR of ${pctS(apr)}, compounded ${label}</b>.`,
+      ask:"What is that worth today?",
+      correct,
+      cands:[
+        {val:FV/Math.pow(1+apr,t), msg:`You treated the APR as if it were an annual effective rate. It is not &mdash; it is a nominal figure. The rate per period is ${pctS(apr)} / ${m} = ${pctS(apr/m,4)}, applied ${m*t} times.`},
+        {val:FV/Math.pow(1+apr/m,t), msg:`You divided the rate by ${m} but discounted only ${t} times. If the rate is per period, the count must be in periods too: ${m} &times; ${t} = ${m*t}.`},
+        {val:FV/Math.pow(1+apr,m*t), msg:`You used ${m*t} periods but left the rate annual. Rate and period count have to sit on the same footing &mdash; divide the rate by ${m} as well.`},
+        {val:FV/(1+apr*t), msg:`That is simple interest over ${t} years. Interest here compounds ${label}.`}
+      ],
+      /* 22 Sep 2026: the periodic rate is substituted as APR/m rather than as a six-decimal
+         decimal, so the line reproduces from the page (it was up to 24 cents from the key). */
+      steps:[
+        `Rate per period = APR / ${m} = ${pctS(apr)} / ${m} = ${pctS(apr/m,4)}`,
+        `Number of periods = ${m} &times; ${t} = ${m*t}`,
+        `PV = FV / (1 + APR/${m})<sup>${m*t}</sup> = ${money(FV)} / (1 + ${apr}/${m})<sup>${m*t}</sup> = ${money(correct)}`
+      ]};
+  }},
+
+/* --------------------------- continuous <-> discrete equivalence (S4) */
+{ id:"x1", topic:"cont", name:"The continuous rate that matches a quote", gen(){
+    const apr=pick(range(.06,.22,.0025));
+    const m=pick([2,4,12]);
+    const label={2:"semiannually",4:"quarterly",12:"monthly"}[m];
+    const correct=m*Math.log(1+apr/m);
+    return {
+      unit:"percent",
+      tol:0.0015,
+      text:`A rate is quoted as an <b>APR of ${pctS(apr)}, compounded ${label}</b>.`,
+      ask:"What continuously compounded rate leaves you exactly as well off?",
+      correct,
+      cands:[
+        {val:apr, msg:`That is the quoted APR itself. Continuous compounding works harder than ${label} compounding, so it needs a <em>lower</em> stated rate to produce the same growth.`},
+        {val:Math.pow(1+apr/m,m)-1, msg:`That is the effective annual rate. It is the right growth figure, but expressed as an annual effective rate rather than as a continuously compounded one &mdash; take its logarithm.`},
+        {val:Math.log(1+apr), msg:`You compounded the full APR once a year before taking logs. The quote compounds ${m} times, so the growth over a year is (1 + ${pctS(apr)}/${m})<sup>${m}</sup>, not 1 + ${pctS(apr)}.`},
+        {val:Math.exp(apr)-1, msg:`That converts the other way &mdash; it treats ${pctS(apr)} as already continuous and turns it into an effective annual rate.`}
+      ],
+      /* 22 Sep 2026: the growth factor is substituted as APR/m rather than as a six-decimal
+         decimal, so the line reproduces from the page (its sixth decimal was wrong on 43 of
+         195 draws). */
+      steps:[
+        `Growth over one year under the quote = (1 + APR/${m})<sup>${m}</sup> = (1 + ${apr}/${m})<sup>${m}</sup> = ${Math.pow(1+apr/m,m).toFixed(6)}`,
+        `Set e<sup>r</sup> equal to that: r = ln[(1 + APR/${m})<sup>${m}</sup>] = ${m} &times; ln(1 + ${apr}/${m})`,
+        `r = ${pctS(correct,3)} &mdash; below the quoted ${pctS(apr)}, as it must be.`
+      ]};
+  }},
+
+/* --------------------------- annuity + zero decomposition (S6) */
+{ id:"z1", topic:"bond", name:"Splitting a bond into an annuity and a zero", gen(){
+    let c,y,T,F,cpn,i,n,ann,zero;
+    const cents = v => Math.round(v*100);
+    /* Re-drawn when the annuity and the zero, each to the cent, do not add to the price to the
+       cent (22 Sep 2026, gridall.js 01): on 896 of 3,650 draws price - annuity, from the stem,
+       came out a cent off the zero and the check line did not add up. About a quarter of draws
+       are lost. */
+    do {
+      c=pick(range(.02,.09,.0025)); y=pick(range(.02,.09,.0025));
+      T=pick([2,3,5,7,10]); F=1000; cpn=F*c/2; i=y/2; n=2*T;
+      ann=0; for(let k=1;k<=n;k++) ann += cpn/Math.pow(1+i,k);
+      zero=F/Math.pow(1+i,n);
+    } while (Math.abs(c-y)<0.005 || cents(ann)+cents(zero) !== cents(ann+zero));
+    const correct=zero;
+    return {
+      unit:"money",
+      /* Tolerance set 22 Sep 2026 from the full-grid check (gridall.js 01): discounting the face
+         T times at y instead of 2T times at y/2 was inside the old 0.2% match on 1,317 of 3,650
+         draws, because the two differ by about T*y^2/4 (0.02% at 2% over 2 years). Its smallest
+         gap on the grid is $0.19. Accept anything within 6 cents of the zero: price - annuity from
+         the stem gives it to the cent, and a discount or growth factor rounded to four decimals
+         lands within $0.05. sep 12 cents (>= tol) keeps the slip, and the annuity piece, whose
+         smallest gap is $0.42, on screen. */
+      tol:0.06/zero, sep:0.12/zero,
+      text:`A <b>${T}-year</b> note, face <b>${money(F)}</b>, pays ${art(c)} <b>${pctS(c)} p.a.</b>
+            coupon, paid semiannually, and yields <b>${pctS(y)} p.a. compounded semiannually</b>. Its price is
+            <b>${money(ann+zero)}</b>, which splits into two pieces: an annuity of the coupons, worth
+            <b>${money(ann)}</b>, and a zero-coupon bond for the face value.`,
+      ask:"What is that zero-coupon piece worth?",
+      correct,
+      cands:[
+        {val:F, msg:`That is the face value undiscounted. It does not arrive for ${T} years, so it has to be discounted back ${n} periods at ${pctS(i,3)}.`},
+        {val:ann, msg:`That is the annuity piece you were already given. The zero is the rest of the price.`},
+        {val:ann+zero, msg:`That is the whole price. Subtract the annuity to isolate the zero.`},
+        {val:F/Math.pow(1+y,T), msg:`You discounted ${T} times at ${pctS(y)} instead of ${n} times at ${pctS(i,3)}. Both the rate and the period count are semiannual here.`}
+      ],
+      steps:[
+        `The zero is just the face value discounted over the whole life: Zero = F / (1 + y/2)<sup>2T</sup>`,
+        `Zero = ${money(F)} / (1 + ${i.toFixed(5)})<sup>${n}</sup> = ${money(correct)}`,
+        `Check: annuity + zero = ${money(ann)} + ${money(correct)} = ${money(ann+correct)}, the price.`,
+        `Every coupon bond splits this way, and the habit is worth keeping.`
+      ]};
+  }},
+
+/* --------------------------- perpetuities, run backwards (S8) */
+{ id:"r1", topic:"perp", name:"What a fund can pay out forever", gen(){
+    const P=pick(range(20000,500000,5000));
+    const r=pick(range(.02,.09,.0025));
+    const correct=P*r;
+    return {
+      unit:"money",
+      tol:0.002,
+      text:`An endowment of <b>${money(P)}</b> is invested at <b>${pctS(r)} per year, compounded annually</b>, and must last
+            forever &mdash; the capital is never to be touched.`,
+      ask:"What annual payment can it support in perpetuity?",
+      correct,
+      cands:[
+        {val:P/r, msg:`You used the perpetuity formula in the wrong direction. P = C/r values a known payment; here the value is known and the payment is not, so C = P &times; r.`},
+        {val:P*r/12, msg:`That is a monthly figure. The rate is per year, so ${pctS(r)} of ${money(P)} is what can be drawn each <em>year</em>.`},
+        {val:P/(1+r), msg:`That discounts the capital by a year, which is not what is being asked. The payout is the interest the fund earns: ${money(P)} &times; ${pctS(r)}.`},
+        {val:P*(1+r), msg:`That is the fund's balance after one year. Spending it would exhaust the capital, and the endowment has to last forever.`}
+      ],
+      steps:[
+        `A perpetuity satisfies P = C / r`,
+        `Rearranged for the payment: C = P &times; r = ${money(P)} &times; ${pctS(r)}`,
+        `C = ${money(correct)} a year, forever &mdash; spend exactly the interest and the capital never shrinks.`
+      ]};
+  }},
+
+{ id:"r2", topic:"perp", name:"The rate a perpetuity implies", gen(){
+    const C=pick(range(500,20000,250));
+    const r=pick(range(.02,.10,.0025));
+    const P=C/r;
+    const correct=r;
+    return {
+      unit:"percent",
+      tol:0.0015,
+      text:`A perpetuity paying <b>${money(C)} a year forever</b> is trading at <b>${money(P)}</b>.`,
+      ask:"What discount rate does that price imply? Give it per year, compounded annually.",
+      correct,
+      cands:[
+        {val:P/C, msg:`Upside down. P = C/r, so rearranging gives r = C/P &mdash; the payment divided by the price, not the other way round.`},
+        {val:C/(P+C), msg:`You included this year's payment in the price. The quoted ${money(P)} is already the value of the whole infinite stream.`},
+        {val:C*12/P, msg:`That annualises as though ${money(C)} arrived monthly. It arrives once a year.`},
+        {val:C/P/12, msg:`That turns the annual rate into a monthly one. The payment and the rate are both annual here.`}
+      ],
+      steps:[
+        `P = C / r`,
+        `So r = C / P = ${money(C)} / ${money(P)}`,
+        `r = ${pctS(correct,3)}`
+      ]};
+  }},
+
+/* --------------------------- annuity, solving for n (S7) */
+{ id:"n1", topic:"payment", also:["annuity"], name:"How long a loan takes to repay", gen(){
+    let L,i,C,exact,correct,gap,sep;
+    /* Also re-drawn when "a year of interest up front", L(1+i)^12/C, or "interest fixed at
+       L*i", L/(C - L*i), lands within sep of the count (22 Sep 2026, gridall.js 01): on 1,989
+       draws one of them was inside the match and marked correct. */
+    do {
+      L=pick(range(5000,40000,500));
+      i=pick(range(.004,.015,.0005));          // monthly rate
+      C=pick(range(200,1200,25));
+      exact=-Math.log(1-L*i/C)/Math.log(1+i);
+      correct=Math.ceil(exact);
+      gap=(correct-exact)/correct;
+      sep=Math.min(0.01, gap*0.45);
+    } while (C <= L*i*1.25 || C > L*0.09 ||
+             /* the un-rounded solve must stay distinguishable from the count */
+             gap < 0.006 ||
+             [L*Math.pow(1+i,12)/C, L/(C-L*i)].some(v => near(v, correct, sep)));
+    return {
+      unit:"number",
+      tol:Math.min(0.004, gap*0.45),
+      sep,
+      text:`You owe <b>${money(L)}</b> on a card charging <b>${pctS(i,3)} per month</b>, and you pay
+            <b>${money(C)}</b> at the end of every month until it is cleared.`,
+      ask:"How many monthly payments does it take to clear the balance? The last one may be smaller than the rest.",
+      correct,
+      cands:[
+        {val:exact, msg:`That is the exact solution of the annuity equation, ${exact.toFixed(2)}. You cannot make ${exact.toFixed(2)} payments though &mdash; after ${correct-1} full payments something is still owed, so a ${correct}th payment is needed. Round up.`},
+        {val:L/C, msg:`That ignores interest entirely &mdash; it is how long it would take if the balance simply sat there. Every month ${money(L*i)} of interest is added at the start, so more payments are needed.`},
+        {val:(L*Math.pow(1+i,12))/C, msg:`You added a year of interest and then divided. Interest accrues on a balance that is shrinking each month, so it cannot be applied in one lump up front.`},
+        {val:L/(C-L*i), msg:`That assumes the interest charge stays at ${money(L*i)} for the whole term. It does not &mdash; as the balance falls, so does the interest, and the loan clears faster than this suggests.`},
+        {val:Math.log(L/C)/Math.log(1+i), msg:`Close in shape, but the annuity formula gives n = &minus;ln(1 &minus; L&times;i/C) / ln(1+i). The term inside the logarithm is 1 &minus; L&times;i/C, not L/C.`}
+      ],
+      steps:[
+        `Monthly interest on the opening balance = ${money(L)} &times; ${pctS(i,3)} = ${money(L*i)}`,
+        `Your ${money(C)} clears that and puts ${money(C-L*i)} against the principal in month one`,
+        `n = &minus;ln(1 &minus; L&times;i/C) / ln(1+i) = &minus;ln(1 &minus; ${(L*i/C).toFixed(6)}) / ln(${(1+i).toFixed(4)}) = ${exact.toFixed(2)}`,
+        `Payments arrive whole months apart, so ${correct-1} of them leaves a balance outstanding &mdash; round up.`,
+        `n = ${correct} payments &mdash; about ${(correct/12).toFixed(1)} years.`
+      ]};
+  }},
+
+/* --------------------------- payday loans (S9) */
+{ id:"y1", topic:"payday", name:"What a payday loan really costs", gen(){
+    const borrow=pick([100,200,300,400,500]);
+    const feePct=pick([.10,.12,.15,.18,.20]);
+    const check=borrow*(1+feePct);
+    const periods=26;
+    const correct=Math.pow(1+feePct,periods)-1;
+    return {
+      unit:"percent",
+      tol:0.004,
+      text:`A payday lender hands you <b>${money(borrow)}</b> today if you write a personal check for
+            <b>${money(check)}</b> dated <b>14 days</b> from now. That is <b>${pctS(feePct,0)}</b> for two
+            weeks, and there are <b>26</b> two-week periods in a year.`,
+      ask:"What is the effective annual rate (EAR) on this loan?",
+      correct,
+      cands:[
+        {val:feePct*periods, msg:`That is the <em>advertised</em> APR &mdash; ${pctS(feePct,0)} multiplied by 26. It is a nominal rate, and it ignores that each fortnight's charge is levied on a balance that already includes the last one.`},
+        {val:feePct, msg:`That is the charge for a single two-week period. Annualising it is the whole question.`},
+        {val:Math.pow(1+feePct*periods,1)-1, msg:`That is the advertised APR again, dressed up. Compounding means raising (1 + ${feePct}) to the 26th power, not multiplying by 26.`},
+        {val:Math.pow(1+feePct,12)-1, msg:`You compounded 12 times, as though the loan rolled monthly. It rolls every <b>fortnight</b> &mdash; 26 times a year.`}
+      ],
+      steps:[
+        `Two-week rate = ${money(check-borrow)} / ${money(borrow)} = ${pctS(feePct,0)}`,
+        `Advertised APR = ${pctS(feePct,0)} &times; 26 = ${pctS(feePct*periods,0)}`,
+        `EAR = (1 + ${feePct})<sup>26</sup> &minus; 1 = ${pctS(correct,0)}`,
+        `The advertised figure understates the real cost by a factor of about ${(correct/(feePct*periods)).toFixed(1)}.`
+      ]};
+  }},
+
+{ id:"y2", topic:"payday", name:"The signing bonus, at a payday rate", gen(){
+    const later=pick([1000,1500,2000,2500]);
+    const feePct=pick([.10,.12,.15]);
+    const R=Math.pow(1+feePct,26);
+    const correct=later/R;
+    return {
+      unit:"money",
+      tol:0.004,
+      text:`You are offered <b>${money(later)}</b> one year from now. Your own cost of funds is a payday
+            lender's: <b>${pctS(feePct,0)} every two weeks</b>, compounded every two weeks, 26 periods a year.`,
+      ask:"What is that promise worth to you today?",
+      correct,
+      cands:[
+        {val:later/(1+feePct*26), msg:`You discounted at the advertised APR of ${pctS(feePct*26,0)}. The money compounds every fortnight, so the divisor is (1 + ${feePct})<sup>26</sup> = ${R.toFixed(1)}, not ${(1+feePct*26).toFixed(1)}.`},
+        {val:later/(1+feePct), msg:`You discounted a single two-week period. The payment is a full year &mdash; 26 periods &mdash; away.`},
+        {val:later*R, msg:`You grew it forward instead of discounting it back. A payment arriving later is worth <em>less</em> today, not more.`},
+        {val:later/Math.pow(1+feePct,12), msg:`You used 12 periods. At a fortnightly roll there are 26 in a year.`}
+      ],
+      /* 22 Sep 2026: the division used to be by the factor rounded to 11.92, which gives $209.73,
+         not the $209.76 printed; written formula first with the exact factor (Anh's rules). */
+      steps:[
+        `One year of compounding = (1 + ${feePct})<sup>26</sup> = ${R.toFixed(4)}`,
+        `PV = FV / (1 + r)<sup>26</sup> = ${money(later)} / (1 + ${feePct})<sup>26</sup> = ${money(correct)}`,
+        `Which is why, at a rate like this, a small amount today beats a large amount in a year.`
+      ]};
+  }}
+,
+
+/* ============ THIRD ROUND: inverse and decision-style problems ========= */
+
+{ id:"pv3", topic:"compare", name:"Three payments, three dates", gen(){
+    const r=pick(range(.03,.12,.0025));
+    const C1=pick(range(300,900,50)), C2=pick(range(500,1300,50)), C3=pick(range(700,1800,50));
+    const correct=C1/(1+r)+C2/Math.pow(1+r,2)+C3/Math.pow(1+r,3);
+    return {
+      unit:"money", tol:0.002,
+      text:`An investment pays <b>${money(C1)}</b> in one year, <b>${money(C2)}</b> in two years and
+            <b>${money(C3)}</b> in three years. The interest rate is <b>${pctS(r)} per year,
+            compounded annually</b>.`,
+      ask:"What is the whole stream worth today?",
+      correct,
+      cands:[
+        {val:C1+C2+C3, msg:`You added the payments as they stand. Money arriving in three different years cannot be summed until each amount is brought back to today &mdash; that is the entire point of discounting.`},
+        {val:(C1+C2+C3)/(1+r), msg:`You discounted the total once. Each payment needs discounting by its own number of years: one, two and three respectively.`},
+        {val:C1/(1+r)+C2/(1+r)+C3/(1+r), msg:`Every payment was discounted a single year. The second is two years away and the third is three, so their denominators are (1+r)<sup>2</sup> and (1+r)<sup>3</sup>.`},
+        {val:C1*(1+r)+C2*Math.pow(1+r,2)+C3*Math.pow(1+r,3), msg:`You grew the payments forward instead of discounting them back. Future money is worth <em>less</em> today, not more.`}
+      ],
+      steps:[
+        `PV = ${money(C1)}/(1+${r}) + ${money(C2)}/(1+${r})<sup>2</sup> + ${money(C3)}/(1+${r})<sup>3</sup>`,
+        `= ${money(C1/(1+r))} + ${money(C2/Math.pow(1+r,2))} + ${money(C3/Math.pow(1+r,3))}`,
+        `PV = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"g4", topic:"ear", name:"Which account ends up larger?", gen(){
+    /* The supplied version listed FA itself as a distractor, so whenever A won
+       a wrong answer equalled the right one. Here the distractors are the two
+       genuine convention errors, and the accounts are forced apart. */
+    /* Guard on the separations that actually matter. Annual versus monthly
+       compounding opens only a fraction of a percent a year, so at short
+       horizons the two convention-swap distractors land on top of the answer
+       and get filtered out. Require every one of them to be clear of it. */
+    let P,aprA,aprB,mB,t,FA,FB,best;
+    const apart=(a,b)=>Math.abs(a-b)/Math.max(a,b) >= 0.02;
+    do {
+      P=pick(range(2000,10000,500));
+      aprA=pick(range(.06,.12,.0025));
+      aprB=aprA+pick([-.010,-.008,.008,.010]);
+      mB=pick([4,12]); t=pick([10,15,20,25]);
+      FA=P*Math.pow(1+aprA,t); FB=P*Math.pow(1+aprB/mB,mB*t);
+      best=Math.max(FA,FB);
+    } while (!apart(FA,FB)
+             || !apart(best, P*Math.pow(1+aprB,t))
+             || !apart(best, P*Math.pow(1+aprA/mB,mB*t)));
+    const label={4:"quarterly",12:"monthly"}[mB];
+    const aWins = FA>FB, correct=Math.max(FA,FB);
+    return {
+      unit:"money", tol:0.002,
+      text:`You invest <b>${money(P)}</b> for <b>${t} years</b>. Account A pays <b>${pctS(aprA)} p.a.
+            compounded annually</b>. Account B pays <b>${pctS(aprB)} p.a. compounded ${label}</b>.`,
+      ask:"What is the ending balance of the better account?",
+      correct,
+      cands:[
+        {val:Math.min(FA,FB), msg:`That is the ${aWins?"B":"A"} account, which ends up smaller. Comparing the two quoted rates alone is not enough &mdash; ${pctS(aprB)} compounded ${label} is not the same rate as ${pctS(aprB)} compounded annually.`},
+        {val:P*Math.pow(1+aprB,t), msg:`You treated Account B's ${pctS(aprB)} as if it compounded annually. It compounds ${label}, so the periodic rate is ${pctS(aprB)}/${mB} and it is applied ${mB*t} times.`},
+        {val:P*Math.pow(1+aprA/mB,mB*t), msg:`You applied Account B's compounding frequency to Account A's rate. A compounds once a year; only B compounds ${label}.`},
+        {val:P*(1+aprA*t), msg:`That is simple interest on Account A &mdash; ${pctS(aprA)} of the original ${money(P)} each year, with no interest on interest.`}
+      ],
+      steps:[
+        `Account A: ${money(P)} &times; (1 + ${aprA})<sup>${t}</sup> = ${money(FA)}`,
+        `Account B: ${money(P)} &times; (1 + ${aprB}/${mB})<sup>${mB*t}</sup> = ${money(FB)}`,
+        `Account ${aWins?"A":"B"} wins with ${money(correct)}.`,
+        `A quoted rate is not comparable to another quoted rate until both are on the same compounding footing.`
+      ]};
+  }},
+
+{ id:"x2", topic:"cont", name:"The continuous rate an investment earned", gen(){
+    const PV=pick(range(1000,8000,500));
+    const mult=pick([1.4,1.5,1.6,1.8,2,2.5]);
+    const t=pick([3,4,5,6,8,10]);
+    const FV=Math.round(PV*mult/50)*50;
+    const correct=Math.log(FV/PV)/t;
+    return {
+      unit:"percent", tol:0.0015,
+      text:`An investment grows from <b>${money(PV)}</b> to <b>${money(FV)}</b> over <b>${t} years</b>,
+            with interest compounded <b>continuously</b> throughout.`,
+      ask:"What continuously compounded annual rate did it earn?",
+      correct,
+      cands:[
+        {val:Math.pow(FV/PV,1/t)-1, msg:`That is the <em>annually compounded</em> rate that would produce the same growth. Continuous compounding works harder, so it needs a slightly lower stated rate to get to the same place. Take logs rather than roots.`},
+        {val:Math.log(FV/PV), msg:`You left out the time. ln(FV/PV) is the total continuously compounded growth over all ${t} years; divide by ${t} for the annual rate.`},
+        {val:(FV/PV-1)/t, msg:`That is the simple-interest answer &mdash; total growth spread evenly over ${t} years, with no compounding at all.`},
+        {val:Math.exp(Math.log(FV/PV)/t)-1, msg:`You converted back to an effective annual rate at the end. The question asks for the continuously compounded rate itself, which is the exponent, not e<sup>r</sup> &minus; 1.`}
+      ],
+      steps:[
+        `FV = PV &times; e<sup>rt</sup>, so ln(FV/PV) = r &times; t`,
+        `r = ln(${money(FV)} / ${money(PV)}) / ${t} = ${Math.log(FV/PV).toFixed(6)} / ${t}`,
+        `r = ${pctS(correct,3)}`
+      ]};
+  }},
+
+{ id:"b1", topic:"bond", name:"Backing a yield out of a price", gen(){
+    /* Yield from price, done where it is honestly solvable by hand: a zero. */
+    const F=pick([1000,5000,10000]);
+    const n=pick([3,4,5,6,8,10]);
+    const y=pick(range(.03,.11,.0025));
+    const P=F/Math.pow(1+y,n);
+    const correct=y;
+    /* the growth factor is worked from the price as printed, to the cent, so the step
+       reproduces from the page (22 Sep 2026) */
+    const g=F/+P.toFixed(2);
+    return {
+      unit:"percent", tol:0.0015,
+      text:`A <b>zero-coupon</b> bond pays <b>${money(F)}</b> in <b>${n} years</b> and nothing before
+            then. It is trading today at <b>${money(P)}</b>.`,
+      ask:"What yield does that price imply, quoted per year with annual compounding?",
+      correct,
+      cands:[
+        {val:F/P-1, msg:`That is the <em>total</em> return over the whole ${n} years, not the annual rate. Undo ${n} years of compounding by taking the ${ORD(n)} root.`},
+        {val:(F/P-1)/n, msg:`You divided the total return by ${n}, which is the simple-interest answer. Because the return compounds, the annual rate that produces this growth is smaller than a straight average.`},
+        {val:(F-P)/F, msg:`You measured the gain against the <em>face value</em> rather than against the price you paid. Your money went in at ${money(P)}, so that is the base.`},
+        {val:Math.log(F/P)/n, msg:`That is the continuously compounded rate. Here the convention is annual compounding, so the yield solves (1+y)<sup>${n}</sup> = ${money(F)}/${money(P)}.`}
+      ],
+      steps:[
+        `A zero has one cash flow, so P = F / (1+y)<sup>${n}</sup>`,
+        `(1+y)<sup>${n}</sup> = F / P = ${money(F)} / ${money(P)} = ${g.toFixed(6)}`,
+        `y = (F/P)<sup>1/${n}</sup> &minus; 1 = ${g.toFixed(6)}<sup>1/${n}</sup> &minus; 1 = ${pctS(correct,3)}`,
+        `Notice the direction: the price came from the market, and the yield was backed out of it.`
+      ]};
+  }},
+
+{ id:"a1", topic:"annuity", name:"The rate an annuity implies", gen(){
+    const C=pick(range(400,1200,50));
+    const r=pick(range(.03,.12,.0025));
+    const n=pick([5,8,10,12,15,20]);
+    const PV=C/r*(1-Math.pow(1+r,-n));
+    const correct=r;
+    return {
+      unit:"percent", tol:0.004,
+      text:`An investment costs <b>${money(PV)}</b> today and pays <b>${money(C)}</b> at the end of each
+            year for <b>${n} years</b>. (You will need a calculator or spreadsheet for this one &mdash;
+            there is no formula that solves it directly.)`,
+      ask:"What interest rate per year, compounded annually, makes those cash flows exactly worth the price?",
+      correct,
+      cands:[
+        {val:C*n/PV-1, msg:`That compares total payments to the price and calls the surplus a rate. It ignores <em>when</em> each payment arrives, which is the only thing that determines the answer.`},
+        {val:C/PV, msg:`That is the first year's payment as a fraction of the price &mdash; a yield-on-cost figure. It overstates the true rate, because part of every payment is your own capital coming back.`},
+        {val:(C*n-PV)/PV/n, msg:`Total profit spread evenly over ${n} years. Simple interest again: it ignores that the money is returned gradually and can be reinvested.`},
+        {val:C/PV*n, msg:`That multiplies a yield-on-cost figure by the number of years, which compounds one error with another.`}
+      ],
+      steps:[
+        `Set the price equal to the annuity: ${money(PV)} = (${money(C)}/r)(1 &minus; (1+r)<sup>&minus;${n}</sup>)`,
+        `There is no closed form &mdash; solve numerically, by trial or with a solver`,
+        `r = ${pctS(correct,3)}`,
+        `The annuity formula is a relationship among four quantities, not just a way of computing PV.`
+      ]};
+  }},
+
+{ id:"a2", topic:"annuity", name:"How many payments will it take?", gen(){
+    const C=pick(range(300,1000,50));
+    let r,n;
+    /* Re-drawn when the perpetuity count 1/r is within 1% of n (22 Sep 2026, gridall.js 01):
+       at 5% with 20 payments it is exactly 20 and was marked correct. */
+    do { r=pick(range(.02,.09,.005)); n=pick([6,8,10,12,15,20]); } while (near(1/r, n, REL_SEP));
+    const PV=C/r*(1-Math.pow(1+r,-n));
+    const correct=n;
+    return {
+      unit:"number",
+      tol:0.006,
+      text:`A fund pays <b>${money(C)}</b> at the end of every year and is worth <b>${money(PV)}</b>
+            today. The interest rate is <b>${pctS(r)} per year, compounded annually</b>.`,
+      ask:"How many payments does it make?",
+      correct,
+      cands:[
+        {val:PV/C, msg:`That ignores interest entirely &mdash; it is how many payments it would take if the money simply sat there. Because the balance earns ${pctS(r)} along the way, it supports <em>more</em> payments than that.`},
+        {val:1/r, msg:`That is how many payments a <b>perpetuity</b> is worth in the sense that C/r = C &times; (1/r). This fund stops, so it is worth less and runs for fewer than that.`},
+        {val:PV/C*(1+r), msg:`Close in spirit, but adding one year of interest to the undiscounted count is not how the annuity formula unwinds. Solve (1+r)<sup>&minus;n</sup> = 1 &minus; PV&times;r/C for n.`},
+        /* not rounded (22 Sep 2026): rounded, it came to exactly 6 at 2-3% with 6 payments */
+        {val:PV/(C-PV*r), msg:`That assumes the interest charge stays fixed at ${money(PV*r)} for the whole term. It falls as the balance falls.`}
+      ],
+      steps:[
+        `PV = (C/r)(1 &minus; (1+r)<sup>&minus;n</sup>)`,
+        `Rearrange: (1+r)<sup>&minus;n</sup> = 1 &minus; PV&times;r/C = ${(1-PV*r/C).toFixed(6)}`,
+        `n = &minus;ln(${(1-PV*r/C).toFixed(6)}) / ln(1+${r}) = ${correct}`,
+        `The same formula answers a loan question and an investment question &mdash; it is not a "loan formula".`
+      ]};
+  }},
+
+{ id:"r3", topic:"perp", name:"How much of a perpetuity is the distant tail?", gen(){
+    const C=pick(range(200,2000,100));
+    const r=pick(range(.03,.09,.0025));
+    const n=pick([10,15,20,25,30]);
+    const perp=C/r, ann=C/r*(1-Math.pow(1+r,-n));
+    const correct=perp-ann;
+    /* the tail in the worked solution is the difference of the two figures printed above it,
+       so it reproduces from the page; it can sit a cent from the key (22 Sep 2026) */
+    const tailP=(Math.round(perp*100)-Math.round(ann*100))/100;
+    return {
+      unit:"money", tol:0.002,
+      text:`A perpetuity pays <b>${money(C)}</b> a year forever. The discount rate is <b>${pctS(r)} per year, compounded annually</b>,
+            so the whole thing is worth <b>${money(perp)}</b> today.`,
+      ask:`How much of that value comes from the payments after year ${n}?`,
+      correct,
+      cands:[
+        {val:ann, msg:`That is the value of the <em>first</em> ${n} payments. The tail is what is left when you take that away from the whole perpetuity.`},
+        {val:perp, msg:`That is the entire perpetuity, near payments included. The question asks only for the part beyond year ${n}.`},
+        {val:C/Math.pow(1+r,n), msg:`That is a single payment of ${money(C)} discounted ${n} years. The tail is an infinite stream of them, so it is worth considerably more.`},
+        {val:C*n, msg:`That adds up ${n} payments without discounting anything, and it describes the wrong part of the stream besides.`}
+      ],
+      steps:[
+        `Whole perpetuity = C/r = ${money(perp)}`,
+        `First ${n} payments = (C/r)(1 &minus; (1+r)<sup>&minus;${n}</sup>) = ${money(ann)}`,
+        `Tail = whole &minus; first ${n} payments = ${money(perp)} &minus; ${money(ann)} = ${money(tailP)}, which is ${(100*correct/perp).toFixed(0)}% of the value`,
+        `Equivalently the tail is just the whole perpetuity discounted ${n} years: ${money(perp)}/(1+${r})<sup>${n}</sup>.`
+      ]};
+  }},
+
+{ id:"p1", topic:"payment", name:"The payment that changes nothing", gen(){
+    const L=pick(range(4000,25000,500));
+    const i=pick(range(.008,.025,.0005));
+    const correct=L*i;
+    return {
+      unit:"money", tol:0.002,
+      text:`A loan balance is <b>${money(L)}</b> and the card charges <b>${pctS(i,2)} per month</b>.`,
+      ask:"What monthly payment would leave the balance exactly unchanged, forever?",
+      correct,
+      cands:[
+        {val:L/12, msg:`That would clear the whole balance in a year if no interest were charged. Interest is charged, and the question asks for the payment that exactly covers it &mdash; nothing more.`},
+        {val:L*i*12, msg:`That is a year of interest. The payment is monthly, so it has to cover one month's interest: ${money(correct)}.`},
+        {val:L*(1+i), msg:`That is the balance plus a month of interest &mdash; what you would owe after a month if you paid nothing at all.`},
+        {val:L, msg:`Paying the whole balance would clear the loan immediately. The question asks for the payment that leaves it exactly where it is.`}
+      ],
+      steps:[
+        `One month's interest = ${money(L)} &times; ${pctS(i,2)} = ${money(correct)}`,
+        `Pay exactly that and the principal never moves: the balance stays at ${money(L)} for ever.`,
+        `Pay a cent less and the shortfall is added to the balance, which then charges more interest &mdash; the debt grows without limit.`,
+        `Pay a cent more and the balance falls, slowly at first and then faster. Minimum payments are set close to this line for a reason.`
+      ]};
+  }}
+];
+
+
+/* ======================= CHOICE-MODE ITEMS ==============================
+   Auto-graded by which option is clicked, not by a typed number.
+     topic "error"   — a worked solution with one planted mistake
+     topic "concept" — reason about the direction of an effect, no arithmetic
+   Directional items shuffle their own options so position carries no
+   information; spot-the-error items must stay in step order.            */
+
+function shuffle(a){
+  const out = a.slice();
+  for (let i=out.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [out[i],out[j]] = [out[j],out[i]];
+  }
+  return out;
+}
+
+const CHOICE_TEMPLATES = [
+
+/* ---------------------------------------------------- spot the mistake --- */
+
+{ id:"e1", topic:"error", also:["bond"], name:"Find the mistake — bond price", gen(){
+    /* The fault PROPAGATES into the later steps, so the working shown is a
+       coherent but wrong calculation and exactly one step introduces the error.
+       Previously step 4 quietly used the un-corrupted numbers, which let a
+       student defensibly point at step 4 instead. */
+    let c,y;
+    do { c=pick(range(.03,.09,.005)); y=pick(range(.03,.09,.005)); } while (Math.abs(c-y)<0.01);
+    const T=pick([3,4,5,6,8]), F=1000;
+    const fault = pick(["coupon","rate","periods","face"]);
+    const cpn = (fault==="coupon") ? F*c : F*c/2;
+    const i   = (fault==="rate")   ? y   : y/2;
+    const n   = (fault==="periods")? T   : 2*T;
+    const s = [
+      fault==="coupon"
+        ? `<b>Step 1.</b> Each coupon = ${pctS(c)} &times; ${money(F)} = ${money(cpn)}`
+        : `<b>Step 1.</b> Each coupon = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${money(cpn)}`,
+      fault==="rate"
+        ? `<b>Step 2.</b> Rate per period = ${pctS(y)}`
+        : `<b>Step 2.</b> Rate per period = ${pctS(y)} &divide; 2 = ${pctS(i,3)}`,
+      fault==="periods"
+        ? `<b>Step 3.</b> Number of periods = ${n}`
+        : `<b>Step 3.</b> Number of periods = ${T} &times; 2 = ${n}`,
+      /* Step 4 refers to Steps 1-3 symbolically instead of reprinting their figures.
+         Reprinting them showed a planted coupon/rate/period error a SECOND time, so a
+         reader could defensibly point here rather than at the step that introduced it
+         - all three blind readers did exactly that on 24 Aug 2026. The "face" fault
+         still has to be legible in this step, hence the two branches.               */
+      fault==="face"
+        ? `<b>Step 4.</b> Price = C/(1+i) + &hellip; + C/(1+i)<sup>n</sup> + ${money(F)} &nbsp;&mdash;&nbsp; taking C, i and n from Steps 1&ndash;3`
+        : `<b>Step 4.</b> Price = C/(1+i) + &hellip; + (C + ${money(F)})/(1+i)<sup>n</sup> &nbsp;&mdash;&nbsp; taking C, i and n from Steps 1&ndash;3`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; the annual coupon rate is halved to get the semiannual payment.`,
+      `Step 2 is fine &mdash; an annual rate compounded semiannually is halved to get the rate per period.`,
+      `Step 3 is fine &mdash; ${T} years of semiannual payments is ${2*T} periods.`,
+      `Step 4 is fine &mdash; it follows correctly from the three steps above it.`
+    ];
+    let at, why;
+    if (fault==="coupon"){
+      at=0; why=`${pctS(c)} is the <em>annual</em> coupon rate. Paid semiannually, each payment is half of it &mdash; ${money(F*c/2)}, not ${money(F*c)}. Everything below inherits the doubled coupon.`;
+    } else if (fault==="rate"){
+      at=1; why=`The ${pctS(y)} is quoted per year, compounded semiannually, so the rate for a six-month period is ${pctS(y)} &divide; 2 = ${pctS(y/2,3)}. Using an annual rate on a semiannual cash flow is the single most common error on this material.`;
+    } else if (fault==="periods"){
+      at=2; why=`${T} years of <em>semiannual</em> payments is ${2*T} periods, not ${T}. The coupon and the rate were both halved correctly &mdash; the period count has to move with them. All three change together or none do.`;
+    } else {
+      at=3; why=`The ${money(F)} face value is added on undiscounted. It arrives in ${T} years like the final coupon, so it needs dividing by (1+${i.toFixed(4)})<sup>${n}</sup> too.`;
+    }
+    return {
+      mode:"choice",
+      text:`A student is pricing a <b>${T}-year</b> bond, face value <b>${money(F)}</b>, paying ${art(c)}
+            <b>${pctS(c)} p.a.</b> coupon, paid semiannually, discounted at <b>${pctS(y)} p.a. compounded
+            semiannually</b>. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `Coupon per period = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${money(F*c/2)}`,
+        `Rate per period = ${pctS(y)} &divide; 2 = ${pctS(y/2,3)}`,
+        `Periods = ${T} &times; 2 = ${2*T}`,
+        `Coupon, rate and period count all sit on the same six-month footing. Move one and all three must move.`
+      ]};
+  }},
+
+{ id:"e2", topic:"error", also:["ear"], name:"Find the mistake — effective annual rate", gen(){
+    const apr = pick(range(.06,.24,.005)), m = pick([2,4,12]);
+    const label = {2:"semiannually",4:"quarterly",12:"monthly"}[m];
+    const fault = pick(["rate","multiply"]);
+    const per   = (fault==="rate") ? apr : apr/m;
+    /* The rate Step 2 works with is written from the APR, not as a six-decimal decimal (22 Sep
+       2026, gridall.js 01): apr/12 rounded to six decimals is not the rate Step 3 then used, so
+       Step 3 was out in the fourth decimal on 48 of 222 draws. Written this way both steps
+       reproduce exactly, and multiplying really does give the APR back. */
+    const base  = (fault==="rate") ? pctS(apr) : `${pctS(apr)} &divide; ${m}`;
+    const grow  = (fault==="multiply") ? 1 + m*per : Math.pow(1+per,m);
+    const ear   = grow - 1;
+    const s = [
+      fault==="rate"
+        ? `<b>Step 1.</b> The rate per period = ${pctS(apr)}`
+        : `<b>Step 1.</b> The rate per period = ${pctS(apr)} &divide; ${m} = ${pctS(per,4)}`,
+      fault==="multiply"
+        ? `<b>Step 2.</b> One dollar grows to 1 + ${m} &times; (${base}) over a year`
+        : `<b>Step 2.</b> One dollar grows to (1 + ${base})<sup>${m}</sup> over a year`,
+      `<b>Step 3.</b> So the effective annual rate = ${pctS(ear,4)}`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; the APR is a nominal rate, so dividing by ${m} gives the rate actually charged each period.`,
+      `Step 2 is fine &mdash; compounding the periodic rate ${m} times is what turns a nominal rate into an effective one.`,
+      `Step 3 is fine &mdash; it follows correctly from the step above it.`
+    ];
+    let at, why;
+    if (fault==="rate"){
+      at=0; why=`The ${pctS(apr)} is the APR &mdash; a nominal <em>annual</em> figure. The rate actually charged each period is ${pctS(apr)} &divide; ${m} = ${pctS(apr/m,4)}. Compounding the full APR ${m} times gives ${pctS(Math.pow(1+apr,m)-1,2)}, which is nonsense.`;
+    } else {
+      at=1; why=`That multiplies instead of compounding, which just returns the APR you started with. Interest earns interest, so the periodic rate is raised to the power ${m}: (1 + ${base})<sup>${m}</sup>.`;
+    }
+    return {
+      mode:"choice",
+      text:`A loan is quoted at an APR of <b>${pctS(apr)}</b>, compounded <b>${label}</b>. A student
+            works out the effective annual rate:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `Rate per period = APR / ${m} = ${pctS(apr)} / ${m} = ${pctS(apr/m,4)}`,
+        `EAR = (1 + APR/${m})<sup>${m}</sup> &minus; 1 = (1 + ${apr}/${m})<sup>${m}</sup> &minus; 1 = ${pctS(Math.pow(1+apr/m,m)-1,4)}`,
+        `Divide first, then compound. Doing either alone gives the wrong answer.`
+      ]};
+  }},
+
+{ id:"e3", topic:"error", also:["annuity"], name:"Find the mistake — annuity", gen(){
+    const C = pick(range(100,900,25)), r = pick(range(.02,.08,.005)), n = pick([5,8,10,12,15,20]);
+    const fault = pick(["perp","due","nodisc"]);
+    const ann = C/r*(1-Math.pow(1+r,-n));
+    const val = fault==="perp" ? C/r : fault==="due" ? ann*(1+r) : ann;
+    const s = [
+      `<b>Step 1.</b> The payments are equal and finite, so this is an ordinary annuity`,
+      fault==="perp"
+        ? `<b>Step 2.</b> PV = C/r`
+        : fault==="due"
+        ? `<b>Step 2.</b> PV = (C/r) &times; (1 &minus; 1/(1+r)<sup>n</sup>) &times; (1+r)`
+        : `<b>Step 2.</b> PV = (C/r) &times; (1 &minus; 1/(1+r)<sup>n</sup>)`,
+      /* Step 3 substitutes into whatever Step 2 wrote rather than reprinting it. The
+         old version spelled the corrupted formula out a second time, so all three blind
+         readers could point at Step 3 as defensibly as at Step 2. Only the "nodisc"
+         fault is genuinely introduced here, so that branch keeps its own arithmetic. */
+      fault==="nodisc"
+        ? `<b>Step 3.</b> PV = ${money(C)} &times; ${n} = ${money(C*n)}`
+        : `<b>Step 3.</b> Substituting C = ${money(C)}, r = ${r} and n = ${n} into the formula above: PV = ${money(val)}`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; equal payments over a fixed number of periods is exactly an ordinary annuity.`,
+      `Step 2 is fine &mdash; that is the ordinary annuity formula.`,
+      `Step 3 is fine &mdash; it substitutes into the formula above it correctly.`
+    ];
+    let at, why;
+    if (fault==="perp"){
+      at=1; why=`That is the <em>perpetuity</em> formula, which assumes the payments never stop. This stream ends after ${n} periods, so it needs the bracket (1 &minus; 1/(1+r)<sup>${n}</sup>) to strip out the payments that never arrive. Step 3 then dutifully computes the wrong thing: ${money(val)} instead of ${money(ann)}.`;
+    } else if (fault==="due"){
+      at=1; why=`Multiplying by (1+r) turns this into an annuity <em>due</em>, which assumes the first payment arrives today. Here the first payment comes at the end of period 1, so that factor does not belong &mdash; it inflates the value to ${money(val)} from ${money(ann)}.`;
+    } else {
+      at=2; why=`That adds the payments without discounting any of them. Money arriving in ${n} periods is worth less than money today &mdash; the formula in Step 2 was right, it just was not used.`;
+    }
+    return {
+      mode:"choice",
+      text:`An investment pays <b>${money(C)}</b> at the end of each period for <b>${n} periods</b>.
+            The rate is <b>${pctS(r)} per period</b>. A student values it:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `Ordinary annuity: PV = (C/r) &times; (1 &minus; 1/(1+r)<sup>n</sup>)`,
+        `= (${money(C)} / ${r}) &times; (1 &minus; 1/(1+${r})<sup>${n}</sup>) = ${money(ann)}`,
+        `The perpetuity formula drops the bracket; the annuity-due version adds a (1+r) that does not belong here.`
+      ]};
+  }},
+
+{ id:"e4", topic:"error", also:["payment","car"], name:"Find the mistake — loan payment", gen(){
+    const L = pick(range(10000,40000,1000)), apr = pick(range(.04,.12,.005)), yrs = pick([3,4,5]);
+    const n = yrs*12;
+    const fault = pick(["rate","split","interest"]);
+    const i = (fault==="rate") ? apr : apr/12;
+    const C = L*i/(1-Math.pow(1+i,-n));
+    const s = [
+      fault==="rate"
+        ? `<b>Step 1.</b> Monthly rate = ${pctS(apr)}`
+        : `<b>Step 1.</b> Monthly rate = ${pctS(apr)} &divide; 12 = ${pctS(i,4)}`,
+      `<b>Step 2.</b> Number of payments = ${yrs} &times; 12 = ${n}`,
+      `<b>Step 3.</b> The payments must have a present value equal to the loan, so C &times; (1/i)(1 &minus; 1/(1+i)<sup>n</sup>) = ${money(L)}`,
+      fault==="split"
+        ? `<b>Step 4.</b> C = ${money(L)} / ${n} = ${money(L/n)}`
+        /* the interest-only step is worked from the APR itself, so its own arithmetic holds to the
+           cent: L x 0.003333 gave $36.66, printed as $36.67 (22 Sep 2026) */
+        : fault==="interest"
+        ? `<b>Step 4.</b> C = L &times; i = ${money(L)} &times; ${pctS(apr)} &divide; 12 = ${money(L*i)}`
+        : `<b>Step 4.</b> C = ${money(L)} &times; ${i.toFixed(6)} / (1 &minus; 1/(1+${i.toFixed(6)})<sup>${n}</sup>) = ${money(C)}`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; an annual rate compounded monthly divides by 12 to give the rate per month.`,
+      `Step 2 is fine &mdash; ${yrs} years of monthly payments is ${n} payments.`,
+      `Step 3 is fine &mdash; a loan is priced so the payments are worth exactly the amount borrowed.`,
+      `Step 4 is fine &mdash; that is the annuity formula rearranged for C, applied to the rate above it.`
+    ];
+    let at, why;
+    const trueC = L*(apr/12)/(1-Math.pow(1+apr/12,-n));
+    if (fault==="rate"){
+      at=0; why=`${pctS(apr)} is the rate per <em>year</em>, compounded monthly. The rate per month is ${pctS(apr)} &divide; 12 = ${pctS(apr/12,4)}. Step 4 then applies the annual rate to monthly payments, which inflates the payment to ${money(C)} instead of ${money(trueC)}.`;
+    } else if (fault==="split"){
+      at=3; why=`That splits the principal evenly and charges no interest at all. The lender is owed ${pctS(apr)} a year on the outstanding balance, so the payment has to exceed ${money(L/n)} &mdash; it is ${money(trueC)}.`;
+    } else {
+      at=3; why=`That is one month's interest on the full balance &mdash; an interest-only payment of ${money(L*i)}. It never repays a cent of principal, so the loan would never be retired. The equation in Step 3 has to be solved for C, not just multiplied out.`;
+    }
+    return {
+      mode:"choice",
+      text:`A student works out the monthly payment on a <b>${money(L)}</b> loan repaid over
+            <b>${yrs} years</b> at <b>${pctS(apr)} p.a. compounded monthly</b>:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `Monthly rate i = ${pctS(apr)} &divide; 12 = ${pctS(apr/12,4)},  n = ${n}`,
+        `C = L &times; i / (1 &minus; 1/(1+i)<sup>n</sup>) = ${money(trueC)}`,
+        `L/n charges no interest; L&times;i charges only interest. The annuity formula balances the two.`
+      ]};
+  }},
+
+{ id:"e5", topic:"error", also:["perp"], name:"Find the mistake — perpetuity", gen(){
+    const X = pick(range(50,500,10)), apr = pick(range(.04,.12,.005)), k = pick([2,3,4,6]);
+    const fault = pick(["rate","simple"]);
+    const im = (fault==="rate") ? apr : apr/12;
+    /* Each step is worked from the figure printed before it (22 Sep 2026, gridall.js 01): the
+       planted k x i uses the monthly rate as Step 1 prints it, and Step 3 divides by Step 2's
+       rate as printed. Before, Step 3 used unrounded rates, the worked solution divided by the
+       rate to six decimals (up to $2.49 off), and on 58 draws k x i was off in the fourth
+       decimal. */
+    const ik = (fault==="simple") ? k*(+im.toFixed(6)) : Math.pow(1+im,k)-1;
+    const dep = X/(+ik.toFixed(6));
+    const trueIm = apr/12, trueIk = Math.pow(1+trueIm,k)-1;
+    const s = [
+      fault==="rate"
+        ? `<b>Step 1.</b> Monthly rate = ${pctS(apr)}`
+        : `<b>Step 1.</b> Monthly rate = ${pctS(apr)} &divide; 12 = ${pctS(im,4)}`,
+      fault==="simple"
+        ? `<b>Step 2.</b> Rate earned over ${k} months = ${k} &times; ${pctS(im,4)} = ${pctS(ik,4)}`
+        : `<b>Step 2.</b> Rate earned over ${k} months = (1 + ${im.toFixed(6)})<sup>${k}</sup> &minus; 1 = ${pctS(ik,4)}`,
+      /* refers back to Step 2's rate instead of reprinting it - the reprint showed a
+         planted Step 1 or Step 2 error twice. */
+      `<b>Step 3.</b> Deposit needed = ${money(X)} &divide; (the rate from Step 2) = ${money(dep)}`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; the account compounds monthly, so the monthly rate is the annual rate over 12.`,
+      `Step 2 is fine &mdash; compounding the monthly rate over ${k} months gives the rate the account actually earns between payments.`,
+      `Step 3 is fine &mdash; it follows correctly from the rate above it.`
+    ];
+    let at, why;
+    if (fault==="rate"){
+      at=0; why=`${pctS(apr)} is the rate per year. The account compounds <em>monthly</em>, so the rate per month is ${pctS(apr)} &divide; 12 = ${pctS(trueIm,4)}. Steps 2 and 3 then carry the annual rate through, and the deposit comes out at ${money(dep)} instead of ${money(X/trueIk)}.`;
+    } else {
+      at=1; why=`Multiplying the monthly rate by ${k} ignores the interest earned on interest during those ${k} months. The account actually earns (1+i)<sup>${k}</sup> &minus; 1 = ${pctS(trueIk,4)}, slightly more than ${pctS(ik,4)} &mdash; so rather less needs to be deposited than Step 3 suggests.`;
+    }
+    return {
+      mode:"choice",
+      text:`A bank account earns <b>${pctS(apr)} p.a. compounded monthly</b>. A student works out how
+            much to deposit so it pays <b>${money(X)}</b> every <b>${k} months</b> forever, without
+            touching the principal:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k2)=>({html, correct:k2===at, msg: k2===at ? why : fine[k2]})),
+      steps:[
+        `Monthly rate i = APR / 12 = ${pctS(apr)} / 12 = ${pctS(trueIm,4)}`,
+        `${k}-month rate = (1+i)<sup>${k}</sup> &minus; 1 = (1 + ${apr}/12)<sup>${k}</sup> &minus; 1 = ${pctS(trueIk,4)}  (not ${k} &times; i = ${k} &times; ${pctS(trueIm,4)} = ${pctS(k*(+trueIm.toFixed(6)),4)})`,
+        `P = X / (${k}-month rate) = ${money(X)} / ((1 + ${apr}/12)<sup>${k}</sup> &minus; 1) = ${money(X/trueIk)}`
+      ]};
+  }},
+
+{ id:"d1", topic:"concept", name:"Which price moves more?", gen(){
+    let a,b;
+    do { a=pick([2,3,4,5]); b=pick([10,15,20,30]); } while (b<=a+4);
+    const r0=pick(range(.03,.06,.005)), r1=r0+pick([.01,.015,.02]);
+    const more = Math.random()<0.5;
+    const chA = ((1+r0)/(1+r1))**a - 1, chB = ((1+r0)/(1+r1))**b - 1;
+    return {
+      mode:"choice",
+      text:`Interest rates rise from <b>${pctS(r0)}</b> to <b>${pctS(r1)} per year, compounded annually</b>. You hold two zero-coupon
+            bonds: one maturing in <b>${a} years</b>, the other in <b>${b} years</b>. Neither bond's
+            promised payment changes.`,
+      ask:`Which price falls by the ${more ? "<b>larger</b>" : "<b>smaller</b>"} percentage?`,
+      options: shuffle([
+        {html:`The ${a}-year bond`, correct: !more,
+         msg: more ? `Not quite — the shorter bond moves <em>less</em>. Its payment is discounted only ${a} times, so the rate change compounds through fewer periods (${(chA*100).toFixed(1)}% vs ${(chB*100).toFixed(1)}%).`
+                   : `Right. Its payment is discounted only ${a} times, so the rate change compounds through fewer periods — it falls ${(chA*100).toFixed(1)}% against the longer bond's ${(chB*100).toFixed(1)}%.`},
+        {html:`The ${b}-year bond`, correct: more,
+         msg: more ? `Right. Its payment is discounted ${b} times, so the same rate change compounds through far more periods — ${(chB*100).toFixed(1)}% against ${(chA*100).toFixed(1)}% for the shorter bond.`
+                   : `Not quite — the longer bond moves <em>more</em>. Discounting ${b} times means the rate change compounds through many more periods (${(chB*100).toFixed(1)}% vs ${(chA*100).toFixed(1)}%).`},
+        {html:`Both fall by the same percentage`, correct:false,
+         msg:`No. Both are discounted at the same rate, but over different lengths of time — and the number of periods is precisely what makes the percentage change differ.`}
+      ]),
+      steps:[
+        `A zero maturing in n years is worth F/(1+r)<sup>n</sup>.`,
+        `Raising r divides by a larger number — and that larger number is raised to the power n.`,
+        `${a}-year: ${(chA*100).toFixed(1)}%   ·   ${b}-year: ${(chB*100).toFixed(1)}%`,
+        `The longer you wait for your money, the more a change in rates matters. That sensitivity is what we later call duration.`
+      ]};
+  }},
+
+{ id:"d2", topic:"concept", name:"Compounding more often", gen(){
+    const apr = pick(range(.05,.20,.01));
+    return {
+      mode:"choice",
+      text:`Two lenders both quote an APR of <b>${pctS(apr)}</b>. Lender A compounds
+            <b>annually</b>; Lender B compounds <b>monthly</b>. Nothing else differs.`,
+      ask:"As a borrower, which do you prefer?",
+      options: shuffle([
+        {html:`Lender A — annual compounding`, correct:true,
+         msg:`Right. Same quoted rate, but B adds interest to the balance every month, so you pay interest on interest sooner. A costs ${pctS(apr)} effective; B costs ${pctS(Math.pow(1+apr/12,12)-1,3)}.`},
+        {html:`Lender B — monthly compounding`, correct:false,
+         msg:`The other way round. More frequent compounding is worse for a <em>borrower</em>: B charges ${pctS(Math.pow(1+apr/12,12)-1,3)} effectively against A's ${pctS(apr)}. You would prefer B only if you were the one lending.`},
+        {html:`No difference — the APR is the same`, correct:false,
+         msg:`The APR is the same, but the APR is a nominal figure. Once you compound B's monthly rate over a year it reaches ${pctS(Math.pow(1+apr/12,12)-1,3)} — the whole reason the note distinguishes APR from EAR.`}
+      ]),
+      steps:[
+        `Lender A compounds once: EAR = ${pctS(apr)}`,
+        `Lender B compounds 12 times: EAR = (1 + ${pctS(apr)}/12)<sup>12</sup> − 1 = ${pctS(Math.pow(1+apr/12,12)-1,4)}`,
+        `Holding the APR fixed, compounding more often always raises the effective rate — good for a lender, bad for a borrower.`
+      ]};
+  }},
+
+{ id:"d3", topic:"concept", name:"Perpetuity and the rate", gen(){
+    const C = pick(range(50,500,25)), r0 = pick(range(.03,.07,.005)), r1 = r0 + pick([.01,.02,.03]);
+    const up = Math.random()<0.5;
+    const lo = C/(up?r1:r0), hi = C/(up?r0:r1);
+    return {
+      mode:"choice",
+      text:`A perpetuity pays <b>${money(C)}</b> every year, forever. The interest rate
+            ${up ? `<b>rises</b> from ${pctS(r0)} to ${pctS(r1)}` : `<b>falls</b> from ${pctS(r1)} to ${pctS(r0)}`}
+            per year, compounded annually. The payment itself never changes.`,
+      ask:"What happens to the price?",
+      options: shuffle([
+        {html:`It ${up ? "falls" : "rises"}`, correct:true,
+         msg:`Right. P = C/r, so r sits in the denominator: ${money(C)}/${(up?r0:r1)} = ${money(hi)} becomes ${money(C)}/${(up?r1:r0)} = ${money(lo)}. ${up ? "A higher rate means you need less money on deposit to generate the same payment." : "A lower rate means you need more principal to generate the same payment."}`},
+        {html:`It ${up ? "rises" : "falls"}`, correct:false,
+         msg:`The other way. Think of it as a bank balance: at ${pctS(up?r1:r0)} you need ${money(lo)} on deposit to earn ${money(C)} a year, but at ${pctS(up?r0:r1)} you need ${money(hi)}. Rate and price move in opposite directions.`},
+        {html:`It is unchanged — the payment did not change`, correct:false,
+         msg:`The payment is fixed, but its <em>value</em> is not. What a stream of payments is worth depends entirely on the rate you discount it at — that is the whole point of the note.`}
+      ]),
+      steps:[
+        `P = C/r — the rate is in the denominator.`,
+        `At ${pctS(up?r0:r1)}: P = ${money(C)} / ${(up?r0:r1)} = ${money(hi)}`,
+        `At ${pctS(up?r1:r0)}: P = ${money(C)} / ${(up?r1:r0)} = ${money(lo)}`,
+        `Rates up, prices down. Always, for any fixed stream of payments.`
+      ]};
+  }},
+
+{ id:"d4", topic:"concept", also:["annuity","perp"], name:"Annuity or perpetuity?", gen(){
+    const C = pick(range(100,800,25)), r = pick(range(.03,.09,.005)), n = pick([10,15,20,25,30]);
+    const ann = C/r*(1-1/Math.pow(1+r,n)), perp = C/r;
+    return {
+      mode:"choice",
+      text:`Two investments both pay <b>${money(C)}</b> at the end of every year, and both are
+            valued at <b>${pctS(r)} per year, compounded annually</b>. Investment A pays for <b>${n} years</b>.
+            Investment B pays <b>forever</b>.`,
+      ask:"How do their values compare?",
+      /* Which of the first two options is TRUE depends on the draw: the ratio
+         perp/ann is 1/(1 - (1+r)^-n), which exceeds 2 exactly when the money has
+         NOT doubled over the annuity's life. Hard-coding "less than twice" as the
+         answer was wrong on 23% of this template's grid. */
+      options: shuffle([
+        {html:`B is worth more, but less than twice A`, correct: (perp/ann) < 2,
+         msg: (perp/ann) < 2
+           ? `Right. B is worth ${money(perp)} against A's ${money(ann)} — more, but only ${(perp/ann).toFixed(2)}× as much. Payments beyond year ${n} have been discounted ${n}+ times, so they add surprisingly little.`
+           : `Not here. The ratio is ${(perp/ann).toFixed(2)}, which is above 2. At ${pctS(r)} over ${n} years the money has not doubled — (1+r)<sup>${n}</sup> = ${Math.pow(1+r,n).toFixed(3)} — and the tail beyond year ${n} is worth more than everything before it.`},
+        {html:`B is worth more than twice A`, correct: (perp/ann) >= 2,
+         msg: (perp/ann) >= 2
+           ? `Right. The ratio is ${(perp/ann).toFixed(2)}. The test is whether the money doubles over the ${n} years: (1+${pctS(r)})<sup>${n}</sup> = ${Math.pow(1+r,n).toFixed(3)}, below 2, so the infinite tail outweighs the first ${n} payments.`
+           : `Less than you would think. B is ${money(perp)} and A is ${money(ann)} — a ratio of ${(perp/ann).toFixed(2)}. An infinite tail of payments adds little because each one is discounted so heavily.`},
+        {html:`They are worth the same`, correct:false,
+         msg:`No — B genuinely is worth more (${money(perp)} vs ${money(ann)}). But the gap is smaller than the words "forever" suggest.`},
+        {html:`A is worth more — it is a real, finite investment`, correct:false,
+         msg:`B contains every payment A has plus infinitely many more, so it must be worth at least as much: ${money(perp)} against ${money(ann)}.`}
+      ]),
+      steps:[
+        `A (annuity) = (C/r)(1 − 1/(1+r)<sup>${n}</sup>) = ${money(ann)}`,
+        `B (perpetuity) = C/r = ${money(perp)}`,
+        `Difference = ${money(perp-ann)} — that is every payment from year ${n+1} to infinity, discounted back.`,
+        `The ratio B/A is 1/(1 − (1+r)<sup>−n</sup>), which is above 2 exactly when (1+r)<sup>n</sup> &lt; 2 — that is, when the money has not doubled over A's life. Here (1+${pctS(r)})<sup>${n}</sup> = ${Math.pow(1+r,n).toFixed(3)}.`
+      ]};
+  }},
+
+{ id:"d5", topic:"concept", name:"Moving the first payment", gen(){
+    const C = pick(range(50,500,25)), r = pick(range(.03,.10,.005));
+    const ord = C/r, due = C + C/r;
+    return {
+      mode:"choice",
+      text:`Two perpetuities each pay <b>${money(C)}</b> a year forever, valued at <b>${pctS(r)} per year, compounded annually</b>.
+            Perpetuity A makes its first payment <b>one year from today</b>. Perpetuity B makes its
+            first payment <b>today</b>.`,
+      ask:"Which is worth more, and roughly by how much?",
+      options: shuffle([
+        {html:`B, by exactly one payment`, correct:true,
+         msg:`Right. B is simply A plus one payment received right now: ${money(ord)} + ${money(C)} = ${money(due)}. The formula C/r already values a stream whose first payment is one period away.`},
+        {html:`B, but by much more than one payment`, correct:false,
+         msg:`Only by one payment. Every other payment in B lines up exactly with a payment in A — shifting the whole stream forward one year is the same as receiving one extra payment today. ${money(ord)} + ${money(C)} = ${money(due)}.`},
+        {html:`A, because its payments are discounted less`, correct:false,
+         msg:`The other way round. A's payments arrive <em>later</em> than B's, so they are discounted <em>more</em>. Receiving money sooner is always worth more.`},
+        {html:`They are worth the same — both pay forever`, correct:false,
+         msg:`Both are infinite streams, but timing still matters: B's payments each arrive a year earlier. That is worth exactly one extra payment, ${money(C)}.`}
+      ]),
+      steps:[
+        `A is the ordinary perpetuity: C/r = ${money(ord)}`,
+        `B is the same stream shifted forward one year, which is A plus one payment today.`,
+        `B = C + C/r = ${money(C)} + ${money(ord)} = ${money(due)}`,
+        `C/r always assumes the first payment is one full period away. If it arrives sooner, add the difference.`
+      ]};
+  }},
+
+{ id:"d6", topic:"concept", name:"What is missing?", gen(){
+    /* 2B must sit BELOW A or there is no crossover: PV(two) - PV(one), scaled by
+       (1+r), is B(1+r)^0.5 + (B - A) — it starts at 2B - A and rises with r. The old
+       multipliers (0.52-0.56) put 2B above A, so the two-payment option was dearer at
+       EVERY rate and the keyed answer was false on all 33 combinations. At 0.49-0.495
+       the ranking flips somewhere between about 3.4% and 10.5%.                     */
+    const A = pick(range(700,1200,50)), B = Math.round(A*pick([0.49,0.4925,0.495])/5)*5;
+    return {
+      mode:"choice",
+      text:`A dealer offers two ways to pay: <b>${money(A)} in one year's time</b>, or
+            <b>${money(B)} in six months and another ${money(B)} in twelve months</b>.
+            A classmate says the second option is obviously cheaper because
+            ${money(2*B)} in total is less than ${money(A)}.`,
+      ask:"What is wrong with that reasoning?",
+      options: shuffle([
+        {html:`You cannot rank them without knowing the interest rate`, correct:true,
+         msg:`Right — and this is the reflex the whole note is built around. The ranking genuinely reverses: the two-payment option has the smaller total, which wins at a low rate, but its money leaves your hands <em>earlier</em>, which costs more as the rate rises. Somewhere between, they cross. The first question is always "what is the interest rate?"`},
+        {html:`Nothing — ${money(2*B)} is less than ${money(A)}, so the second option is cheaper`, correct:false,
+         msg:`Adding ${money(B)} + ${money(B)} treats payments at six and twelve months as if they arrived at the same moment. They do not, so the sum is meaningless until both are discounted to today — and the second option's money leaves <em>earlier</em>, which works against it.`},
+        {html:`The second option is cheaper because paying later is always better`, correct:false,
+         msg:`Paying later is better, but that is not what settles it here — one of those payments comes <em>earlier</em> than the single payment. Which option wins depends on the rate.`},
+        {html:`The first option is cheaper because it is a single payment`, correct:false,
+         msg:`The number of payments is not what matters — their timing and the discount rate are. A single payment can be cheaper or dearer depending on the rate.`}
+      ]),
+      steps:[
+        `Cash flows at different dates cannot be added or compared directly.`,
+        `Discount both options to today, then compare like with like.`,
+        `${money(2*B)} in two instalments is less in total than ${money(A)}, but it leaves your hands earlier. Which effect wins depends entirely on the rate.`,
+        `"What is the interest rate?" is the correct first response to any question of this shape.`
+      ]};
+  }}
+
+,
+
+/* ============================ ADDITIONS ============================== */
+
+{ id:"e6", topic:"error", also:["cont","discount"], name:"Find the mistake — continuous discounting", gen(){
+    const FV=pick(range(1000,9000,500)), r=pick(range(.04,.12,.005)), t=pick([3,4,5,6,8,10]);
+    const fault = pick(["dropt","linear"]);
+    const expo = (fault==="dropt") ? r : r*t;
+    const pv   = (fault==="linear") ? FV*(1-expo) : FV*Math.exp(-expo);
+    const s = [
+      `<b>Step 1.</b> The rate is continuously compounded, so the discount factor is e<sup>&minus;rt</sup>`,
+      fault==="dropt"
+        ? `<b>Step 2.</b> The exponent is just &minus;r = &minus;${r}`
+        : `<b>Step 2.</b> rt = ${r} &times; ${t} = ${expo.toFixed(4)}`,
+      fault==="linear"
+        ? `<b>Step 3.</b> PV = ${money(FV)} &times; (1 &minus; ${expo.toFixed(4)}) = ${smoney(pv)}`
+        : `<b>Step 3.</b> PV = ${money(FV)} &times; e<sup>&minus;${expo.toFixed(4)}</sup> = ${money(pv)}`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; continuous compounding discounts by e<sup>&minus;rt</sup>.`,
+      `Step 2 is fine &mdash; the exponent carries both the rate and the time.`,
+      `Step 3 is fine &mdash; it applies the exponent above it correctly.`
+    ];
+    let at, why;
+    if (fault==="dropt"){
+      at=1; why=`The time is missing. Waiting ${t} years is not the same as waiting one &mdash; the exponent is &minus;r&times;t = &minus;${(r*t).toFixed(4)}. Step 3 then discounts a ${t}-year wait as though it were a single year, giving ${smoney(pv)} instead of ${money(FV*Math.exp(-r*t))}.`;
+    } else {
+      at=2; why=`That is the linear approximation 1 &minus; rt, which stands in for e<sup>&minus;rt</sup> only when rt is very small. Here rt = ${(r*t).toFixed(4)}, and the two differ by ${money(Math.abs(FV*Math.exp(-r*t)-FV*(1-r*t)))}.`;
+    }
+    return {
+      mode:"choice",
+      text:`A payment of <b>${money(FV)}</b> arrives in <b>${t} years</b>. The <b>continuously
+            compounded</b> rate is <b>${pctS(r)} per year</b>. A student discounts it:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `PV = FV &times; e<sup>&minus;rt</sup>`,
+        `rt = ${r} &times; ${t} = ${(r*t).toFixed(4)}`,
+        `PV = ${money(FV*Math.exp(-r*t))}`
+      ]};
+  }},
+
+{ id:"e7", topic:"error", name:"Find the mistake — the right rate on the wrong clock", gen(){
+    const apr=pick(range(.09,.24,.0025));
+    const m=12, per=apr/m, ear=Math.pow(1+per,m)-1;
+    const C=pick(range(200,900,50)), n=pick([12,24,36,48]);
+    let right=0; for(let k=1;k<=n;k++) right += C/Math.pow(1+per,k);
+    /* Step 4 discounts at the annual rate exactly as Step 2 prints it, to three decimals of a
+       percent, so that step too reproduces from the figure above it (22 Sep 2026) */
+    const earP = +pctS(ear,3).replace("%","")/100;
+    let wrong=0; for(let k=1;k<=n;k++) wrong += C/Math.pow(1+earP,k);
+    const s = [
+      `<b>Step 1.</b> The rate per month = ${pctS(apr)} / 12 = ${pctS(per,4)}`,
+      /* the monthly rate is written from the APR, so this step reproduces exactly (22 Sep 2026,
+         gridall.js 01): as a six-decimal decimal it printed 11.296% where the printed figures
+         gave 11.2954%, on 1,200 of 3,660 draws - and this item's whole point is that every step
+         is arithmetically right */
+      `<b>Step 2.</b> The effective annual rate = (1 + ${pctS(apr)}/12)<sup>12</sup> &minus; 1 = ${pctS(ear,3)}`,
+      `<b>Step 3.</b> There are ${n} monthly payments of ${money(C)}`,
+      `<b>Step 4.</b> Discount each payment at ${pctS(ear,3)}: PV = ${money(wrong)}`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; an APR is nominal, so dividing by 12 gives the monthly rate.`,
+      `Step 2 is fine &mdash; that is the correct effective annual rate for this quote. Working it out is never an error in itself; what matters is what you then apply it to.`,
+      `Step 3 is fine &mdash; ${n} months of payments is exactly what the loan calls for.`,
+      `Step 4 is fine &mdash; the payments are discounted one by one at the stated rate.`
+    ];
+    const at = 3;
+    const why = `Every individual step here is correct, which is what makes this one dangerous. The error is in <em>pairing</em> them: the payments arrive <b>monthly</b>, so they must be discounted at the <b>monthly</b> rate of ${pctS(per,4)}, not at the annual rate of ${pctS(ear,3)}. The effective annual rate is the right number for a cash flow that arrives once a year. Applying it to monthly cash flows discounts each one about twelve times too hard: ${money(wrong)} instead of ${money(right)}. The rate and the period count must always sit on the same clock.`;
+    return {
+      mode:"choice",
+      text:`A loan is quoted at an <b>APR of ${pctS(apr)} compounded monthly</b> and calls for
+            <b>${n} monthly payments</b> of <b>${money(C)}</b>. A student values the payments:`,
+      ask:"Every step below is arithmetically correct. Which one is nevertheless wrong?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `Monthly rate = APR / 12 = ${pctS(apr)} / 12 = ${pctS(per,4)}`,
+        `Monthly payments must be discounted at the monthly rate, over ${n} months`,
+        `PV = Σ C/(1+i)<sup>k</sup> for k = 1…${n} = Σ ${money(C)}/(1 + ${pctS(apr)}/12)<sup>k</sup> for k = 1…${n} = ${money(right)}`,
+        `Converting to an EAR was not wrong &mdash; it was simply the wrong tool for cash flows that do not arrive annually.`
+      ]};
+  }},
+
+/* ------------------------------------------------------- directional --- */
+
+{ id:"d7", topic:"concept", name:"A rate without its convention", gen(){
+    const P=pick(range(300,900,50)), apr=pick([18.5,20.4,22.15,24.9]);
+    return {
+      mode:"choice",
+      text:`A student discounts <b>${money(P)}</b> back one year at a quoted rate of <b>${apr}% p.a.</b> by
+            dividing by <b>${(1+apr/100).toFixed(4)}</b>.`,
+      ask:"Is that right?",
+      options: shuffle([
+        {html:`You cannot say until you know how often the rate compounds`, correct:true,
+         msg:`Correct, and this is the reflex worth building. Dividing by ${(1+apr/100).toFixed(4)} is right only if ${apr}% is an <em>effective annual</em> rate. If it is an APR compounded monthly, a year of growth is (1 + ${apr}%/12)<sup>12</sup> instead, and the answer changes. A rate quoted without its convention is not yet a rate.`},
+        {html:`Yes &mdash; one year, one division by (1 + r)`, correct:false,
+         msg:`That works only if the quoted figure is already an effective annual rate. Most consumer rates are quoted as APRs with a compounding frequency attached, and then one division by (1+r) is the wrong operation.`},
+        {html:`No &mdash; it is always wrong, because an APR is never an EAR`, correct:false,
+         msg:`Too strong in the other direction. If the rate happens to be quoted as an effective annual rate, or as an APR compounded annually, dividing by (1 + r) is exactly right. The point is that you have not been told which.`},
+        {html:`No &mdash; you should use e<sup>&minus;r</sup> instead`, correct:false,
+         msg:`That assumes continuous compounding, which is just one more convention among several. Picking it without being told is the same mistake in a different costume.`}
+      ]),
+      steps:[
+        `A quoted rate is a number plus a convention. Without the convention it is incomplete.`,
+        `${apr}% compounded annually, monthly, daily and continuously all describe different amounts of money.`,
+        `The first question about any rate is how often it compounds.`
+      ]};
+  }},
+
+{ id:"d8", topic:"concept", name:"Which convention gives the biggest present value?", gen(){
+    const apr=pick([18.5,20.4,22.15,24.9]);
+    return {
+      mode:"choice",
+      text:`The same nominal rate of <b>${apr}% p.a.</b> can be quoted under different compounding
+            conventions. You are discounting a payment that arrives one year from now.`,
+      ask:"Which convention gives that payment the largest present value?",
+      options: shuffle([
+        {html:`Compounded annually`, correct:true,
+         msg:`Right. Discounting is division, so the smallest effective rate leaves the largest present value &mdash; and of these, annual compounding produces the smallest effective rate. The same nominal ${apr}% grows fastest when it is applied most often, so applying it least often makes the discounting gentlest.`},
+        {html:`Compounded monthly`, correct:false,
+         msg:`Monthly compounding turns ${apr}% into a larger effective rate than annual does, which discounts harder and leaves a smaller present value.`},
+        {html:`Compounded daily`, correct:false,
+         msg:`Daily compounding is harsher still &mdash; a bigger effective rate, so an even smaller present value. Only continuous compounding beats it.`},
+        {html:`Continuously`, correct:false,
+         msg:`Continuous compounding is the limit &mdash; the largest effective rate the nominal ${apr}% can produce, and therefore the <em>smallest</em> present value, not the largest.`}
+      ]),
+      steps:[
+        `The same nominal rate produces a bigger effective rate the more often it compounds.`,
+        `Present value divides by (1 + effective rate), so a bigger effective rate means a smaller present value.`,
+        `Annual compounding gives the smallest effective rate here, and so the largest present value.`,
+        `Notice the numbers converge quickly: past monthly, compounding more often barely moves anything.`
+      ]};
+  }},
+
+{ id:"d9", topic:"concept", also:["simple"], name:"After one year they are level", gen(){
+    const P=pick([1000,2000,5000]), r=pick([.05,.06,.0716,.08]);
+    return {
+      mode:"choice",
+      text:`Two accounts each start with <b>${money(P)}</b> at <b>${pctS(r,2)} a year</b>. One compounds
+            <b>annually</b>; the other pays <b>simple interest</b>. After <b>one year</b> both hold exactly
+            <b>${money(P*(1+r))}</b> &mdash; not a cent between them.`,
+      ask:"Why are they still level?",
+      options: shuffle([
+        {html:`There has been no interest yet for the compound account to earn interest on`, correct:true,
+         msg:`Exactly. Compounding is interest earning interest, and at the end of year one the first interest payment has only just arrived. The two accounts separate in year <em>two</em>, when the compound account starts earning on ${money(P*r)} that the simple account leaves idle. From there the gap widens every year, and after fifty it is the difference between comfortable and rich.`},
+        {html:`Compound interest only begins after the first year by convention`, correct:false,
+         msg:`There is no such rule. Compounding is running from day one &mdash; there simply is not any accumulated interest for it to act on until the first year closes.`},
+        {html:`Because one year is too short for the rates to differ`, correct:false,
+         msg:`The rates are identical, and always were. What differs is what the rate is applied <em>to</em>: the original balance in one account, the growing balance in the other.`},
+        {html:`They are not really level &mdash; the difference is too small to see`, correct:false,
+         msg:`They are exactly level. Both earn ${pctS(r,2)} on ${money(P)}, which is ${money(P*r)}. The first genuine difference appears at the end of year two.`}
+      ]),
+      steps:[
+        `Year 1: both earn ${pctS(r,2)} on ${money(P)} = ${money(P*r)}. Identical.`,
+        `Year 2: the compound account earns ${pctS(r,2)} on ${money(P*(1+r))}; the simple account still earns it on ${money(P)}.`,
+        `The gap starts at ${money(P*r*r)} and compounds from there.`,
+        `Interest on interest is worth nothing at first and almost everything eventually.`
+      ]};
+  }},
+
+{ id:"d10", topic:"concept", name:"When the payment never clears the interest", gen(){
+    const L=pick([4000,6000,8000,12000]), i=pick([.015,.018,.02]);
+    const interest=L*i;
+    const pay=Math.round(interest*pick([0.7,0.8,0.9])/5)*5;
+    return {
+      mode:"choice",
+      text:`A balance of <b>${money(L)}</b> is charged <b>${pctS(i,1)} a month</b>, which comes to
+            <b>${money(interest)}</b> of interest in the first month. The borrower pays
+            <b>${money(pay)}</b> a month, every month, without fail.`,
+      ask:"When is the balance cleared?",
+      options: shuffle([
+        {html:`Never &mdash; the balance grows every month`, correct:true,
+         msg:`Right, and it is worse than never repaying: the payment does not even cover the ${money(interest)} of interest, so the shortfall of ${money(interest-pay)} is added to the balance, which then charges more interest next month. The debt compounds upward forever. The annuity formula gives no answer here because there is none &mdash; it needs the payment to exceed the interest before it will solve at all.`},
+        {html:`After ${Math.round(L/pay)} months &mdash; the balance divided by the payment`, correct:false,
+         msg:`That would be right if the loan charged no interest. It charges ${money(interest)} in the first month alone, which is more than the ${money(pay)} being paid.`},
+        {html:`Eventually, but it takes many years`, correct:false,
+         msg:`"Eventually" assumes the balance falls, however slowly. It does not fall at all &mdash; it rises by ${money(interest-pay)} in the first month and by more thereafter.`},
+        {html:`It depends on whether interest is charged before or after the payment`, correct:false,
+         msg:`The ordering shifts the arithmetic by a month, not the outcome. With a payment below the interest charge, the balance grows either way.`}
+      ]),
+      steps:[
+        `Interest in month one = ${money(L)} &times; ${pctS(i,1)} = ${money(interest)}`,
+        `Payment = ${money(pay)}, which is ${money(interest-pay)} short`,
+        `The balance rises to ${money(L+interest-pay)}, and next month's interest is larger still.`,
+        `This is why a minimum payment set near the interest charge can keep a balance alive indefinitely.`
+      ]};
+  }},
+
+{ id:"d11", topic:"concept", name:"Premium, par, or discount?", gen(){
+    const c=pick([4,5,6,7,8]);
+    let y; do { y=pick([3,4,5,6,7,8,9]); } while (y===c);
+    const rel = y>c ? "above" : "below";
+    return {
+      mode:"choice",
+      text:`A bond pays a <b>${c}% p.a.</b> coupon, paid semiannually. The market's required yield on it is <b>${y}% p.a., compounded semiannually</b>.`,
+      ask:"Does it trade above, at, or below its face value?",
+      options: shuffle([
+        {html: y>c ? `Below face value &mdash; at a discount` : `Above face value &mdash; at a premium`, correct:true,
+         msg: y>c
+           ? `Right. The coupon of ${c}% is less than the ${y}% the market wants, so the bond is short-changing its buyer every period. The only way to make it competitive is to sell it for less than face &mdash; a discount.`
+           : `Right. The coupon of ${c}% beats the ${y}% the market requires, so the bond is generous. Buyers bid it up above face value &mdash; a premium.`},
+        {html: y>c ? `Above face value &mdash; at a premium` : `Below face value &mdash; at a discount`, correct:false,
+         msg: y>c
+           ? `Backwards. A coupon <em>below</em> the required yield makes the bond less attractive than the alternatives, so its price must fall to compensate.`
+           : `Backwards. A coupon <em>above</em> the required yield makes the bond more attractive than the alternatives, so buyers pay extra for it.`},
+        {html:`At face value &mdash; coupons and yields do not affect price`, correct:false,
+         msg:`They are the only things that affect it. The price is exactly what makes the bond's fixed coupons competitive with the ${y}% available elsewhere.`},
+        {html:`It cannot be determined without knowing the maturity`, correct:false,
+         msg:`Maturity changes <em>how far</em> the price moves from face, but not which side of it lands on. That is settled entirely by whether the coupon beats the yield.`}
+      ]),
+      steps:[
+        `Coupon ${c}% versus required yield ${y}%.`,
+        `The coupon sits ${rel} the yield, so the bond is ${y>c?"less":"more"} attractive than the market alternative.`,
+        `Price adjusts until they are equally attractive: ${y>c?"below":"above"} face value.`,
+        `Coupon = yield is the knife edge, and there the bond trades exactly at par.`
+      ]};
+  }}
+
+,
+
+/* ============ THIRD ROUND: choosing the rate, and who gains ============ */
+
+{ id:"d12", topic:"concept", name:"Which rate should you use?", gen(){
+    const now=pick([5000,8000,10000,12000,15000]);
+    const later=Math.round(now*pick([1.08,1.10,1.12])/100)*100;
+    return {
+      mode:"choice",
+      text:`You are deciding between <b>${money(now)} today</b> and <b>${money(later)} one year from
+            now</b>. You have already worked out that the answer depends on the interest rate.`,
+      ask:"Whose rate, or which rate, belongs in that comparison?",
+      options: shuffle([
+        {html:`Your own opportunity cost &mdash; the return you could get on the next best use of the money`, correct:true,
+         msg:`Right. The question is what you would do with ${money(now)} if you took it today, and the answer is whatever return is genuinely available to you. That is why the same choice can go different ways for two different people on the same day &mdash; a payday borrower and a pension fund face wildly different opportunity costs.`},
+        {html:`The rate the person paying you can borrow at`, correct:false,
+         msg:`Their financing cost tells you something about them, not about what the money is worth to you. You are valuing your own alternatives.`},
+        {html:`The inflation rate`, correct:false,
+         msg:`Inflation matters for what the money will <em>buy</em>, but it is not automatically the return available to you. The comparison here is between nominal amounts, and it needs the rate you could actually earn.`},
+        {html:`The rate on the safest available government security`, correct:false,
+         msg:`That is one candidate, and it is the right one only if a government security really is your next best alternative. For most people it is not.`}
+      ]),
+      steps:[
+        `Cash flows at different dates are compared by discounting, and discounting needs a rate.`,
+        `The right rate is what you could otherwise earn on the money &mdash; your opportunity cost.`,
+        `Which is personal: the same two options can rank differently for different people.`,
+        `The tennis club and the payday borrower in the note are the same problem at wildly different rates.`
+      ]};
+  }},
+
+{ id:"d13", topic:"ear", name:"Who gains when compounding speeds up?", gen(){
+    const r=pick([.06,.08,.10,.12,.18]);
+    const m=pick([12,365]);
+    const label={12:"monthly",365:"daily"}[m];
+    const ear=Math.pow(1+r/m,m)-1;
+    return {
+      mode:"choice",
+      text:`A lender changes a loan from <b>${pctS(r)} APR compounded annually</b> to <b>${pctS(r)} APR
+            compounded ${label}</b>. The advertised APR is unchanged at ${pctS(r)}, and nothing else
+            about the loan moves.`,
+      ask:"Who is better off?",
+      options: shuffle([
+        {html:`The lender`, correct:true,
+         msg:`Right. The APR is only a nominal figure &mdash; the periodic rate multiplied by the number of periods. Compounding it ${label} instead of annually raises the effective annual rate from ${pctS(r)} to ${pctS(ear,3)}, so the borrower genuinely owes more at the end of the year while the advertised number never changed. This is exactly why the note insists a rate without its convention is not a rate.`},
+        {html:`The borrower`, correct:false,
+         msg:`Backwards. More frequent compounding means interest starts earning interest sooner, which raises what is owed. On a loan, that is bad for the borrower.`},
+        {html:`Neither &mdash; the APR is the same, so nothing has changed`, correct:false,
+         msg:`That is the trap. The APR is nominal and it has not changed, but the <em>effective</em> annual rate has risen to ${pctS(ear,3)}. The advertised figure is the one thing that stays still.`},
+        {html:`It depends on the size of the loan`, correct:false,
+         msg:`The effect is proportional, so it applies at any size. A larger loan means more dollars, but the direction is the same.`}
+      ]),
+      steps:[
+        `APR ${pctS(r)} compounded annually &rarr; effective annual rate ${pctS(r)}.`,
+        `APR ${pctS(r)} compounded ${label} &rarr; effective annual rate ${pctS(ear,3)}.`,
+        `The advertised number is identical; the amount owed is not.`,
+        `More frequent compounding always favours whoever is receiving the interest.`
+      ]};
+  }}
+
+];
+
+const TOPICS = [
+  {key:"all",      label:"Mixed"},
+  {key:"grow",     label:"Growing forward"},
+  {key:"discount", label:"Discounting"},
+  {key:"simple",   label:"Simple vs compound"},
+  {key:"ear",      label:"APR & EAR"},
+  {key:"cont",     label:"Continuous"},
+  {key:"compare",  label:"Comparing options"},
+  {key:"bond",     label:"Bond pricing"},
+  {key:"annuity",  label:"Annuities"},
+  {key:"perp",     label:"Perpetuities"},
+  {key:"payment",  label:"Loan payments"},
+  {key:"car",      label:"Car finance"},
+  {key:"payday",   label:"Payday loans"},
+  {key:"error",    label:"Find the mistake"},
+  {key:"concept",  label:"Concepts"}
+];
+
+/* ----------------------------------------------------------------- state */
+let active = "all", current = null, tries = 0;
+let peeked = false, solved = false, tallied = false;  // tallied = already counted in `attempted`
+const stats = {att:0, first:0, streak:0, peek:0};
+
+const $ = id => document.getElementById(id);
+
+function buildTopics(){
+  const box = $("topics");
+  TOPICS.forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = t.label;
+    b.setAttribute("aria-pressed", String(t.key===active));
+    b.onclick = ()=>{
+      active = t.key;
+      [...box.children].forEach(c=>c.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");
+      seqIdx = 0;                 // a new topic restarts the sequence
+      newQuestion();
+    };
+    box.appendChild(b);
+  });
+}
+
+const ALL_TEMPLATES = TEMPLATES.concat(CHOICE_TEMPLATES);
+
+/* A template's primary topic is `topic`; it may also list secondary topics in
+   `also`, so one item can appear under several chips. */
+function inTopic(t, key){
+  return t.topic === key || (Array.isArray(t.also) && t.also.includes(key));
+}
+
+/* ---- progress: distinct templates solved without opening the solution ---- */
+const PROG_KEY = "practice-progress:" + document.title;
+let mastered = new Set();
+try { mastered = new Set(JSON.parse(localStorage.getItem(PROG_KEY) || "[]")); }
+catch (e) { mastered = new Set(); }
+
+function saveProgress(){
+  try { localStorage.setItem(PROG_KEY, JSON.stringify([...mastered])); } catch (e) {}
+}
+function markMastered(id){
+  if (!id || mastered.has(id)) return;
+  mastered.add(id);
+  saveProgress();
+}
+
+/* Templates are drawn WITHOUT immediate repeats. Sampling with replacement
+   looks fine on the full bank, but a topic holding only three or four
+   templates repeats roughly one press in three, which reads as the button
+   being broken. Hold the most recent half of the pool out of the draw. */
+let recentIds = [];
+/* Questions seen this session, so the arrow keys can step back and forth through them. */
+let history = [], histIdx = -1;
+let navKey = false;      // true while an arrow key is doing the rendering
+let order = "shuffle";   // "shuffle" | "seq"
+let seqIdx = 0;
+
+function newQuestion(replay){
+  let q;
+  if (replay){ q = replay.q; }
+  else {
+  const pool = active==="all" ? ALL_TEMPLATES : ALL_TEMPLATES.filter(t=>inTopic(t,active));
+  let tpl;
+  if (order === "seq"){
+    /* walk the bank in order, wrapping at the end */
+    if (seqIdx >= pool.length) seqIdx = 0;
+    tpl = pool[seqIdx];
+    seqIdx = (seqIdx + 1) % pool.length;
+    $("seqPos").textContent = `${seqIdx === 0 ? pool.length : seqIdx} of ${pool.length}`;
+  } else {
+    const hold = Math.max(1, Math.floor(pool.length / 2));
+    let choices = pool.filter(t => !recentIds.slice(0, hold).includes(t.id));
+    if (!choices.length) choices = pool;        // pool of one, or all held out
+    tpl = pick(choices);
+    recentIds.unshift(tpl.id);
+    if (recentIds.length > 40) recentIds.length = 40;
+    $("seqPos").textContent = "";
+  }
+  q = tpl.gen();
+  q.name = tpl.name;
+  q.id   = tpl.id;
+  q.seqPos = $("seqPos").textContent;   // carried so stepping back shows its own position
+  if (q.mode !== "choice") q.distractors = usable(q.correct, q.cands, q.sep);
+  }
+  current = q;
+  if (replay){
+    tries = replay.tries; peeked = replay.peeked; solved = replay.solved; tallied = replay.tallied;
+  } else {
+    tries = 0; peeked = false; solved = false; tallied = false;
+    history = history.slice(0, histIdx + 1);           // a new draw discards anything ahead
+    history.push({q, tries:0, peeked:false, solved:false, tallied:false, fb:"", ans:""});
+    if (history.length > 50){ history.shift(); }
+    histIdx = history.length - 1;
+  }
+
+  const isChoice = q.mode === "choice";
+  $("qmeta").textContent = q.name;
+  $("qtext").innerHTML   = q.text;
+  $("qask").innerHTML    = q.ask;
+  /* Hide the input and Check individually, NOT the whole row -- the
+     "New question" button lives in that row and must stay reachable
+     on choice questions. */
+  $("ans").hidden   = isChoice;
+  $("check").hidden = isChoice;
+  $("opts").hidden     = !isChoice;
+  const box = $("opts");
+  box.innerHTML = "";              // always clear, even when the panel is hidden
+  if (isChoice){
+    q.options.forEach((o,k)=>{
+      const btn = document.createElement("button");
+      btn.className = "opt"; btn.innerHTML = o.html;
+      btn.onclick = () => pickOption(k);
+      box.appendChild(btn);
+    });
+  }
+  $("ans").value = "";
+  $("ans").placeholder = q.unit==="money" ? "e.g. 1234.56"
+                     : q.unit==="percent" ? "e.g. 12.34  (percent)"
+                     : "e.g. 18";
+  $("ans").disabled = false;
+  $("check").disabled = false;
+  $("fb").innerHTML = "";
+  $("steps").innerHTML = q.steps.map(s=>`<div>${s}</div>`).join("");
+  const d = $("soldetails"); d.hidden = false; d.open = false;
+  if (replay){
+    /* Put the question back exactly as it was left --- the feedback, what was typed, and
+       whether it had already been answered. The tallied/solved flags come back with it,
+       so revisiting a question never re-counts an attempt or re-awards mastery. */
+    $("fb").innerHTML = replay.fb || "";
+    $("ans").value    = replay.ans || "";
+    $("seqPos").textContent = q.seqPos || "";
+    if (isChoice && q.wrong){
+      [...$("opts").children].forEach((b,j)=>{
+        if (q.wrong.indexOf(j) >= 0){ b.classList.add("wrong"); b.disabled = true; }
+      });
+    }
+    if (solved || q.done){
+      if (isChoice){
+        [...$("opts").children].forEach((b,j)=>{ b.disabled = true;
+          if (q.options[j].correct) b.classList.add("right"); });
+      } else { $("ans").disabled = true; $("check").disabled = true; }
+    }
+    d.open = peeked || solved;
+  }
+  /* Arriving by arrow key must not park the cursor in the answer box: a restored answer
+     sitting there would swallow the next arrow press and strand the student. */
+  if (navKey) $("ans").blur();
+  else if (!isChoice && !$("ans").disabled) $("ans").focus();
+}
+
+function parseInput(raw){
+  const cleaned = raw.replace(/[$,%\s,]/g,"");
+  if (cleaned === "" ) return NaN;
+  return Number(cleaned);
+}
+
+function say(kind, title, body){
+  $("fb").innerHTML = `<div class="fb ${kind}"><strong>${title}</strong>${body}</div>`;
+}
+
+function pickOption(k){
+  const q = current;
+  if (q.done) return;
+  const o    = q.options[k];
+  const btns = [...$("opts").children];
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }
+
+  if (o.correct){
+    q.done = true; solved = true;
+    btns.forEach((b2,j)=>{ b2.disabled = true; if (q.options[j].correct) b2.classList.add("right"); });
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "It still counts as attempted, just not toward first-try accuracy or your streak. " + o.msg);
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok", tries===1 ? "Correct — first try." : "Correct.", o.msg);
+    }
+    $("soldetails").open = true;
+  } else {
+    stats.streak = 0;
+    btns[k].classList.add("wrong");
+    btns[k].disabled = true;
+    (q.wrong || (q.wrong = [])).push(k);   // remembered so a revisit keeps it eliminated
+    say("no","Not that one.", o.msg);
+  }
+  render();
+}
+
+function check(){
+  const raw = $("ans").value;
+  const parsed = parseInput(raw);
+  if (!Number.isFinite(parsed)){
+    say("hint","Enter a number","Type your answer as a number — you can include $ , or % and it will be ignored.");
+    return;
+  }
+  const q = current;
+  const val = q.unit==="percent" ? parsed/100 : parsed;
+  const TOL = q.tol || REL_MATCH;
+
+  /* Unit slips are formatting mistakes, not wrong answers, so they cost
+     neither an attempt nor first-try credit. Guarded so a genuinely
+     correct entry can never be mistaken for one. */
+  if (!near(val, q.correct, TOL)){
+    if (q.unit==="percent" && near(parsed, q.correct, TOL)){
+      say("hint","Right number, wrong units.",
+          `You entered <code>${raw}</code> as a decimal. This box wants a percent — enter <code>${(q.correct*100).toFixed(4).replace(/\.?0+$/,"")}</code> instead.`);
+      return;
+    }
+    if (near(val*100, q.correct, TOL) || near(val/100, q.correct, TOL)){
+      say("hint","Check your units.","Your figure is off by a factor of 100. Re-read what the box is asking for.");
+      return;
+    }
+  }
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }   // count each question once, right or wrong
+
+  if (near(val, q.correct, TOL)){
+    solved = true;
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "That is a perfectly good way to learn, and it still counts as attempted. It does " +
+          "not count toward first-try accuracy or your streak, so those numbers stay honest. " +
+          "Try the next one before opening the solution.");
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok","Correct.", tries===1 ? "First try — well done." : "Got there.");
+    }
+    $("check").disabled = true; $("ans").disabled = true;
+    $("soldetails").open = true;
+    render(); return;
+  }
+
+  stats.streak = 0;
+  const hit = q.distractors.find(d => near(val, d.val, TOL));
+  say("no", hit ? "Not quite — and I can see why." : "Not quite.",
+      hit ? hit.msg
+          : "That does not match any of the usual slips, so it may be an arithmetic error. Try again, or open the worked solution below.");
+  render();
+}
+
+function render(){
+  $("sAtt").textContent    = stats.att;
+  $("sFirst").textContent  = stats.first;
+  $("sAcc").textContent    = stats.att ? Math.round(stats.first/stats.att*100)+"%" : "—";
+  $("sStreak").textContent = stats.streak;
+  $("sPeek").textContent   = stats.peek;
+  const total = ALL_TEMPLATES.length;
+  $("pTotal").textContent  = total;
+  $("pDone").textContent   = mastered.size;
+  $("progfill").style.width = (total ? 100*mastered.size/total : 0).toFixed(1) + "%";
+}
+
+$("check").onclick = check;
+$("next").onclick  = () => newQuestion();   // arrow fn: never pass the click Event as `replay`
+
+/* ---- arrow keys: right for the next question, left for the previous one -------------
+   Ignored while the answer box is being typed in, where the arrows move the caret, and
+   ignored with a modifier held so the browser's own shortcuts still work.            */
+function snapshotQuestion(){
+  const h = history[histIdx];
+  if (!h) return;
+  h.tries = tries; h.peeked = peeked; h.solved = solved; h.tallied = tallied;
+  h.fb = $("fb").innerHTML; h.ans = $("ans").value;
+}
+function goBack(){
+  if (histIdx <= 0) return;
+  snapshotQuestion(); histIdx--;
+  navKey = true; newQuestion(history[histIdx]); navKey = false;
+}
+function goForward(){
+  snapshotQuestion();
+  navKey = true;
+  if (histIdx < history.length - 1){ histIdx++; newQuestion(history[histIdx]); }
+  else newQuestion();
+  navKey = false;
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  const t = e.target;
+  if (t && (t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  /* Inside the answer box the arrows belong to the caret --- but only while it still has
+     somewhere to go. Once it sits at the end you are pressing toward, the press is free,
+     so a half-typed answer never traps a student in the field. */
+  if (t && t.tagName === "INPUT" && !t.disabled){
+    const at = t.selectionStart, to = t.selectionEnd, n = String(t.value).length;
+    if (at === null || at !== to) return;                       // a selection: leave it alone
+    if (e.key === "ArrowRight" ? at < n : at > 0) return;
+  }
+  e.preventDefault();
+  if (e.key === "ArrowRight") goForward(); else goBack();
+});
+$("ans").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("check").disabled) check(); });
+$("soldetails").addEventListener("toggle", ()=>{
+  if ($("soldetails").open && !solved && !peeked){
+    peeked = true;
+    stats.peek++;
+    if (!tallied){ tallied = true; stats.att++; }  // opening it counts as engaging with the question
+    render();
+  }
+});
+
+function setOrder(o){
+  order = o; seqIdx = 0;
+  $("mShuffle").setAttribute("aria-pressed", String(o === "shuffle"));
+  $("mSeq").setAttribute("aria-pressed",     String(o === "seq"));
+  newQuestion();
+}
+$("mShuffle").onclick = () => setOrder("shuffle");
+$("mSeq").onclick     = () => setOrder("seq");
+
+$("pReset").onclick = () => {
+  if (!mastered.size) return;
+  mastered.clear(); saveProgress(); render();
+};
+
+buildTopics();
+newQuestion();
+render();
+</script>
+</body>
+</html>

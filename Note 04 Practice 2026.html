@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forwards & FRAs — Practice</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#5f6672; --line:#e2e5ea;
+    --card:#f7f8fa; --accent:#00205b; --accent-fg:#ffffff;
+    --ok-bg:#e8f5ec; --ok-line:#2e7d47; --ok-fg:#17532c;
+    --no-bg:#fdeceb; --no-line:#c0392b; --no-fg:#8e2b20;
+    --hint-bg:#fff8e6; --hint-line:#b8860b; --hint-fg:#6b4e00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161a; --fg:#e8eaed; --muted:#9aa3af; --line:#2b2f36;
+      --card:#1b1e24; --accent:#7f9cd4; --accent-fg:#0d1015;
+      --ok-bg:#132a1c; --ok-line:#4caf70; --ok-fg:#9fdcb4;
+      --no-bg:#2c1614; --no-line:#e06c5d; --no-fg:#f0a99f;
+      --hint-bg:#2a2313; --hint-line:#d4a017; --hint-fg:#e5c976;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 18px 64px}
+  header{border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:20px}
+  h1{font-size:1.35rem; margin:0 0 4px}
+  .sub{color:var(--muted); font-size:.9rem}
+  .topics{display:flex; flex-wrap:wrap; gap:7px; margin:18px 0}
+  .chip{
+    border:1px solid var(--line); background:var(--card); color:var(--fg);
+    padding:6px 12px; border-radius:999px; cursor:pointer; font-size:.85rem;
+    font-family:inherit;
+  }
+  .chip[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:var(--accent)}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:20px; margin-bottom:16px;
+  }
+  .qmeta{font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+  .qtext{font-size:1.05rem; margin-bottom:6px}
+  .qtext b{font-variant-numeric:tabular-nums}
+  .ask{margin-top:14px; font-weight:600}
+  .row{display:flex; gap:9px; margin-top:14px; flex-wrap:wrap}
+  input[type=text]{
+    flex:1 1 190px; min-width:0; padding:11px 13px; font-size:1rem; font-family:inherit;
+    border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg);
+  }
+  input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px}
+  button{
+    padding:11px 17px; font-size:.95rem; font-family:inherit; border-radius:8px;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-fg);
+    cursor:pointer; font-weight:600;
+  }
+  button.ghost{background:transparent; color:var(--fg); border-color:var(--line); font-weight:500}
+  button:disabled{opacity:.45; cursor:default}
+  .fb{border-radius:8px; padding:13px 15px; margin-top:15px; border-left:4px solid; font-size:.95rem}
+  .fb.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-fg)}
+  .fb.no{background:var(--no-bg); border-color:var(--no-line); color:var(--no-fg)}
+  .fb.hint{background:var(--hint-bg); border-color:var(--hint-line); color:var(--hint-fg)}
+  .fb strong{display:block; margin-bottom:3px}
+  details{margin-top:15px; border-top:1px solid var(--line); padding-top:13px}
+  summary{cursor:pointer; font-size:.9rem; color:var(--muted); font-weight:600}
+  .steps{margin-top:11px; font-size:.92rem}
+  .steps div{padding:5px 0; border-bottom:1px dashed var(--line)}
+  .steps div:last-child{border-bottom:none; font-weight:600}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em;
+    background:var(--bg); padding:1px 5px; border-radius:4px; border:1px solid var(--line);
+  }
+  .opts{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+  .opt{
+    text-align:left; padding:11px 14px; border:1px solid var(--line); background:var(--bg);
+    color:var(--fg); border-radius:8px; cursor:pointer; font-family:inherit;
+    font-size:.95rem; font-weight:400; line-height:1.55;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt.right{background:var(--ok-bg); border-color:var(--ok-line); border-width:2px}
+  .opt.wrong{background:var(--no-bg); border-color:var(--no-line)}
+  .opt:disabled{cursor:default}
+  .opt sup{font-size:.75em}
+  .stats{display:flex; gap:22px; font-size:.86rem; color:var(--muted); margin-top:22px;
+         border-top:1px solid var(--line); padding-top:14px; flex-wrap:wrap}
+  .stats b{color:var(--fg); font-variant-numeric:tabular-nums}
+  footer{margin-top:26px; font-size:.78rem; color:var(--muted); text-align:center}
+  /* The hidden attribute's UA rule is only [hidden]{display:none}, which loses
+     to author rules like .opts{display:flex} and .row{display:flex}. Without
+     this, hiding those panels silently does nothing. */
+  .modes{display:flex; gap:8px; align-items:center; margin-top:10px;
+         font-size:.84rem; color:var(--muted); flex-wrap:wrap}
+  .modes .chip{font-size:.84rem; padding:5px 12px}
+  .prog{margin-top:18px}
+  .progtop{display:flex; justify-content:space-between; align-items:baseline;
+           font-size:.86rem; color:var(--muted); margin-bottom:6px}
+  .progtop b{color:var(--fg); font-variant-numeric:tabular-nums}
+  .progbar{height:9px; border-radius:999px; background:var(--line); overflow:hidden}
+  .progfill{height:100%; width:0%; border-radius:999px; background:var(--accent);
+            transition:width .35s ease}
+  .progreset{background:none; border:none; color:var(--muted); font-size:.8rem;
+             padding:0; cursor:pointer; text-decoration:underline; font-weight:400}
+  .progreset:hover{color:var(--fg)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Forwards & FRAs — Practice</h1>
+  <div class="sub">Companion drills for Note 04 · Professor Anh Le</div>
+</header>
+
+<div class="topics" id="topics" role="group" aria-label="Choose topics"></div>
+
+<div class="modes" id="modes" role="group" aria-label="Question order">
+  <span>Order</span>
+  <button class="chip" id="mShuffle" type="button" aria-pressed="true">Shuffle</button>
+  <button class="chip" id="mSeq" type="button" aria-pressed="false">In order</button>
+  <span id="seqPos"></span>
+</div>
+
+<div class="card" id="card">
+  <div class="qmeta" id="qmeta">—</div>
+  <div class="qtext" id="qtext">Loading…</div>
+  <div class="ask" id="qask"></div>
+  <div class="opts" id="opts" hidden></div>
+  <div class="row" id="inputrow">
+    <input type="text" id="ans" autocomplete="off" inputmode="decimal"
+           placeholder="Your answer" aria-label="Your answer">
+    <button id="check">Check</button>
+    <button id="next" class="ghost">New question</button>
+  </div>
+  <div id="fb"></div>
+  <details id="soldetails" hidden>
+    <summary>Show the worked solution</summary>
+    <div class="steps" id="steps"></div>
+  </details>
+</div>
+
+<div class="prog">
+  <div class="progtop">
+    <span>Templates solved unaided <b id="pDone">0</b> of <b id="pTotal">0</b></span>
+    <button class="progreset" id="pReset" type="button">reset</button>
+  </div>
+  <div class="progbar"><div class="progfill" id="progfill"></div></div>
+</div>
+
+<div class="stats">
+  <span>Attempted <b id="sAtt">0</b></span>
+  <span>Correct first try <b id="sFirst">0</b></span>
+  <span>Accuracy <b id="sAcc">—</b></span>
+  <span>Streak <b id="sStreak">0</b></span>
+  <span>Solutions opened <b id="sPeek">0</b></span>
+</div>
+
+<footer>Numbers are randomised, so every attempt is different. Nothing you type leaves this page.<br>Use the &rarr; and &larr; arrow keys to move between questions.</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ utils */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+/* stepped range, e.g. range(0.04,0.24,0.0025) -> 81 rates instead of a list of 6 */
+const range = (lo,hi,step) => {
+  const out=[]; for(let v=lo; v<=hi+1e-9; v+=step) out.push(Number(v.toFixed(8)));
+  return out;
+};
+const ORD = n => n + (["th","st","nd","rd"][(n%100-n%10!=10)*(n%10<4)*(n%10)]||"th");
+const money = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+const pct   = (v,d=4) => (v*100).toFixed(d).replace(/\.?0+$/,"") + "%";
+const pctS  = (v,d=2) => (v*100).toFixed(d) + "%";
+const REL_SEP  = 0.01;    // distractors must sit >1% from everything else
+const REL_MATCH= 0.0025;  // student answer counts as a match within 0.25%
+
+const near = (a,b,tol) =>
+  Number.isFinite(a) && Number.isFinite(b) &&
+  Math.abs(a-b) / Math.max(Math.abs(a), Math.abs(b), 1e-12) < tol;
+
+/* Drop distractors too close to the answer (or to each other) to diagnose.
+   Templates about small effects (perpetuity timing) pass a tighter `sep`. */
+function usable(correct, cands, sep){
+  const s = sep || REL_SEP;
+  const kept = [];
+  for (const c of cands){
+    if (!Number.isFinite(c.val)) continue;
+    if (near(c.val, correct, s)) continue;
+    if (kept.some(k => near(k.val, c.val, s))) continue;
+    kept.push(c);
+  }
+  return kept;
+}
+
+/* ------------------------------------------------------------- templates */
+
+/* ------------------------------------------------------------ Note 04 ---
+   Forwards and FRAs.  Rates are per annum, semiannually compounded.        */
+const dfOf   = (y,n) => 1/Math.pow(1+y/2, 2*n);
+const yOfDf  = (d,n) => 2*(Math.pow(1/d, 1/(2*n)) - 1);
+/* forward rate implied by the two spot rates r_t (to t) and r_T (to T) */
+const fwdRate = (rt,t,rT,T) =>
+  2*(Math.pow(Math.pow(1+rT/2,2*T)/Math.pow(1+rt/2,2*t), 1/(2*(T-t))) - 1);
+
+const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a share", gen(){
+    const S = pick(range(20,180,2.5));
+    const r = pick(range(.02,.10,.0025));
+    const correct = S*(1+r);
+    return {
+      unit:"money",
+      text:`A share currently sells for <b>${money(S)}</b> and the one-year interest rate is
+            <b>${pctS(r)} p.a., compounded annually</b>. The share pays no dividend.`,
+      ask:"What is the one-year forward price?",
+      correct,
+      cands:[
+        {val:S, msg:`That is the spot price. Your counterparty has to borrow ${money(S)} today to buy the share and carry it for a year, and that borrowing costs interest. The forward price has to cover it.`},
+        {val:S/(1+r), msg:`You discounted instead of growing. The forward price sits at the <em>end</em> of the year, so the spot price is carried forward: ${money(S)} &times; (1+${pctS(r)}).`},
+        {val:S*r, msg:`That is the interest alone &mdash; the cost of carry. The forward price is the spot price <em>plus</em> that carry: ${money(S)} + ${money(S*r)}.`},
+        {val:S*(1+r/2), msg:`You halved the rate. This is a one-year contract quoted at a one-year annual rate; there is no six-month period to halve for.`}
+      ],
+      steps:[
+        `Borrow ${money(S)}, buy the share, hold it for a year`,
+        `The loan grows to ${money(S)} &times; (1 + ${pctS(r)}) = ${money(correct)}`,
+        `Delivering the share for ${money(correct)} exactly repays the loan &mdash; so that is the forward price.`
+      ]};
+  }},
+
+{ id:"w2", topic:"fwdzero", name:"Forward price of a zero from the carry", gen(){
+    /* d1 and r must come off one curve. Drawn independently, d(1) could exceed
+       d(0.5), pricing the forward above par and implying a negative forward
+       rate -- three independent readers caught it. */
+    let d1, r, correct;
+    do {
+      r  = pick(range(.03,.09,.0025));
+      const r1 = r + pick(range(.002,.02,.0005))*pick([1,-1]);
+      d1 = 1/Math.pow(1+r1/2,2);
+      correct = d1*(1+r/2);
+    } while (correct >= 0.999 || d1 <= 0.88);
+    return {
+      unit:"number",
+      text:`A <b>1-year</b> zero with $1 face value costs <b>${d1.toFixed(4)}</b> today, and
+            the six-month rate is <b>${pctS(r)} p.a. compounded semiannually</b>. You want to
+            buy forward, at time 0.5, a 0.5-year zero with $1 face value.`,
+      ask:"What is the forward price? (Four decimals.)",
+      correct,
+      cands:[
+        {val:d1/(1+r/2), msg:`You discounted instead of carrying forward. You borrow ${d1.toFixed(4)} today and repay it <em>with</em> interest in six months, so the forward price is ${d1.toFixed(4)} &times; (1+${pctS(r)}/2).`},
+        {val:d1*(1+r), msg:`You used the full annual rate. The carry runs for six months, so the rate for the period is ${pctS(r)} &divide; 2 = ${pctS(r/2,4)}.`},
+        {val:d1, msg:`That is today's price of the 1-year zero. Six months of financing cost has to be added on top.`},
+        {val:(1+r/2)/d1, msg:`You inverted it. The forward price of a zero is below $1 face, not above it.`}
+      ],
+      steps:[
+        `d(0.5) = 1 / (1 + ${(r/2).toFixed(5)}) = ${(1/(1+r/2)).toFixed(6)}`,
+        `F = d(1) / d(0.5) = d(1) &times; (1 + ${(r/2).toFixed(5)}) = ${d1.toFixed(4)} &times; ${(1+r/2).toFixed(5)}`,
+        `= ${correct.toFixed(4)} &mdash; by then the 1-year zero has become a 0.5-year zero.`
+      ]};
+  }},
+
+{ id:"w3", topic:"fwdzero", name:"Forward price as a ratio of discount factors", gen(){
+    const t = pick([0.5,1,1.5]);
+    const T = t + pick([0.5,1,1.5]);
+    /* see rev1's COLLISION BAND note -- w3 owns the +20bp class */
+    const rt = pick(range(.0320,.0720,.0025));
+    const rT = rt + pick(range(.005,.02,.0025));
+    /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules), so every result
+       reproduces from the page (gridall.js flagged the last digit). */
+    const dt = +dfOf(rt,t).toFixed(6), dT = +dfOf(rT,T).toFixed(6);
+    const correct = dT/dt;
+    return {
+      unit:"number",
+      text:`The discount factors are <b>d<sub>${t}</sub> = ${dt.toFixed(6)}</b> and
+            <b>d<sub>${T}</sub> = ${dT.toFixed(6)}</b>. Consider a forward contract to buy, at
+            time <b>${t}</b>, a $1-face zero maturing at time <b>${T}</b>.`,
+      ask:"What is the forward price? (Four decimals.)",
+      correct,
+      cands:[
+        {val:dt/dT, msg:`Upside down. The contract pays out at time ${T} and settles at time ${t}, so F = d<sub>${T}</sub> &divide; d<sub>${t}</sub>. As written your answer exceeds 1, which no zero's price can.`},
+        {val:dT*dt, msg:`You multiplied the two factors. Set the present value of the contract to zero: &minus;F&times;d<sub>${t}</sub> + 1&times;d<sub>${T}</sub> = 0, which gives a ratio.`},
+        {val:dT, msg:`That is the spot price of the ${T}-year zero. The forward price is higher, because payment is deferred to time ${t}.`},
+        {val:dT-dt, msg:`You subtracted. The no-arbitrage condition divides, it does not subtract.`}
+      ],
+      steps:[
+        `Cash flows: 0 today, &minus;F at time ${t}, +$1 at time ${T}`,
+        `The contract costs nothing to enter, so &minus;F&times;d<sub>${t}</sub> + d<sub>${T}</sub> = 0`,
+        `F = d<sub>${T}</sub> / d<sub>${t}</sub> = ${dT.toFixed(6)} / ${dt.toFixed(6)} = ${correct.toFixed(4)}`
+      ]};
+  }},
+
+{ id:"w4", topic:"arb", also:["fwdzero"], name:"Arbitrage on a mispriced forward", gen(){
+    /* Both the theoretical price and the quoted one must stay below par. A
+       forward above 1.00 on a $1-face zero implies a negative forward rate,
+       which no dealer could post even as a mispricing. */
+    let d1, r, fair, gap, mkt;
+    do {
+      d1 = pick(range(.92,.97,.0005));
+      r  = pick(range(.04,.08,.0025));
+      /* Both prices are printed to four decimals, so build them that way: the key used to
+         be the exact gap while the printed prices differed by 0.0001 more or less on 157 of
+         43,112 draws (22 Sep 2026, gridall.js 04). */
+      fair = +(d1*(1+r/2)).toFixed(4);
+      gap  = pick(range(.004,.02,.0005));
+      mkt  = +(fair + gap).toFixed(4);
+    } while (mkt >= 0.999);
+    const correct = gap;
+    return {
+      unit:"number",
+      text:`The theoretical forward price of a 0.5-year zero, six months out, is
+            <b>${fair.toFixed(4)}</b>. In the market that forward is quoted at
+            <b>${mkt.toFixed(4)}</b>, on $1 of face value.`,
+      ask:"What riskless profit per $1 of face can you lock in? (Four decimals.)",
+      correct,
+      cands:[
+        {val:mkt, msg:`That is the market forward price, not the profit. The profit is what is left after the financing is repaid.`},
+        {val:fair, msg:`That is the theoretical price. The arbitrage captures the <em>gap</em> between the two.`},
+        {val:mkt+fair, msg:`You added the prices. You sell at ${mkt.toFixed(4)} and owe ${fair.toFixed(4)}, so you keep the difference.`},
+        {val:gap*2, msg:`Double-counted. The gap is captured once.`}
+      ],
+      sep:0.02,
+      steps:[
+        `Borrow ${d1.toFixed(4)}, buy the 1-year zero, and sell it forward at ${mkt.toFixed(4)}`,
+        `Cash today: zero`,
+        `At six months: receive ${mkt.toFixed(4)}, repay the loan of ${fair.toFixed(4)}`,
+        `Riskless profit = ${mkt.toFixed(4)} &minus; ${fair.toFixed(4)} = ${correct.toFixed(4)}`
+      ]};
+  }},
+
+{ id:"r1", topic:"fwdrate", name:"Forward rate from a forward price", gen(){
+    const t = 0.5, T = 1;
+    const F = pick(range(.955,.99,.0005));
+    const correct = 2*(1/F - 1);
+    return {
+      unit:"percent",
+      text:`The forward price to buy, in six months, a 0.5-year $1-face zero is
+            <b>${F.toFixed(4)}</b>.`,
+      ask:"What forward interest rate does that imply, p.a. compounded semiannually?",
+      correct,
+      cands:[
+        {val:1/F-1, msg:`That is the interest over the six-month lending period. Annualise it by multiplying by 2.`},
+        {val:1-F, msg:`That is the discount as a fraction of the $1 face, not a rate on the amount lent. Divide by the amount actually lent, ${F.toFixed(4)}, before annualising.`},
+        {val:2*(1-F), msg:`Same problem, annualised: you divided the gain by the face value rather than by what you lent.`},
+        {val:4*(1/F-1), msg:`You annualised by 4. A six-month period goes into a year twice, not four times.`}
+      ],
+      steps:[
+        `That price <em>is</em> the forward discount factor from time 0.5 to time 1: d(0.5,1) = ${F.toFixed(4)}`,
+        `A discount factor and its rate: d = 1/(1+f/2), so f = 2 &times; (1/d &minus; 1)`,
+        `f = 2 &times; (1/${F.toFixed(4)} &minus; 1) = 2 &times; ${(1/F-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually`
+      ]};
+  }},
+
+{ id:"r2", topic:"fwdrate", name:"Forward rate from two spot rates", gen(){
+    /* 22 Sep 2026 (Anh: the shortcut counts as wrong, and the question must say so).
+       The simple-interest shortcut was inside the 0.25% match on 71% of draws, and on
+       Quiz 2's Sample (Q7) it picked the key. Re-drawn until it sits at least 0.10% from
+       the key, so a quiz can show both as distinct options; tol 0.05% marks it wrong,
+       sep 0.08% keeps it on the list. Answers typed to four decimals are off by at most
+       0.0013%. The slip is third in cands, where a quiz swaps it for exactly one option. */
+    let t,T,rt,rT,correct;
+    do {
+      t = pick([0.5,1]);
+      T = t + pick([0.5,1]);
+      rt = pick(range(.03,.07,.0025));
+      rT = rt + pick(range(.008,.025,.0005));
+      correct = fwdRate(rt,t,rT,T);
+    } while (Math.abs(correct - (rT*T-rt*t)/(T-t)) < 0.001*correct);
+    const dt = Math.pow(1+rt/2,-2*t), dT = Math.pow(1+rT/2,-2*T);
+    /* 22 Sep 2026: the last step now substitutes the two SPOT RATES, which the stem prints
+       exactly, instead of the six-decimal forward factor. "2 x (1.026533 - 1) = 5.3065%"
+       did not reproduce -- the figures give 5.3066% (gridall.js 04, STEPS, 658 of 1,617
+       draws) -- because a factor rounded to six decimals pins the rate only to about
+       5e-7, and the question asks for four decimals of a percent. The key is left exactly
+       as the no-arbitrage relation gives it, which is what the question demands ("no
+       shortcuts or approximations"); the printed chain is now that relation written out,
+       so the answer read off the printed figures IS the key on every draw. The factors
+       shown along the way are quoted from the figures printed before them.            */
+    const dt6 = +dt.toFixed(6), dT6 = +dT.toFixed(6);
+    const powT = `(1+${(rT/2).toFixed(5)})<sup>${2*T}</sup>`;
+    const powt = `(1+${(rt/2).toFixed(5)})${2*t===1?"":`<sup>${2*t}</sup>`}`;
+    const root = 2*(T-t)===1 ? "" : `<sup>1/${2*(T-t)}</sup>`;
+    return {
+      unit:"percent",
+      text:`The riskless rate to <b>${t} year${t===1?"":"s"}</b> is <b>${pctS(rt)} p.a.</b> and
+            to <b>${T} year${T===1?"":"s"}</b> is <b>${pctS(rT)} p.a.</b>, both compounded
+            semiannually.`,
+      ask:`What is the forward rate for a loan running from time ${t} to time ${T}, p.a. compounded semiannually? (Use the exact no-arbitrage relation &mdash; no shortcuts or approximations. Give the rate in percent to four decimal places.)`,
+      tol:0.0005,
+      correct,
+      cands:[
+        {val:rT, msg:`That is the spot rate to time ${T}. The forward rate covers only the stretch from ${t} to ${T}, and because the curve is rising it must sit above the ${T}-year spot rate.`},
+        {val:rT-rt, msg:`You subtracted the two rates. Rates compound, so the two ways of lending to time ${T} have to be equated as a product, not a difference.`},
+        {val:(rT*T-rt*t)/(T-t), msg:`That is a simple-interest weighting. It is a decent approximation, but the question asks for the exact rate, and the no-arbitrage relation compounds: (1+r<sub>${T}</sub>/2)<sup>${2*T}</sup> = (1+r<sub>${t}</sub>/2)<sup>${2*t}</sup>(1+f/2)<sup>${2*(T-t)}</sup>.`},
+        {val:rt, msg:`That is the spot rate to time ${t}, which covers the period <em>before</em> the forward loan begins.`}
+      ],
+      sep:0.0008,
+      steps:[
+        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d(${t}) = 1/(1+${(rt/2).toFixed(5)})<sup>${2*t}</sup> = ${dt6.toFixed(6)} and d(${T}) = 1/(1+${(rT/2).toFixed(5)})<sup>${2*T}</sup> = ${dT6.toFixed(6)}`,
+        `The forward discount factor from ${t} to ${T} is d(${t},${T}) = d(${T})/d(${t}) = ${(dT6/dt6).toFixed(6)}`,
+        `It spans ${2*(T-t)} six-month period${2*(T-t)===1?"":"s"}, so d(${t},${T}) = 1/(1+f/2)<sup>${2*(T-t)}</sup> and f = 2 &times; ((d(${t})/d(${T}))${root} &minus; 1)`,
+        `f = 2 &times; ((${powT}/${powt})${root} &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually`
+      ]};
+  }},
+
+{ id:"w5", topic:"fwdzero", also:["fwdrate"], name:"Roll-forward equivalence", gen(){
+    let rt,f;
+    do { rt = pick(range(.03,.07,.0025)); f = rt + pick(range(.025,.05,.0025)); }
+    while (f - rt < 0.025);
+    const correct = Math.pow(1+rt/2,2)*Math.pow(1+f/2,2);
+    return {
+      unit:"number",
+      /* Tolerance set 22 Sep 2026 from the full-grid check: adding the two annual rates was
+         inside 0.25% on the edge of the grid (smallest gap 0.245%). Six decimals asked. Listed
+         third so a quiz offers it, in place of the "divided by the growth" option. */
+      tol:0.0001, sep:0.002,
+      text:`The <b>one-year</b> spot rate is <b>${pctS(rt)} p.a.</b> and the
+            <b>one-year-ahead forward rate for a one-year loan</b> (a one-year forward
+            loan that starts 12 months from now and ends 24 months from now) is
+            <b>${pctS(f)} p.a.</b>, both compounded semiannually.`,
+      ask:"What does $1 lent today grow to after two years? (Six decimals.)",
+      correct,
+      /* order: the adding-rates slip third (22 Sep 2026) */
+      cands:[
+        {val:Math.pow(1+rt/2,4), msg:`You rolled the one-year spot rate across all four periods. Only the first two six-month periods earn ${pctS(rt)}; the two running from month 12 to month 24 earn the forward rate ${pctS(f)}.`},
+        {val:Math.pow(1+f/2,4), msg:`You used the forward rate for all four periods. It applies only from month 12 to month 24; the first twelve months earn the spot rate ${pctS(rt)}.`},
+        {val:1+rt+f, msg:`You added the two annual rates. Interest from month 12 onward is earned on the balance the first twelve months produced, so the growth factors multiply.`},
+        {val:Math.pow(1+rt/2,2)/Math.pow(1+f/2,2), msg:`You divided by the growth from month 12 to month 24 instead of multiplying by it. Lending on for a further year makes the balance grow, so the factor multiplies.`}
+      ],
+      steps:[
+        `Months 0 to 12: $1 &times; (1 + ${(rt/2).toFixed(5)})<sup>2</sup> = ${Math.pow(1+rt/2,2).toFixed(6)}`,
+        `Months 12 to 24 at the forward rate: &times; (1 + ${(f/2).toFixed(5)})<sup>2</sup>`,
+        `Total = ${correct.toFixed(6)}, which must equal (1+r<sub>2</sub>/2)<sup>4</sup> or an arbitrage exists.`
+      ]};
+  }},
+
+{ id:"w6", topic:"forward", name:"The cost of carry", gen(){
+    // S and r are drawn so S x r lands exactly on whole cents. The stem no longer
+    // prints the forward price -- handing over both spot and forward reduced the
+    // question to a subtraction -- but the last step still prints spot + carry as
+    // the forward price, and a half-cent mismatch there would read as an error.
+    const S = pick(range(40,200,10));
+    const r = pick(range(.03,.10,.005));
+    const correct = S*r;
+    return {
+      unit:"money",
+      text:`An asset sells for <b>${money(S)}</b> spot, and the one-year rate is
+            <b>${pctS(r)} p.a., annually compounded</b>.`,
+      ask:"How much of its one-year forward price is the cost of carry?",
+      correct,
+      cands:[
+        {val:S*(1+r), msg:`That is the whole forward price. The carry is only the interest part &mdash; what it costs the counterparty to finance the asset for a year.`},
+        {val:S, msg:`That is the spot price, the part of the forward price that is <em>not</em> carry.`},
+        {val:S*r/2, msg:`You halved the interest. The contract runs a full year at ${pctS(r)}.`},
+        {val:S/(1+r), msg:`That is the present value of the spot price, which is not what the question asks.`}
+      ],
+      steps:[
+        `The counterparty borrows ${money(S)} at ${pctS(r)} to buy the asset and hold it`,
+        `Interest over the year = ${money(S)} &times; ${pctS(r)} = ${money(correct)}`,
+        `Forward price = spot ${money(S)} + carry ${money(correct)} = ${money(S*(1+r))}`
+      ]};
+  }},
+
+{ id:"r3", topic:"fwdrate", name:"Forward rate over a longer period", gen(){
+    const t = 1, T = 2;
+    const F = pick(range(.90,.965,.0005));
+    /* 22 Sep 2026: the last step takes the square root of the PRICE the stem prints, not of
+       the six-decimal 1/F shown on the way. "2 x (1.108647^(1/2) - 1) = 10.5847%" did not
+       reproduce -- those figures give 10.58462% (gridall.js 04, STEPS, 25 of 131 draws) --
+       because six decimals of 1/F pin the rate only to about 5e-7, and the answer is quoted
+       to four decimals of a percent. The price is drawn on a 0.0005 lattice, so it prints
+       exactly, the key is untouched, and the printed chain now returns it exactly.      */
+    const correct = 2*(Math.pow(1/F, 1/(2*(T-t))) - 1);
+    return {
+      unit:"percent",
+      text:`The forward price to buy, at time <b>1</b>, a $1-face zero maturing at time
+            <b>2</b> is <b>${F.toFixed(4)}</b>.`,
+      ask:"What forward rate does that imply, p.a. compounded semiannually?",
+      correct,
+      cands:[
+        {val:2*(1/F-1), msg:`You annualised as though the loan ran six months. It runs a full year, so there are two six-month periods inside it: take the square root before doubling.`},
+        {val:1/F-1, msg:`That is the total interest over the whole year of the forward loan, not a semiannually compounded annual rate.`},
+        {val:Math.pow(1/F,1/2)-1, msg:`That is the rate per six-month period, one step short. Multiply by 2.`},
+        {val:1-F, msg:`That is the discount as a fraction of face value, not a rate on the amount lent.`}
+      ],
+      steps:[
+        `That price <em>is</em> the forward discount factor from time 1 to time 2: d(1,2) = ${F.toFixed(4)}`,
+        `It spans ${2*(T-t)} six-month periods, so d = 1/(1+f/2)<sup>2</sup> and (1+f/2)<sup>2</sup> = 1/${F.toFixed(4)} = ${(1/F).toFixed(6)}`,
+        `f = 2 &times; ((1/d)<sup>1/2</sup> &minus; 1) = 2 &times; ((1/${F.toFixed(4)})<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually`
+      ]};
+  }},
+
+/* ------------- curve shape, the roll relation, and reasoning -------------- */
+
+{ id:"r4", topic:"fwdrate", also:["reason"], name:"Forward rate on an inverted curve", gen(){
+    let rt,rT;
+    /* 22 Sep 2026: also re-drawn when the forward rate is at or below 0.5% (19 of 152
+       draws were, some negative, down to -1.19%). The linear shortcut counts as wrong
+       (Anh): it was inside the 0.25% match on 6.6% of draws; its smallest gap on this
+       grid is 0.165%, so tol 0.05% marks it wrong and sep 0.12% keeps it listed.        */
+    do { rt=pick(range(.055,.095,.0025)); rT=rt-pick(range(.015,.035,.0025)); }
+    while (rT < 0.02 || 2*(Math.pow(1+rT/2,2)/(1+rt/2)-1) <= 0.005);
+    const correct=2*(Math.pow(1+rT/2,2)/(1+rt/2)-1);
+    /* 22 Sep 2026: the last step substitutes the two SPOT RATES, which the stem prints
+       exactly, instead of the six-decimal forward factor. "2 x (1/0.986383 - 1) = 2.7609%"
+       did not reproduce -- the figures give 2.76100% (gridall.js 04, STEPS, 64 of 133
+       draws) -- because six decimals of the factor pin the rate only to about 1e-6, and
+       the answer is quoted to four decimals of a percent. The key is left exactly as the
+       no-arbitrage relation gives it, which is what the question demands ("no shortcuts or
+       approximations"); the printed chain is now that relation written out, so the answer
+       read off the printed figures IS the key on every draw.                           */
+    const d05P = +(1/(1+rt/2)).toFixed(6), d10P = +Math.pow(1+rT/2,-2).toFixed(6);
+    return {
+      unit:"percent",
+      text:`The curve is <b>inverted</b>: the six-month rate is <b>${pctS(rt)}</b> and the one-year
+            rate is <b>${pctS(rT)}</b>, both p.a. compounded semiannually.`,
+      ask:"What is the forward rate for a six-month loan starting in six months, p.a. compounded semiannually? (Use the exact no-arbitrage relation &mdash; no shortcuts or approximations. Give the rate in percent to four decimal places.)",
+      tol:0.0005, sep:0.0012,
+      correct,
+      cands:[
+        {val:rT, msg:`That is the one-year spot rate. It is a blend of the first six months at ${pctS(rt)} and the forward six months. Since the blend is <em>below</em> the first leg here, the second leg must be below the blend.`},
+        {val:rt, msg:`That is the six-month spot rate, which covers the period <em>before</em> the forward loan starts.`},
+        {val:2*rT-rt, msg:`That extrapolates the drop in a straight line &mdash; a shortcut, and the question asks for the exact rate. Rates compound, so the relation is a product: (1+r<sub>1</sub>/2)<sup>2</sup> = (1+r<sub>0.5</sub>/2)(1+f/2).`}
+      ],
+      steps:[
+        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d(0.5) = 1/(1+${(rt/2).toFixed(5)}) = ${d05P.toFixed(6)} and d(1) = 1/(1+${(rT/2).toFixed(5)})<sup>2</sup> = ${d10P.toFixed(6)}`,
+        `The forward discount factor from 0.5 to 1 is d(0.5,1) = d(1)/d(0.5) = ${(d10P/d05P).toFixed(6)}`,
+        `d(0.5,1) = 1/(1+f/2), so f = 2 &times; (1/d(0.5,1) &minus; 1) = 2 &times; ((1+${(rT/2).toFixed(5)})<sup>2</sup>/(1+${(rt/2).toFixed(5)}) &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually — <em>below</em> both spot rates`,
+        `On an upward-sloping curve the forward rate sits above both. Invert the curve and it sits below both. Neither is a rule about forward rates; both follow from the shape.`
+      ]};
+  }},
+
+
+{ id:"arb2", topic:"arb", also:["fwdrate","reason"], name:"Arbitrage against a quoted forward rate", gen(){
+    const N=pick([1000000,5000000,10000000,25000000]);
+    const rt=pick(range(.03,.06,.0025));
+    const rT=rt+pick(range(.01,.025,.0025));
+    const fair=2*(Math.pow(1+rT/2,2)/(1+rt/2)-1);
+    const off=pick(range(.004,.02,.001))*pick([1,-1]);
+    /* The dealer's quote is a round rate, on a quarter-point grid (Anh's rule, 22 Sep 2026:
+       no rates like 10.719% that students must key in). The offset is at least 0.40%, so
+       rounding by at most 0.125% never closes the gap or flips its sign. The key is built
+       from the quote as displayed.                                                     */
+    const q=Math.round((fair+off)*400)/400;
+    const correct=Math.abs((1+rt/2)*(1+q/2)-Math.pow(1+rT/2,2))*N;
+    const half=N*(1+rt/2), roll=half*(1+q/2), straight=N*Math.pow(1+rT/2,2);
+    const lendStraight = straight > roll;
+    return {
+      unit:"money",
+      text:`Spot rates (all quoted p.a. compounded semiannually) are <b>${pctS(rt)}</b> to six months
+            and <b>${pctS(rT)}</b> to one year. A dealer quotes a six-month-ahead forward rate of
+            <b>${pctS(q,2)} p.a. compounded semiannually</b> for a six-month loan.`,
+      ask:`How much riskless profit is available at the one-year horizon, by appropriately combining spot and forward loans, if you borrow and lend ${money(N)} at t = 0?`,
+      correct,
+      cands:[
+        {val:Math.abs(q-fair)*N, msg:`You applied the rate error to the starting amount as though it ran a full year. It applies over six months and then has to be carried to the one-year horizon, so scale it properly.`},
+        {val:Math.abs(q-fair)*N/2, msg:`Closer — that is the rate error over six months — but applied to the starting amount. The forward loan is on the balance at six months, which has already grown; the profit is the difference between the two grown amounts at time 1.`},
+        {val:N*Math.pow(1+rT/2,2), msg:`That is what the starting amount grows to over the year, not the profit.`},
+        {val:correct*2, msg:`Double-counted. The gap is captured once.`}
+      ],
+      sep:0.02,
+      steps:[
+        `Fair forward rate = ${pctS(fair,4)} p.a. compounded semiannually; the dealer quotes ${pctS(q,2)} p.a. &mdash; too ${q<fair?"low":"high"}.`,
+        `<b>Roll.</b> Lend ${money(N)} for six months at ${pctS(rt)} p.a. compounded semiannually, which grows to ${money(half)}; then lend that on from month 6 to month 12 at the dealer's ${pctS(q,2)}: ${money(half)} &times; (1 + ${(q/2).toFixed(5)}) = <b>${money(roll)}</b>`,
+        `<b>Straight.</b> Lend the same ${money(N)} for the full year at ${pctS(rT)} p.a. compounded semiannually: ${money(N)} &times; (1 + ${(rT/2).toFixed(5)})<sup>2</sup> = <b>${money(straight)}</b>`,
+        `The ${lendStraight?"straight":"roll"} leg pays more, so <b>lend ${lendStraight?"straight and borrow through the roll":"through the roll and borrow straight"}</b>. At time 0 you borrow ${money(N)} and lend ${money(N)} &mdash; nothing changes hands. At six months the ${money(half)} falling due on one leg is exactly matched by the other. Time 1 is the first date with a net flow.`,
+        `Profit = larger amount &minus; smaller amount = ${money(Math.max(roll,straight))} &minus; ${money(Math.min(roll,straight))} = <b>${money(Math.abs(+roll.toFixed(2) - +straight.toFixed(2)))}</b> at time 1, with no money down and no risk.`,
+        `Note that the ${money(N)} scales the profit and nothing else: every cash flow before time 1 nets to zero, so no capital is tied up at any point.`
+      ]};
+  }},
+
+{ id:"rev1", topic:"fwdzero", also:["reason"], name:"Recover a missing discount factor", gen(){
+    const t=pick([0.5,1,1.5]), T=t+pick([0.5,1,1.5]);
+    /* COLLISION BAND, do not round back to .03. rev1 and w3 are the same triangle
+       F = d(T)/d(t) with a different unknown each time, and both drew rates off one
+       quarter-point lattice starting at 3.000% -- so they displayed the same discount
+       factors while implying different curves, 24 shared factors between them. Both
+       carry topic "fwdzero", so a student drills them back to back. Each owns a residue
+       class mod 25bp: rev1 +10bp, w3 +20bp. The spread is drawn on the same 25bp lattice
+       so d(T) stays in its template's class too. Checked by _tools/collide.js.
+       (w7 held +5bp and was parked 4 Sep 2026; that class is free.)                   */
+    const rt=pick(range(.0310,.0760,.0025));
+    const rT=rt+pick(range(.0025,.015,.0025));
+    /* derive both factors from one curve, so d(T) < d(t) always holds and the
+       forward price stays below 1 -- drawing them independently lets d(T)
+       exceed d(t), which would price a zero above par */
+    const dt=1/Math.pow(1+rt/2,2*t), dT=1/Math.pow(1+rT/2,2*T);
+    /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules), so every result
+       reproduces from the page (gridall.js flagged the last digit). */
+    const F=+(dT/dt).toFixed(6), dtP=+dt.toFixed(6), dTP=F*dtP;
+    return {
+      unit:"number",
+      tol:0.0015, sep:0.0015,
+      text:`A forward contract to buy a \$1-face zero at time <b>${t}</b>, maturing at <b>${T}</b>,
+            has a forward price of <b>${F.toFixed(6)}</b>. Today's discount factor to time
+            <b>${t}</b> is <b>${dt.toFixed(6)}</b>.`,
+      ask:`What is today's discount factor for maturity ${T}? (Six decimals.)`,
+      correct:dTP,
+      cands:[
+        {val:F/dt, msg:`You divided again. F = d<sub>${T}</sub>/d<sub>${t}</sub>, so recovering the far factor means <em>multiplying</em>: d<sub>${T}</sub> = F &times; d<sub>${t}</sub>.`},
+        {val:dt/F, msg:`Inverted. That gives the ratio the wrong way up.`},
+        {val:dt, msg:`That is the factor you were already given.`},
+        {val:F, msg:`That is the forward price. It is above d<sub>${T}</sub> precisely because payment is deferred to time ${t}.`}
+      ],
+      steps:[
+        `Cash flows: 0 today, &minus;F at time ${t}, +\$1 at time ${T}`,
+        `A forward contract costs nothing to enter, so those cash flows must have zero present value: &minus;F &times; d<sub>${t}</sub> + d<sub>${T}</sub> = 0`,
+        `so d<sub>${T}</sub> = F &times; d<sub>${t}</sub> = ${F.toFixed(6)} &times; ${dt.toFixed(6)} = ${dTP.toFixed(6)}`,
+        `Note the check: d<sub>${T}</sub> must come out <em>below</em> d<sub>${t}</sub>. A later dollar is always worth less.`
+      ]};
+  }},
+
+{ id:"rev2", topic:"fwdrate", also:["reason"], name:"Recover a missing spot rate", gen(){
+    const rt=pick(range(.03,.07,.0025));
+    const f=rt+pick(range(.015,.04,.0025));
+    /* 22 Sep 2026: the last step substitutes the two RATES, which the stem prints exactly,
+       instead of the six-decimal d(1) shown on the way. "2 x ((1/0.962365)^(1/2) - 1) =
+       3.8731%" did not reproduce -- those figures give 3.873175% (gridall.js 04, STEPS, 44
+       of 187 draws) -- because six decimals of d(1) pin the rate only to about 5e-7 and the
+       question asks for the exact answer. The key is left exactly as the chaining relation
+       gives it; the printed chain is now that relation written out, so the answer read off
+       the printed figures IS the key on every draw.                                     */
+    const correct=2*(Math.sqrt((1+rt/2)*(1+f/2))-1);
+    return {
+      unit:"percent",
+      /* Tightened 14 Sep 2026 (Anh: count the average as wrong). The arithmetic average is
+         never more than 1bp from the key, so at the default 0.25% it always scored and its
+         feedback never showed. Its smallest relative gap on this grid is 1.75e-4; an answer
+         typed to four decimals is off by at most 1.4e-5. Listed second so a quiz offers it. */
+      tol:0.0001, sep:0.00015,
+      text:`The six-month spot rate is <b>${pctS(rt)}</b> p.a. and the six-month-ahead forward rate
+            for a six-month loan is <b>${pctS(f)}</b> p.a., both compounded semiannually.`,
+      ask:"What one-year spot rate is implied, p.a. compounded semiannually? (Work it out exactly — no shortcuts or approximations.)",
+      correct,
+      cands:[
+        {val:rt+f, msg:`You added the two annualised rates. Each covers only six months.`},
+        {val:(rt+f)/2, msg:`That is the arithmetic average. Growth factors multiply, so the one-year factor is the <em>geometric</em> blend: (1 + r<sub>1</sub>/2)<sup>2</sup> = (1 + r<sub>0.5</sub>/2) &times; (1 + f/2).`},
+        {val:f, msg:`That is the forward rate. The one-year spot rate is a blend of it and the near rate, so it must sit between them.`},
+        {val:f-rt, msg:`That is the gap between them, not a level.`}
+      ],
+      steps:[
+        `Discount factors chain along the timeline: d(1) = d(0.5) &times; d(0.5,1)`,
+        `= 1/(1+${(rt/2).toFixed(5)}) &times; 1/(1+${(f/2).toFixed(5)}) = ${(1/((1+rt/2)*(1+f/2))).toFixed(6)}`,
+        `r<sub>1</sub> = 2 &times; ((1/d(1))<sup>1/2</sup> &minus; 1) = 2 &times; (((1+${(rt/2).toFixed(5)})&times;(1+${(f/2).toFixed(5)}))<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually, which sits between ${pctS(rt)} and ${pctS(f)} as it must.`
+      ]};
+  }},
+
+{ id:"age2", topic:"forward", also:["fwdzero","reason"], name:"Which maturity do you buy today?", gen(){
+    const t=pick([0.5,1,1.5,2]), rem=pick([0.5,1,1.5,2,3]);
+    const correct=t+rem;
+    return {
+      unit:"number",
+      text:`You want to hold, at time <b>${t}</b>, a zero with exactly <b>${rem}
+            year${rem===1?"":"s"}</b> left to run.`,
+      ask:"What maturity must the zero you buy today have?",
+      correct,
+      cands:[
+        {val:rem, msg:`That is what you want it to be <em>at delivery</em>. Bonds age while you wait, so a zero bought today with ${rem} years to run would have only ${Math.max(rem-t,0)} left by time ${t}.`},
+        {val:Math.abs(rem-t), msg:`You subtracted the waiting period. It has to be added: the bond must survive the wait and then still have ${rem} years in it.`},
+        {val:t, msg:`That is the delivery date, not a maturity.`},
+        {val:rem+t/2, msg:`Only half the wait was added. The whole of it counts.`}
+      ],
+      steps:[
+        `maturity today = delivery date + maturity remaining at delivery`,
+        `= ${t} + ${rem} = ${correct} years`,
+        `Same idea as forward-buying a one-year-old car: today you are looking at a new one.`
+      ]};
+  }},
+
+{ id:"exp1", topic:"fwdrate", also:["reason","concept"], name:"Back out the premium", gen(){
+    const f=pick(range(.055,.10,.0025));
+    const e=f-pick(range(.005,.025,.0025));
+    const correct=f-e;
+    return {
+      unit:"percent",
+      text:`The six-month-ahead forward rate is <b>${pctS(f)} p.a. compounded semiannually</b>. Investors
+            expect the six-month spot rate six months from now to be <b>${pctS(e)} p.a. compounded
+            semiannually</b>.`,
+      ask:"What premium is implied?",
+      correct,
+      cands:[
+        {val:e-f, msg:`Sign reversed. The forward rate exceeds the expected future spot rate here, so the premium is positive.`},
+        {val:f+e, msg:`The premium is the difference between the two, not their sum.`},
+        {val:f, msg:`That is the forward rate itself, which equals the expected spot rate <em>plus</em> the premium.`},
+        {val:e, msg:`That is the expected future spot rate.`}
+      ],
+      steps:[
+        `forward rate = expected future spot rate + premium`,
+        `${pctS(f)} = ${pctS(e)} + premium`,
+        `premium = ${pctS(correct,4)}`,
+        `A positive premium is what compensates a lender for tying money up rather than rolling short.`
+      ]};
+  }},
+];
+
+/* ======================= CHOICE-MODE ITEMS ==============================
+   Auto-graded by which option is clicked, not by a typed number.
+     topic "error"   — a worked solution with one planted mistake
+     topic "concept" — reason about the direction of an effect, no arithmetic
+   Directional items shuffle their own options so position carries no
+   information; spot-the-error items must stay in step order.            */
+
+function shuffle(a){
+  const out = a.slice();
+  for (let i=out.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [out[i],out[j]] = [out[j],out[i]];
+  }
+  return out;
+}
+
+const CHOICE_TEMPLATES = [
+{ id:"e1", topic:"error", also:["fwdzero"], name:"Find the mistake — forward price of a zero", gen(){
+    // Both figures must come from one curve. Drawing the 1-year zero price
+    // independently of the six-month rate lets d(1) exceed d(0.5), which prices the
+    // zero forward above par and implies a negative forward rate.
+    const r  = pick(range(.04,.085,.005));                 // six-month rate, p.a. s.a.
+    const fw = pick(range(.03,.08,.005));                  // six-month rate, six months forward
+    const d1 = +(1/((1+r/2)*(1+fw/2))).toFixed(4);         // 1-year zero off that curve
+    const fault = pick(["direction","annual","maturity"]);
+    const F = fault==="direction" ? d1/(1+r/2)
+            : fault==="annual"    ? d1*(1+r)
+            :                       d1*(1+r/2);
+    const s = [
+      `<b>Step 1.</b> Borrow ${d1.toFixed(4)} today and buy the 1-year $1-face zero`,
+      fault==="annual"
+        ? `<b>Step 2.</b> The carry runs six months, so the rate to apply is ${pctS(r)}.`
+        : `<b>Step 2.</b> The carry runs six months, so the rate to apply is ${pctS(r)} &divide; 2 = ${pctS(r/2,4)}.`,
+      fault==="direction"
+        ? `<b>Step 3.</b> Loan repayment at six months = ${d1.toFixed(4)} &divide; (1 + the rate above) = ${F.toFixed(4)}`
+        : `<b>Step 3.</b> Loan repayment at six months = ${d1.toFixed(4)} &times; (1 + the rate above) = ${F.toFixed(4)}`,
+      fault==="maturity"
+        ? `<b>Step 4.</b> After six months the bond is still a 1-year zero, so ${F.toFixed(4)} is the forward price of a 1-year zero`
+        : `<b>Step 4.</b> After six months the bond has become a 0.5-year zero, so ${F.toFixed(4)} is the forward price of a 0.5-year zero`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; to deliver a bond in six months you buy it today and finance it.`,
+      `Step 2 is fine &mdash; a rate quoted per annum compounded semiannually is halved for a six-month period.`,
+      `Step 3 is fine &mdash; the loan is repaid with interest, so the amount owed grows.`,
+      `Step 4 is fine &mdash; six months of a 1-year bond's life have elapsed, leaving six months to maturity.`
+    ];
+    let at, why;
+    if (fault==="annual"){
+      at=1; why=`${pctS(r)} is quoted per annum compounded semiannually, so the carry over six months costs ${pctS(r)} &divide; 2 = ${pctS(r/2,4)}. Step 3 inherits the doubled rate.`;
+    } else if (fault==="direction"){
+      at=2; why=`The loan was <em>discounted</em> rather than grown. You owe more in six months than you borrowed today, so the repayment is ${d1.toFixed(4)} &times; (1+${(r/2).toFixed(5)}), which is above ${d1.toFixed(4)}, not below it.`;
+    } else {
+      at=3; why=`A bond ages. The 1-year zero bought today has six months left to run after six months have passed, so what you are delivering is a <em>0.5-year</em> zero. To forward-buy a 1-year zero you would have had to start with an 18-month one.`;
+    }
+    return {
+      mode:"choice",
+      text:`A student works out the forward price to buy, in six months, a 0.5-year $1-face
+            zero. The 1-year zero costs <b>${d1.toFixed(4)}</b> and the six-month rate is
+            <b>${pctS(r)} p.a. compounded semiannually</b>. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,q)=>({html, correct:q===at, msg: q===at ? why : fine[q]})),
+      steps:[
+        `Borrow ${d1.toFixed(4)}, buy the 1-year zero &mdash; net cash today is zero`,
+        `At six months, repay ${d1.toFixed(4)} &times; (1+${(r/2).toFixed(5)}) = ${(d1*(1+r/2)).toFixed(4)}`,
+        `The bond is now a 0.5-year zero, so that repayment is the forward price.`
+      ]};
+  }},
+
+{ id:"k1", topic:"concept", also:["forward"], name:"Is the counterparty gambling?", gen(){
+    const opts = shuffle([
+      {html:`No &mdash; they buy the share today with borrowed money and hold it, so they can always deliver`, correct:true,
+       msg:`Right. Buying spot and carrying to delivery removes the risk entirely. Whatever the share does in between, they hold it and owe a fixed loan repayment.`},
+      {html:`Yes &mdash; they lose whenever the share ends up above the forward price`, correct:false,
+       msg:`Only if they had not hedged. Having bought the share at the outset, a rise costs them nothing: they hand over a share they already own.`},
+      {html:`Yes, but the risk is acceptable because shares rise on average`, correct:false,
+       msg:`No. The forward price does not depend on any view about the share's direction; it comes from the spot price and the financing cost.`},
+      {html:`No, because the forward price always equals what the share will be worth`, correct:false,
+       msg:`It does not. Nobody knows the future price, and the forward price is generally not equal to it. The hedge is what removes the risk, not a forecast.`}
+    ]);
+    return {mode:"choice",
+      text:`Your counterparty has promised to sell you a share for a fixed price in a year, and
+            nobody knows what it will be worth by then.`,
+      ask:"Is the counterparty taking a gamble?",
+      options:opts,
+      steps:[
+        `Borrow the spot price today and buy the share`,
+        `Hold it for the year`,
+        `At delivery, collect the forward price and repay the loan. The forward price is set so those exactly offset.`
+      ]};
+  }},
+
+{ id:"k2", topic:"concept", also:["fwdzero"], name:"What it costs to enter a forward", gen(){
+    const opts = shuffle([
+      {html:`Nothing &mdash; the forward price is set so that the contract has zero value today`, correct:true,
+       msg:`Right, and that is what pins the forward price down: &minus;F&times;d<sub>t</sub> + d<sub>T</sub> = 0, so F = d<sub>T</sub>/d<sub>t</sub>.`},
+      {html:`The forward price, paid today`, correct:false,
+       msg:`No. The forward price is paid on the settlement date, not today. That deferral is exactly why the forward price exceeds the spot price of the zero.`},
+      {html:`The difference between the forward price and the spot price`, correct:false,
+       msg:`No. Nothing changes hands at inception at all.`},
+      {html:`The present value of the expected gain`, correct:false,
+       msg:`No. There is no expectation involved, and no payment at inception.`}
+    ]);
+    return {mode:"choice",
+      text:`You enter a forward contract to buy, at time <b>t</b>, a $1-face zero maturing at
+            time <b>T</b>.`,
+      ask:"What does entering the contract cost you today?",
+      options:opts,
+      steps:[
+        `Cash flows are 0 today, &minus;F at time t, +$1 at time T`,
+        `Because nothing is paid today, the present value of the rest must be zero`,
+        `&minus;F&times;d<sub>t</sub> + d<sub>T</sub> = 0 &nbsp;&rArr;&nbsp; F = d<sub>T</sub>/d<sub>t</sub>`
+      ]};
+  }},
+
+{ id:"k3", topic:"concept", also:["fwdzero"], name:"The forward as a portfolio of zeros", gen(){
+    const opts = shuffle([
+      {html:`Long a $1-face zero maturing at T, short a $F-face zero maturing at t`, correct:true,
+       msg:`Right. That reproduces the cash flows exactly: nothing today, &minus;F at time t, +$1 at time T.`},
+      {html:`Long a $1-face zero maturing at t, short a $F-face zero maturing at T`, correct:false,
+       msg:`Reversed. You <em>receive</em> the dollar at T and <em>pay</em> F at t, so the long leg is the far one.`},
+      {html:`Long both zeros`, correct:false,
+       msg:`Then the position would cost money today. A forward costs nothing to enter, so one leg has to be short.`},
+      {html:`Short both zeros`, correct:false,
+       msg:`Then you would receive money today. Again, a forward has no cash flow at inception.`}
+    ]);
+    return {mode:"choice",
+      text:`A forward to buy a $1-face zero at time <b>t</b>, maturing at time <b>T</b>, pays
+            nothing today, <b>&minus;F</b> at time t and <b>+$1</b> at time T.`,
+      ask:"Which portfolio of zeros has exactly those cash flows?",
+      options:opts,
+      steps:[
+        `+$1 at time T is a long position in a $1-face zero maturing at T`,
+        `&minus;F at time t is a short position in a $F-face zero maturing at t`,
+        `Their combined value today is d<sub>T</sub> &minus; F&times;d<sub>t</sub>, which must be zero.`
+      ]};
+  }},
+
+{ id:"k4", topic:"concept", also:["fra"], name:"Why an FRA settles on the difference", gen(){
+    const opts = shuffle([
+      {html:`It cuts the credit exposure down to the interest difference rather than the whole principal`, correct:true,
+       msg:`Right. Nobody actually lends the notional, so a counterparty failure costs you only the rate difference on it, not the principal itself.`},
+      {html:`Because the parties do not know the notional amount in advance`, correct:false,
+       msg:`They do &mdash; it is written into the contract. It is simply never exchanged.`},
+      {html:`Because interest rates are unpredictable`, correct:false,
+       msg:`True but beside the point. The design choice is about limiting credit risk, not about forecasting.`},
+      {html:`To avoid paying tax on the principal`, correct:false,
+       msg:`No. The reason is credit risk.`}
+    ]);
+    return {mode:"choice",
+      text:`In practice an FRA involves no borrowing or lending at all. Only the difference
+            between the actual and the contracted interest, computed on a notional amount,
+            changes hands.`,
+      ask:"Why is the contract designed that way?",
+      options:opts,
+      steps:[
+        `If the full notional were lent, a counterparty failure could cost the whole principal.`,
+        `Settling on the difference leaves only the rate difference at risk.`,
+        `That is a far smaller number, so the contract is far safer.`
+      ]};
+  }},
+
+{ id:"k5", topic:"concept", also:["fwdrate"], name:"The pure expectations hypothesis", gen(){
+    const opts = shuffle([
+      {html:`The forward rate equals the expected future spot rate`, correct:true,
+       msg:`Right. If it holds, today's curve gives unbiased forecasts of future curves, and long and short bonds have the same expected return.`},
+      {html:`The forward rate always equals the realised future spot rate`, correct:false,
+       msg:`Far too strong. The hypothesis is about the <em>expectation</em>; the realised rate is random and will differ.`},
+      {html:`Forward rates are always above future spot rates`, correct:false,
+       msg:`That is a statement about a premium, and it is the sort of thing the pure expectations hypothesis <em>denies</em>.`},
+      {html:`The yield curve must slope upward`, correct:false,
+       msg:`No. The hypothesis says nothing about the shape; a downward-sloping curve simply means falling rates are expected.`}
+    ]);
+    return {mode:"choice",
+      text:`You can fix a rate today for a loan starting later, or wait and take whatever spot
+            rate prevails then.`,
+      ask:"What does the pure expectations hypothesis claim?",
+      options:opts,
+      steps:[
+        `Under the hypothesis, f<sub>t</sub><sup>T</sup> = E[future spot rate].`,
+        `Implication 1: today's curve is an unbiased forecast of future curves.`,
+        `Implication 2: a 1-year zero and a rolled 0.5-year zero have the same expected return.`
+      ]};
+  }},
+
+{ id:"k6", topic:"concept", also:["forward"], name:"Why fixed income needs a longer bond", gen(){
+    const opts = shuffle([
+      {html:`Bonds age, so a bond that is 0.5-year at delivery must be a 1-year bond today`, correct:true,
+       msg:`Right &mdash; the same reason a forward purchase of a one-year-old car means buying a brand new one today.`},
+      {html:`Because longer bonds are cheaper`, correct:false,
+       msg:`Price is not the issue. The issue is that a fixed income security has a fixed maturity date, and time passes.`},
+      {html:`Because short bonds cannot be borrowed`, correct:false,
+       msg:`Not the point. The mechanism is buy-and-carry, and what you carry ages while you hold it.`},
+      {html:`It does not &mdash; you buy the 0.5-year bond today and hold it`, correct:false,
+       msg:`Hold a 0.5-year bond for six months and it matures. There would be nothing left to deliver.`}
+    ]);
+    return {mode:"choice",
+      text:`To home-make a forward on a share you buy the share today. To home-make a forward
+            on a <b>0.5-year zero deliverable in six months</b>, you buy a <b>1-year</b> zero
+            today.`,
+      ask:"Why the difference?",
+      options:opts,
+      steps:[
+        `Fixed income securities have maturity dates; equities do not.`,
+        `Six months from now, today's 1-year zero has six months left to run.`,
+        `So it is precisely the 0.5-year zero the contract calls for.`
+      ]};
+  }},
+
+{ id:"k7", topic:"concept", also:["arb"], name:"Which way to trade a rich forward", gen(){
+    const opts = shuffle([
+      {html:`Sell the forward, and buy and carry the zero that replicates it`, correct:true,
+       msg:`Right. Sell the expensive one, build the cheap one. You collect the market forward price and owe only the financed cost.`},
+      {html:`Buy the forward, and short the replicating zero`, correct:false,
+       msg:`That is the trade for the opposite mispricing &mdash; when the market forward is <em>below</em> the theoretical price.`},
+      {html:`Buy both the forward and the zero`, correct:false,
+       msg:`That doubles the exposure in one direction. An arbitrage is long one side, short the other.`},
+      {html:`Wait for the market to correct before trading`, correct:false,
+       msg:`Waiting earns nothing. The gap is riskless money available now, and acting on it is what closes it.`}
+    ]);
+    return {mode:"choice",
+      text:`The theoretical forward price of a zero is <b>0.9736</b>, but the market quotes the
+            forward at <b>0.9800</b>.`,
+      ask:"What is the trade?",
+      options:opts,
+      steps:[
+        `Borrow 0.9477 and buy the 1-year zero &mdash; net cash today is zero`,
+        `Sell the 0.5-year zero forward at the market's 0.9800`,
+        `At six months, deliver the bond, collect 0.9800, repay 0.9736, keep 0.0064 riskless.`
+      ]};
+  }},
+
+{ id:"k8", topic:"concept", also:["fwdrate"], name:"Curve shape and the forward rate", gen(){
+    const opts = shuffle([
+      {html:`Above both, since it covers only the later stretch and must pull the average up`, correct:true,
+       msg:`Right. The 1-year rate is a blend of the first six months and the forward six months. If the blend exceeds the first leg, the second leg must exceed the blend.`},
+      {html:`Between the two spot rates`, correct:false,
+       msg:`No. That is where an <em>average</em> would sit, but the forward rate is the marginal rate over the second period, not an average.`},
+      {html:`Below the six-month rate`, correct:false,
+       msg:`That would drag the one-year rate below the six-month rate, and the curve here slopes upward.`},
+      {html:`Equal to the one-year rate`, correct:false,
+       msg:`Only if the curve were flat. Here the one-year rate is above the six-month rate.`}
+    ]);
+    return {mode:"choice",
+      text:`The six-month spot rate is <b>5%</b> and the one-year spot rate is <b>7%</b>, both
+            p.a. compounded semiannually.`,
+      ask:"Where does the six-month-ahead forward rate for a six-month loan sit?",
+      options:opts,
+      steps:[
+        `(1+7%/2)<sup>2</sup> = (1+5%/2)(1+f/2)`,
+        `1.071225 = 1.025 &times; (1+f/2), so 1+f/2 = 1.045098`,
+        `f = 9.02% p.a. compounded semiannually &mdash; above both spot rates.`
+      ]};
+  }},
+
+/* ------------- curve shape, expectations, and reasoning ------------------ */
+
+{ id:"kf1", topic:"concept", also:["fwdrate","reason"], name:"Is the forward rate always above spot?", gen(){
+    const opts = shuffle([
+      {html:`No &mdash; above both when the curve rises, below both when it is inverted`, correct:true,
+       msg:`Right. The longer spot rate is a blend of the near period and the forward period. If the blend is above the near leg, the forward leg must be above the blend; if the blend is below, the forward leg is below. The shape decides it.`},
+      {html:`Yes &mdash; a forward rate always exceeds the spot rates it is built from`, correct:false,
+       msg:`Only on an upward-sloping curve. With a six-month rate of 7\% and a one-year rate of 5\%, both p.a. compounded semiannually, the six-month-ahead forward rate is about 3.02\% p.a. compounded semiannually &mdash; below both.`},
+      {html:`No &mdash; it always sits between the two spot rates`, correct:false,
+       msg:`That is where an average would sit. A forward rate is the marginal rate over the later stretch, not an average, so it lies outside the pair.`},
+      {html:`Yes, unless the forward period is longer than the spot period`, correct:false,
+       msg:`The relative lengths do not decide it. The slope of the curve does.`}
+    ]);
+    return {mode:"choice",
+      text:`On the upward-sloping curves you have worked with, the forward rate came out
+            <b>above</b> both the spot rates used to build it.`,
+      ask:"Is that a general rule?",
+      options:opts,
+      steps:[
+        `Upward (5\% and 7\%, both p.a. compounded semiannually): the six-month-ahead forward rate is 9.02\% p.a. compounded semiannually &mdash; above both.`,
+        `Inverted (7\% and 5\%, both p.a. compounded semiannually): it is 3.02\% p.a. compounded semiannually &mdash; below both.`,
+        `(1+r<sub>1</sub>/2)<sup>2</sup> = (1+r<sub>0.5</sub>/2)(1+f/2). The forward rate is whatever makes the two ways of lending agree.`
+      ]};
+  }},
+
+{ id:"kf2", topic:"concept", also:["fwdzero","reason"], name:"Forward price against today's price", gen(){
+    const opts = shuffle([
+      {html:`Higher &mdash; because you pay later, and the forward price is grossed up for the deferral`, correct:true,
+       msg:`Right. F = d<sub>T</sub>/d<sub>t</sub>, and d<sub>t</sub> is below 1, so F exceeds d<sub>T</sub>. The gap is the carry: what it costs to finance the bond from now until settlement.`},
+      {html:`Lower &mdash; because the bond has less time to run by the settlement date`, correct:false,
+       msg:`It does have less time to run, and that is why a <em>shorter</em> zero is what gets delivered. But the price comparison is about when you pay, and paying later means paying more.`},
+      {html:`The same &mdash; no money changes hands at inception, so there is nothing to gross up`, correct:false,
+       msg:`Nothing changing hands today is precisely what forces F above the spot price: the seller has to finance the bond until settlement and must be compensated for it.`},
+      {html:`It depends on whether the curve slopes up or down`, correct:false,
+       msg:`No. As long as rates are positive, d<sub>t</sub> is below 1 and F exceeds d<sub>T</sub>, whatever the curve's shape.`}
+    ]);
+    return {mode:"choice",
+      text:`A \$1-face zero maturing at time <b>T</b> trades today at <b>d<sub>T</sub></b>. There is
+            also a forward contract to buy that same zero at time <b>t</b>, before it matures.`,
+      ask:"Is the forward price above or below today's price of that zero?",
+      options:opts,
+      steps:[
+        `F = d<sub>T</sub> / d<sub>t</sub>, and with positive rates d<sub>t</sub> &lt; 1.`,
+        `So F &gt; d<sub>T</sub>, always.`,
+        `The difference is the cost of carrying the bond from today to settlement.`
+      ]};
+  }},
+
+{ id:"kf3", topic:"concept", also:["reason"], name:"What the expectations hypothesis buys you", gen(){
+    const opts = shuffle([
+      {html:`Unbiased forecasts of future yield curves can be derived from today's curve`, correct:true,
+       msg:`Right. Combining r<sub>0.5</sub> with r<sub>0.5+n</sub> gives a forecast of the n-year rate six months out, and doing that across the curve forecasts the whole future curve.`},
+      {html:`Forward rates become risk-free, so no arbitrage is possible`, correct:false,
+       msg:`Forward rates are already locked in by arbitrage, whatever you believe about expectations. The hypothesis is about whether they <em>forecast</em> anything.`},
+      {html:`The yield curve must slope upward`, correct:false,
+       msg:`No. A downward-sloping curve simply means the market expects rates to fall.`},
+      {html:`Bond prices become independent of maturity`, correct:false,
+       msg:`Prices depend on maturity whatever you believe about expectations &mdash; a 30-year zero still costs far less than a 1-year zero. The hypothesis is about forecasting rates, not about levelling prices.`}
+    ]);
+    return {mode:"choice",
+      text:`The <b>pure expectations hypothesis</b> says the forward rate equals the expected future
+            spot rate.`,
+      ask:"If it held, what would follow?",
+      options:opts,
+      steps:[
+        `Combining r<sub>0.5</sub> with r<sub>1</sub> gives f<sub>0.5</sub><sup>1</sup>, which would be an unbiased forecast of the 0.5-year spot rate six months from now.`,
+        `Doing that across the curve forecasts the whole future curve.`
+      ]};
+  }},
+
+{ id:"e3", topic:"error", also:["fwdrate"], name:"Find the mistake — the roll relation", gen(){
+    const rt=pick(range(.03,.06,.005)), rT=rt+pick(range(.01,.03,.005));
+    const fault=pick(["addRates","noHalving","wrongLeg"]);
+    const fair=2*(Math.pow(1+rT/2,2)/(1+rt/2)-1);
+    const shown = fault==="addRates" ? 2*rT-rt
+                : fault==="noHalving" ? (Math.pow(1+rT,2)/(1+rt)-1)
+                : 2*(Math.pow(1+rt/2,2)/(1+rT/2)-1);
+    const s=[
+      `<b>Step 1.</b> Two riskless ways to lend for a year must agree: lend straight to one year, or lend six months and roll at the forward rate.`,
+      fault==="addRates"
+        ? `<b>Step 2.</b> So the rates must add up: f = 2 &times; ${pctS(rT)} &minus; ${pctS(rt)}`
+        : `<b>Step 2.</b> So the growth factors must match: (1+r<sub>1</sub>/2)<sup>2</sup> = (1+r<sub>0.5</sub>/2)(1+f/2)`,
+      fault==="noHalving"
+        ? `<b>Step 3.</b> Substituting: (1+${pctS(rT)})<sup>2</sup> = (1+${pctS(rt)})(1+f)`
+        : (fault==="wrongLeg"
+            ? `<b>Step 3.</b> Substituting: (1+${(rt/2).toFixed(5)})<sup>2</sup> = (1+${(rT/2).toFixed(5)})(1+f/2)`
+            : `<b>Step 3.</b> Substituting: (1+${(rT/2).toFixed(5)})<sup>2</sup> = (1+${(rt/2).toFixed(5)})(1+f/2)`),
+      `<b>Step 4.</b> Solving gives f = ${pctS(shown,3)}`
+    ];
+    const fine=[
+      `Step 1 is fine &mdash; that is exactly the no-arbitrage condition.`,
+      `Step 2 is fine &mdash; the two strategies must produce the same growth factor, and growth factors multiply.`,
+      `Step 3 is fine &mdash; each rate is halved for its six-month period, and the one-year leg runs two of them.`,
+      `Step 4 is fine &mdash; it follows from the line above it.`
+    ];
+    let at, why;
+    if (fault==="addRates"){
+      at=1; why=`Rates do not add. Interest in the second period is earned on the balance the first period produced, so the two growth <em>factors</em> multiply: (1+r<sub>1</sub>/2)<sup>2</sup> = (1+r<sub>0.5</sub>/2)(1+f/2). The correct answer is ${pctS(fair,3)}, not ${pctS(shown,3)}.`;
+    } else if (fault==="noHalving"){
+      at=2; why=`The rates were not halved. These are quoted per annum compounded semiannually, so each six-month period earns half the quoted rate, and the one-year leg is two such periods.`;
+    } else {
+      at=2; why=`The two legs are swapped. The <em>one-year</em> rate belongs on the left, squared, because that is the strategy running the full year; the six-month rate belongs on the right alongside the forward rate.`;
+    }
+    return {
+      mode:"choice",
+      text:`Spot rates are <b>${pctS(rt)}</b> to six months and <b>${pctS(rT)}</b> to one year, p.a.
+            compounded semiannually. A student works out the six-month-ahead forward rate:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `(1+${(rT/2).toFixed(5)})<sup>2</sup> = (1+${(rt/2).toFixed(5)})(1+f/2)`,
+        `1 + f/2 = ${(Math.pow(1+rT/2,2)/(1+rt/2)).toFixed(6)}`,
+        `f = ${pctS(fair,4)}`
+      ]};
+  }},
+
+{ id:"ktrade04", topic:"error", also:["concept","reason"], name:"Which trader is wrong?", gen(){
+    const claims=[
+      {html:`"The forward price of a zero is below its spot price, because the bond is shorter by the time you get it."`,
+       bad:true, why:`Wrong. F = d<sub>T</sub>/d<sub>t</sub> and d<sub>t</sub> is below 1, so the forward price is <em>above</em> the spot price of that zero. The bond being shorter at delivery is why a <em>shorter</em> zero is delivered, not a reason for a lower price.`,
+       ok:`Trader 1 is right &mdash; the forward price is below spot.`},
+      {html:`"Entering a forward contract costs nothing today, so the forward price is whatever the two sides agree."`,
+       bad:true, why:`Half right and half wrong. It does cost nothing today &mdash; and that is exactly what pins the forward price down, since the present value of the deal must be zero: F = d<sub>T</sub>/d<sub>t</sub>. There is nothing to negotiate.`,
+       ok:`Trader 2 is right &mdash; costing nothing today leaves the price open.`},
+      {html:`"An FRA exchanges the full notional between the two parties on the settlement date."`,
+       bad:true, why:`Wrong. Only the <em>difference</em> between the contracted and market interest changes hands, computed on a notional that is never exchanged. That is precisely what keeps the credit exposure small.`,
+       ok:`Trader 3 is right &mdash; the notional changes hands.`},
+      {html:`"A forward rate is a forecast, so if the curve slopes up the market must expect rates to rise."`,
+       bad:true, why:`That is the pure expectations hypothesis stated as fact. Forward rates are locked in by arbitrage whatever anyone expects; whether they also <em>forecast</em> future spot rates is a separate and contested claim.`,
+       ok:`Trader 4 is right &mdash; forward rates are forecasts by construction.`},
+      {html:`"A forward contract is a long position in one zero and a short position in another."`,
+       bad:false, why:``, ok:`Trader 5 is right. Long a \$1-face zero maturing at T, short a \$F-face zero maturing at t &mdash; which reproduces the cash flows exactly.`},
+      {html:`"To forward-buy a six-month zero six months from now, I buy a one-year zero today and finance the purchase with a six-month loan."`,
+       bad:false, why:``, ok:`Trader 6 is right, and the financing leg is what makes it a forward. Bonds age: today's one-year zero has six months left once six months have passed. Borrowing the purchase price for six months is what defers payment to the delivery date, so nothing changes hands now &mdash; long a one-year zero, short a six-month zero.`},
+      {html:`"An FRA settles on the difference in rates, which is why the credit exposure is small."`,
+       bad:false, why:``, ok:`Trader 7 is right. Never exchanging the principal is what caps the loss if a counterparty fails.`}
+    ];
+    const wrong=pick(claims.filter(c=>c.bad));
+    const rights=shuffle(claims.filter(c=>!c.bad)).slice(0,3);
+    // Label them only after the four are chosen, so the numbering runs 1-4 with no gaps.
+    const opts=shuffle([wrong,...rights]).map((c,i)=>({
+      html:`<b>Trader ${i+1}.</b> ${c.html}`,
+      correct:c===wrong,
+      msg:(c===wrong?c.why:c.ok).replace(/\bTrader \d+\b/g,`Trader ${i+1}`) }));
+    return {mode:"choice",
+      text:`Four traders are talking on a desk. Exactly one of them has said something false.`,
+      ask:"Which one?",
+      options:opts,
+      steps:[
+        `The forward price of a zero exceeds its spot price, by the cost of carrying it to settlement.`,
+        `A forward costs nothing to enter, and that is what fixes F = d<sub>T</sub>/d<sub>t</sub>.`,
+        `An FRA never exchanges the notional &mdash; only the interest difference on it.`
+      ]};
+  }},
+
+{ id:"exp3", topic:"concept", also:["fwdrate","reason"], name:"A forward rate falls — what changed?", gen(){
+    const a=pick([7,8,9]), b=a-pick([1,2,3]);
+    const opts = shuffle([
+      {html:`Either expected future spot rates fell, or premiums fell, or both &mdash; the forward rate alone cannot tell you which`, correct:true,
+       msg:`Right. The forward rate is the sum of the two, so a move in the sum does not identify which component moved. That is the cost of the term-premium equation: it buys realism and gives up interpretability.`},
+      {html:`Expected future spot rates fell by ${a-b} percentage points`, correct:false,
+       msg:`Only under the pure expectations hypothesis, which sets the premium to zero. Without that assumption the fall could be entirely a premium story.`},
+      {html:`The premium fell by ${a-b} percentage points`, correct:false,
+       msg:`Equally possible, and equally unprovable from this number alone. The forward rate cannot separate the two.`},
+      {html:`Nothing can be concluded &mdash; a forward rate carries no economic information`, correct:false,
+       msg:`Too strong. It is pinned down by arbitrage and it tells you exactly what rate you can lock in today. What it cannot do is tell you what the future spot rate will be.`}
+    ]);
+    return {mode:"choice",
+      text:`The six-month-ahead forward rate falls from <b>${a}%</b> to <b>${b}%</b>, both p.a. compounded
+            semiannually.`,
+      ask:"What can you conclude from that alone?",
+      options:opts,
+      steps:[
+        `forward rate = expected future spot rate + premium`,
+        `The observed fall is a fall in the <em>sum</em>.`,
+        `Either component could have moved, and the forward rate does not say which. From the forward rate alone, we cannot tell.`
+      ]};
+  }},
+
+{ id:"hedge1", topic:"fra", also:["concept","reason"], name:"Which way should you hedge?", gen(){
+    const borrow=pick([true,false]);
+    const opts = shuffle([
+      {html:borrow ? `Lock in the future <b>borrowing</b> rate with an FRA, so a rise costs you nothing`
+                   : `Lock in the future <b>lending</b> rate with an FRA, so a fall costs you nothing`,
+       correct:true,
+       msg:`Right. The hedge has to pay off in the state that hurts you. ${borrow ? "A borrower is hurt when rates rise, so the FRA must pay when rates rise." : "A lender is hurt when rates fall, so the FRA must pay when rates fall."}`},
+      {html:borrow ? `Lock in a future <b>lending</b> rate with an FRA`
+                   : `Lock in a future <b>borrowing</b> rate with an FRA`,
+       correct:false,
+       msg:`That hedges the opposite exposure. It would pay off in the state you were already comfortable with, and leave the one that hurts you wide open.`},
+      {html:`Wait and take whatever rate prevails &mdash; no hedge is available for a future period`, correct:false,
+       msg:`An FRA is precisely the instrument for a rate on a future period. Waiting is the exposure, not a response to it.`},
+      {html:borrow ? `<b>Borrow</b> for the full year today &mdash; the rate is fixed now, so a rise cannot reach you`
+                   : `<b>Lend</b> for the full year today &mdash; the rate is fixed now, so a fall cannot reach you`,
+       correct:false,
+       msg:`This one does work, which is why it is worth thinking about. ${borrow ? "Borrowing for a year and lending the proceeds out for the first six months is exactly the replication that pins an FRA's price in the first place. But it takes the \$5 million six months before you need it, so you carry funds you have no use for and lend them back out at less than you are paying on them." : "Lending for a year and funding the first six months by borrowing is exactly the replication that pins an FRA's price in the first place. But it commits the \$5 million six months before you have it, so you must borrow to bridge the gap at more than you are earning."} It also puts \$5 million on the balance sheet on both sides. The FRA fixes the same rate with no principal changing hands at all &mdash; which is the whole reason the instrument exists.`}
+    ]);
+    return {mode:"choice",
+      text:`Your firm will <b>${borrow?"borrow":"lend"}</b> \$5 million in six months, for six months.
+            You are worried that rates will <b>${borrow?"rise":"fall"}</b> before then.`,
+      ask:"What is the most appropriate hedge?",
+      options:opts,
+      steps:[
+        `A borrower is hurt by rising rates; a lender by falling rates.`,
+        `The FRA fixes the rate for that future period, so the market movement no longer reaches you.`,
+        `It also gives up the favourable move &mdash; that is what fixing a rate means.`,
+        `Transacting in the cash market today would fix the rate too, but only by moving principal six months early. The FRA fixes the rate on its own.`
+      ]};
+  }},
+
+];
+
+const TOPICS = [
+  {key:"all", label:"Mixed"},
+  {key:"forward", label:"Forward contracts"},
+  {key:"fwdzero", label:"Forwards on zeros"},
+  {key:"fwdrate", label:"Forward rates"},
+  {key:"fra", label:"FRAs"},
+  {key:"arb", label:"Arbitrage"},
+  {key:"error", label:"Find the mistake"},
+  {key:"reason", label:"Reason it out"},
+  {key:"concept", label:"Concepts"}
+];
+
+/* ----------------------------------------------------------------- state */
+let active = "all", current = null, tries = 0;
+let peeked = false, solved = false, tallied = false;  // tallied = already counted in `attempted`
+const stats = {att:0, first:0, streak:0, peek:0};
+
+const $ = id => document.getElementById(id);
+
+function buildTopics(){
+  const box = $("topics");
+  TOPICS.forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = t.label;
+    b.setAttribute("aria-pressed", String(t.key===active));
+    b.onclick = ()=>{
+      active = t.key;
+      [...box.children].forEach(c=>c.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");
+      seqIdx = 0;                 // a new topic restarts the sequence
+      newQuestion();
+    };
+    box.appendChild(b);
+  });
+}
+
+const ALL_TEMPLATES = TEMPLATES.concat(CHOICE_TEMPLATES);
+
+/* A template's primary topic is `topic`; it may also list secondary topics in
+   `also`, so one item can appear under several chips. */
+function inTopic(t, key){
+  return t.topic === key || (Array.isArray(t.also) && t.also.includes(key));
+}
+
+/* ---- progress: distinct templates solved without opening the solution ---- */
+const PROG_KEY = "practice-progress:" + document.title;
+let mastered = new Set();
+try { mastered = new Set(JSON.parse(localStorage.getItem(PROG_KEY) || "[]")); }
+catch (e) { mastered = new Set(); }
+
+function saveProgress(){
+  try { localStorage.setItem(PROG_KEY, JSON.stringify([...mastered])); } catch (e) {}
+}
+function markMastered(id){
+  if (!id || mastered.has(id)) return;
+  mastered.add(id);
+  saveProgress();
+}
+
+/* Templates are drawn WITHOUT immediate repeats. Sampling with replacement
+   looks fine on the full bank, but a topic holding only three or four
+   templates repeats roughly one press in three, which reads as the button
+   being broken. Hold the most recent half of the pool out of the draw. */
+let recentIds = [];
+/* Questions seen this session, so the arrow keys can step back and forth through them. */
+let history = [], histIdx = -1;
+let navKey = false;      // true while an arrow key is doing the rendering
+let order = "shuffle";   // "shuffle" | "seq"
+let seqIdx = 0;
+
+function newQuestion(replay){
+  let q;
+  if (replay){ q = replay.q; }
+  else {
+  const pool = active==="all" ? ALL_TEMPLATES : ALL_TEMPLATES.filter(t=>inTopic(t,active));
+  let tpl;
+  if (order === "seq"){
+    /* walk the bank in order, wrapping at the end */
+    if (seqIdx >= pool.length) seqIdx = 0;
+    tpl = pool[seqIdx];
+    seqIdx = (seqIdx + 1) % pool.length;
+    $("seqPos").textContent = `${seqIdx === 0 ? pool.length : seqIdx} of ${pool.length}`;
+  } else {
+    const hold = Math.max(1, Math.floor(pool.length / 2));
+    let choices = pool.filter(t => !recentIds.slice(0, hold).includes(t.id));
+    if (!choices.length) choices = pool;        // pool of one, or all held out
+    tpl = pick(choices);
+    recentIds.unshift(tpl.id);
+    if (recentIds.length > 40) recentIds.length = 40;
+    $("seqPos").textContent = "";
+  }
+  q = tpl.gen();
+  q.name = tpl.name;
+  q.id   = tpl.id;
+  q.seqPos = $("seqPos").textContent;   // carried so stepping back shows its own position
+  if (q.mode !== "choice") q.distractors = usable(q.correct, q.cands, q.sep);
+  }
+  current = q;
+  if (replay){
+    tries = replay.tries; peeked = replay.peeked; solved = replay.solved; tallied = replay.tallied;
+  } else {
+    tries = 0; peeked = false; solved = false; tallied = false;
+    history = history.slice(0, histIdx + 1);           // a new draw discards anything ahead
+    history.push({q, tries:0, peeked:false, solved:false, tallied:false, fb:"", ans:""});
+    if (history.length > 50){ history.shift(); }
+    histIdx = history.length - 1;
+  }
+
+  const isChoice = q.mode === "choice";
+  $("qmeta").textContent = q.name;
+  $("qtext").innerHTML   = q.text;
+  $("qask").innerHTML    = q.ask;
+  /* Hide the input and Check individually, NOT the whole row -- the
+     "New question" button lives in that row and must stay reachable
+     on choice questions. */
+  $("ans").hidden   = isChoice;
+  $("check").hidden = isChoice;
+  $("opts").hidden     = !isChoice;
+  const box = $("opts");
+  box.innerHTML = "";              // always clear, even when the panel is hidden
+  if (isChoice){
+    q.options.forEach((o,k)=>{
+      const btn = document.createElement("button");
+      btn.className = "opt"; btn.innerHTML = o.html;
+      btn.onclick = () => pickOption(k);
+      box.appendChild(btn);
+    });
+  }
+  $("ans").value = "";
+  $("ans").placeholder = q.unit==="money" ? "e.g. 1234.56"
+                     : q.unit==="percent" ? "e.g. 12.34  (percent)"
+                     : "e.g. 0.973378";
+  $("ans").disabled = false;
+  $("check").disabled = false;
+  $("fb").innerHTML = "";
+  $("steps").innerHTML = q.steps.map(s=>`<div>${s}</div>`).join("");
+  const d = $("soldetails"); d.hidden = false; d.open = false;
+  if (replay){
+    /* Put the question back exactly as it was left --- the feedback, what was typed, and
+       whether it had already been answered. The tallied/solved flags come back with it,
+       so revisiting a question never re-counts an attempt or re-awards mastery. */
+    $("fb").innerHTML = replay.fb || "";
+    $("ans").value    = replay.ans || "";
+    $("seqPos").textContent = q.seqPos || "";
+    if (isChoice && q.wrong){
+      [...$("opts").children].forEach((b,j)=>{
+        if (q.wrong.indexOf(j) >= 0){ b.classList.add("wrong"); b.disabled = true; }
+      });
+    }
+    if (solved || q.done){
+      if (isChoice){
+        [...$("opts").children].forEach((b,j)=>{ b.disabled = true;
+          if (q.options[j].correct) b.classList.add("right"); });
+      } else { $("ans").disabled = true; $("check").disabled = true; }
+    }
+    d.open = peeked || solved;
+  }
+  /* Arriving by arrow key must not park the cursor in the answer box: a restored answer
+     sitting there would swallow the next arrow press and strand the student. */
+  if (navKey) $("ans").blur();
+  else if (!isChoice && !$("ans").disabled) $("ans").focus();
+}
+
+function parseInput(raw){
+  const cleaned = raw.replace(/[$,%\s,]/g,"");
+  if (cleaned === "" ) return NaN;
+  return Number(cleaned);
+}
+
+function say(kind, title, body){
+  $("fb").innerHTML = `<div class="fb ${kind}"><strong>${title}</strong>${body}</div>`;
+}
+
+function pickOption(k){
+  const q = current;
+  if (q.done) return;
+  const o    = q.options[k];
+  const btns = [...$("opts").children];
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }
+
+  if (o.correct){
+    q.done = true; solved = true;
+    btns.forEach((b2,j)=>{ b2.disabled = true; if (q.options[j].correct) b2.classList.add("right"); });
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "It still counts as attempted, just not toward first-try accuracy or your streak. " + o.msg);
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok", tries===1 ? "Correct — first try." : "Correct.", o.msg);
+    }
+    $("soldetails").open = true;
+  } else {
+    stats.streak = 0;
+    btns[k].classList.add("wrong");
+    btns[k].disabled = true;
+    (q.wrong || (q.wrong = [])).push(k);   // remembered so a revisit keeps it eliminated
+    say("no","Not that one.", o.msg);
+  }
+  render();
+}
+
+function check(){
+  const raw = $("ans").value;
+  const parsed = parseInput(raw);
+  if (!Number.isFinite(parsed)){
+    say("hint","Enter a number","Type your answer as a number — you can include $ , or % and it will be ignored.");
+    return;
+  }
+  const q = current;
+  const val = q.unit==="percent" ? parsed/100 : parsed;
+  const TOL = q.tol || REL_MATCH;
+
+  /* Unit slips are formatting mistakes, not wrong answers, so they cost
+     neither an attempt nor first-try credit. Guarded so a genuinely
+     correct entry can never be mistaken for one. */
+  if (!near(val, q.correct, TOL)){
+    if (q.unit==="percent" && near(parsed, q.correct, TOL)){
+      say("hint","Right number, wrong units.",
+          `You entered <code>${raw}</code> as a decimal. This box wants a percent — enter <code>${(q.correct*100).toFixed(4).replace(/\.?0+$/,"")}</code> instead.`);
+      return;
+    }
+    if (near(val*100, q.correct, TOL) || near(val/100, q.correct, TOL)){
+      say("hint","Check your units.","Your figure is off by a factor of 100. Re-read what the box is asking for.");
+      return;
+    }
+  }
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }   // count each question once, right or wrong
+
+  if (near(val, q.correct, TOL)){
+    solved = true;
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "That is a perfectly good way to learn, and it still counts as attempted. It does " +
+          "not count toward first-try accuracy or your streak, so those numbers stay honest. " +
+          "Try the next one before opening the solution.");
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok","Correct.", tries===1 ? "First try — well done." : "Got there.");
+    }
+    $("check").disabled = true; $("ans").disabled = true;
+    $("soldetails").open = true;
+    render(); return;
+  }
+
+  stats.streak = 0;
+  const hit = q.distractors.find(d => near(val, d.val, TOL));
+  say("no", hit ? "Not quite — and I can see why." : "Not quite.",
+      hit ? hit.msg
+          : "That does not match any of the usual slips, so it may be an arithmetic error. Try again, or open the worked solution below.");
+  render();
+}
+
+function render(){
+  $("sAtt").textContent    = stats.att;
+  $("sFirst").textContent  = stats.first;
+  $("sAcc").textContent    = stats.att ? Math.round(stats.first/stats.att*100)+"%" : "—";
+  $("sStreak").textContent = stats.streak;
+  $("sPeek").textContent   = stats.peek;
+  const total = ALL_TEMPLATES.length;
+  $("pTotal").textContent  = total;
+  $("pDone").textContent   = mastered.size;
+  $("progfill").style.width = (total ? 100*mastered.size/total : 0).toFixed(1) + "%";
+}
+
+$("check").onclick = check;
+$("next").onclick  = () => newQuestion();   // arrow fn: never pass the click Event as `replay`
+
+/* ---- arrow keys: right for the next question, left for the previous one -------------
+   Ignored while the answer box is being typed in, where the arrows move the caret, and
+   ignored with a modifier held so the browser's own shortcuts still work.            */
+function snapshotQuestion(){
+  const h = history[histIdx];
+  if (!h) return;
+  h.tries = tries; h.peeked = peeked; h.solved = solved; h.tallied = tallied;
+  h.fb = $("fb").innerHTML; h.ans = $("ans").value;
+}
+function goBack(){
+  if (histIdx <= 0) return;
+  snapshotQuestion(); histIdx--;
+  navKey = true; newQuestion(history[histIdx]); navKey = false;
+}
+function goForward(){
+  snapshotQuestion();
+  navKey = true;
+  if (histIdx < history.length - 1){ histIdx++; newQuestion(history[histIdx]); }
+  else newQuestion();
+  navKey = false;
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  const t = e.target;
+  if (t && (t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  /* Inside the answer box the arrows belong to the caret --- but only while it still has
+     somewhere to go. Once it sits at the end you are pressing toward, the press is free,
+     so a half-typed answer never traps a student in the field. */
+  if (t && t.tagName === "INPUT" && !t.disabled){
+    const at = t.selectionStart, to = t.selectionEnd, n = String(t.value).length;
+    if (at === null || at !== to) return;                       // a selection: leave it alone
+    if (e.key === "ArrowRight" ? at < n : at > 0) return;
+  }
+  e.preventDefault();
+  if (e.key === "ArrowRight") goForward(); else goBack();
+});
+$("ans").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("check").disabled) check(); });
+$("soldetails").addEventListener("toggle", ()=>{
+  if ($("soldetails").open && !solved && !peeked){
+    peeked = true;
+    stats.peek++;
+    if (!tallied){ tallied = true; stats.att++; }  // opening it counts as engaging with the question
+    render();
+  }
+});
+
+function setOrder(o){
+  order = o; seqIdx = 0;
+  $("mShuffle").setAttribute("aria-pressed", String(o === "shuffle"));
+  $("mSeq").setAttribute("aria-pressed",     String(o === "seq"));
+  newQuestion();
+}
+$("mShuffle").onclick = () => setOrder("shuffle");
+$("mSeq").onclick     = () => setOrder("seq");
+
+$("pReset").onclick = () => {
+  if (!mastered.size) return;
+  mastered.clear(); saveProgress(); render();
+};
+
+buildTopics();
+newQuestion();
+render();
+</script>
+</body>
+</html>

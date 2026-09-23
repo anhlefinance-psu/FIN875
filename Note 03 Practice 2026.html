@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zeros — Practice</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#5f6672; --line:#e2e5ea;
+    --card:#f7f8fa; --accent:#00205b; --accent-fg:#ffffff;
+    --ok-bg:#e8f5ec; --ok-line:#2e7d47; --ok-fg:#17532c;
+    --no-bg:#fdeceb; --no-line:#c0392b; --no-fg:#8e2b20;
+    --hint-bg:#fff8e6; --hint-line:#b8860b; --hint-fg:#6b4e00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161a; --fg:#e8eaed; --muted:#9aa3af; --line:#2b2f36;
+      --card:#1b1e24; --accent:#7f9cd4; --accent-fg:#0d1015;
+      --ok-bg:#132a1c; --ok-line:#4caf70; --ok-fg:#9fdcb4;
+      --no-bg:#2c1614; --no-line:#e06c5d; --no-fg:#f0a99f;
+      --hint-bg:#2a2313; --hint-line:#d4a017; --hint-fg:#e5c976;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 18px 64px}
+  header{border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:20px}
+  h1{font-size:1.35rem; margin:0 0 4px}
+  .sub{color:var(--muted); font-size:.9rem}
+  .topics{display:flex; flex-wrap:wrap; gap:7px; margin:18px 0}
+  .chip{
+    border:1px solid var(--line); background:var(--card); color:var(--fg);
+    padding:6px 12px; border-radius:999px; cursor:pointer; font-size:.85rem;
+    font-family:inherit;
+  }
+  .chip[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:var(--accent)}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:20px; margin-bottom:16px;
+  }
+  .qmeta{font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+  .qtext{font-size:1.05rem; margin-bottom:6px}
+  .qtext b{font-variant-numeric:tabular-nums}
+  .ask{margin-top:14px; font-weight:600}
+  .row{display:flex; gap:9px; margin-top:14px; flex-wrap:wrap}
+  input[type=text]{
+    flex:1 1 190px; min-width:0; padding:11px 13px; font-size:1rem; font-family:inherit;
+    border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg);
+  }
+  input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px}
+  button{
+    padding:11px 17px; font-size:.95rem; font-family:inherit; border-radius:8px;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-fg);
+    cursor:pointer; font-weight:600;
+  }
+  button.ghost{background:transparent; color:var(--fg); border-color:var(--line); font-weight:500}
+  button:disabled{opacity:.45; cursor:default}
+  .fb{border-radius:8px; padding:13px 15px; margin-top:15px; border-left:4px solid; font-size:.95rem}
+  .fb.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-fg)}
+  .fb.no{background:var(--no-bg); border-color:var(--no-line); color:var(--no-fg)}
+  .fb.hint{background:var(--hint-bg); border-color:var(--hint-line); color:var(--hint-fg)}
+  .fb strong{display:block; margin-bottom:3px}
+  details{margin-top:15px; border-top:1px solid var(--line); padding-top:13px}
+  summary{cursor:pointer; font-size:.9rem; color:var(--muted); font-weight:600}
+  .steps{margin-top:11px; font-size:.92rem}
+  .steps div{padding:5px 0; border-bottom:1px dashed var(--line)}
+  .steps div:last-child{border-bottom:none; font-weight:600}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em;
+    background:var(--bg); padding:1px 5px; border-radius:4px; border:1px solid var(--line);
+  }
+  .opts{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+  .opt{
+    text-align:left; padding:11px 14px; border:1px solid var(--line); background:var(--bg);
+    color:var(--fg); border-radius:8px; cursor:pointer; font-family:inherit;
+    font-size:.95rem; font-weight:400; line-height:1.55;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt.right{background:var(--ok-bg); border-color:var(--ok-line); border-width:2px}
+  .opt.wrong{background:var(--no-bg); border-color:var(--no-line)}
+  .opt:disabled{cursor:default}
+  .opt sup{font-size:.75em}
+  .stats{display:flex; gap:22px; font-size:.86rem; color:var(--muted); margin-top:22px;
+         border-top:1px solid var(--line); padding-top:14px; flex-wrap:wrap}
+  .stats b{color:var(--fg); font-variant-numeric:tabular-nums}
+  footer{margin-top:26px; font-size:.78rem; color:var(--muted); text-align:center}
+  /* The hidden attribute's UA rule is only [hidden]{display:none}, which loses
+     to author rules like .opts{display:flex} and .row{display:flex}. Without
+     this, hiding those panels silently does nothing. */
+  .modes{display:flex; gap:8px; align-items:center; margin-top:10px;
+         font-size:.84rem; color:var(--muted); flex-wrap:wrap}
+  .modes .chip{font-size:.84rem; padding:5px 12px}
+  .prog{margin-top:18px}
+  .progtop{display:flex; justify-content:space-between; align-items:baseline;
+           font-size:.86rem; color:var(--muted); margin-bottom:6px}
+  .progtop b{color:var(--fg); font-variant-numeric:tabular-nums}
+  .progbar{height:9px; border-radius:999px; background:var(--line); overflow:hidden}
+  .progfill{height:100%; width:0%; border-radius:999px; background:var(--accent);
+            transition:width .35s ease}
+  .progreset{background:none; border:none; color:var(--muted); font-size:.8rem;
+             padding:0; cursor:pointer; text-decoration:underline; font-weight:400}
+  .progreset:hover{color:var(--fg)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Zeros — Practice</h1>
+  <div class="sub">Companion drills for Note 03 · Professor Anh Le</div>
+</header>
+
+<div class="topics" id="topics" role="group" aria-label="Choose topics"></div>
+
+<div class="modes" id="modes" role="group" aria-label="Question order">
+  <span>Order</span>
+  <button class="chip" id="mShuffle" type="button" aria-pressed="true">Shuffle</button>
+  <button class="chip" id="mSeq" type="button" aria-pressed="false">In order</button>
+  <span id="seqPos"></span>
+</div>
+
+<div class="card" id="card">
+  <div class="qmeta" id="qmeta">—</div>
+  <div class="qtext" id="qtext">Loading…</div>
+  <div class="ask" id="qask"></div>
+  <div class="opts" id="opts" hidden></div>
+  <div class="row" id="inputrow">
+    <input type="text" id="ans" autocomplete="off" inputmode="decimal"
+           placeholder="Your answer" aria-label="Your answer">
+    <button id="check">Check</button>
+    <button id="next" class="ghost">New question</button>
+  </div>
+  <div id="fb"></div>
+  <details id="soldetails" hidden>
+    <summary>Show the worked solution</summary>
+    <div class="steps" id="steps"></div>
+  </details>
+</div>
+
+<div class="prog">
+  <div class="progtop">
+    <span>Templates solved unaided <b id="pDone">0</b> of <b id="pTotal">0</b></span>
+    <button class="progreset" id="pReset" type="button">reset</button>
+  </div>
+  <div class="progbar"><div class="progfill" id="progfill"></div></div>
+</div>
+
+<div class="stats">
+  <span>Attempted <b id="sAtt">0</b></span>
+  <span>Correct first try <b id="sFirst">0</b></span>
+  <span>Accuracy <b id="sAcc">—</b></span>
+  <span>Streak <b id="sStreak">0</b></span>
+  <span>Solutions opened <b id="sPeek">0</b></span>
+</div>
+
+<footer>Numbers are randomised, so every attempt is different. Nothing you type leaves this page.<br>Use the &rarr; and &larr; arrow keys to move between questions.</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ utils */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+/* stepped range, e.g. range(0.04,0.24,0.0025) -> 81 rates instead of a list of 6 */
+const range = (lo,hi,step) => {
+  const out=[]; for(let v=lo; v<=hi+1e-9; v+=step) out.push(Number(v.toFixed(8)));
+  return out;
+};
+const ORD = n => n + (["th","st","nd","rd"][(n%100-n%10!=10)*(n%10<4)*(n%10)]||"th");
+const money = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+/* An eighth-of-a-percent coupon on $1,000 of face lands on a HALF CENT: 6.625% pays
+   $33.125, and money() rounded that to $33.13 -- which reads as a typo and, worse, hands
+   the student a figure the key does not use. moneyX shows the exact amount, and is
+   identical to money() whenever the value is already a whole number of cents ($22.50,
+   $1,000.00). Use it for any EXACT quantity -- a coupon, a face-plus-coupon cash flow, or
+   a price the stem already prints to four decimals -- and NOT for a present value, which
+   is a genuine cent quantity and would sprout meaningless digits.                     */
+const moneyX = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:4});
+const pct   = (v,d=4) => (v*100).toFixed(d).replace(/\.?0+$/,"") + "%";
+const pctS  = (v,d=2) => (v*100).toFixed(d) + "%";
+/* "a 8.75%" is wrong: eight takes "an". Pick the article from the spoken form.
+   Note 03 was missed when this helper went into Notes 01 and 02.               */
+const art = v => { const i = Math.floor(v*100);
+  return (i===8 || i===11 || i===18 || (i>=80 && i<=89)) ? "an" : "a"; };
+const REL_SEP  = 0.01;    // distractors must sit >1% from everything else
+const REL_MATCH= 0.0025;  // student answer counts as a match within 0.25%
+
+const near = (a,b,tol) =>
+  Number.isFinite(a) && Number.isFinite(b) &&
+  Math.abs(a-b) / Math.max(Math.abs(a), Math.abs(b), 1e-12) < tol;
+
+/* Drop distractors too close to the answer (or to each other) to diagnose.
+   Templates about small effects (perpetuity timing) pass a tighter `sep`. */
+function usable(correct, cands, sep){
+  const s = sep || REL_SEP;
+  const kept = [];
+  for (const c of cands){
+    if (!Number.isFinite(c.val)) continue;
+    if (near(c.val, correct, s)) continue;
+    if (kept.some(k => near(k.val, c.val, s))) continue;
+    kept.push(c);
+  }
+  return kept;
+}
+
+/* ------------------------------------------------------------- templates */
+
+/* ------------------------------------------------------------ Note 03 ---
+   Zeros: zero yields, the curve, discount factors, ytm, STRIPS, bootstrap.
+   The curve used throughout Note 03 (per annum, semiannually compounded).   */
+const CURVE = {0.5:0.0300, 1:0.0360, 1.5:0.0420, 2:0.0470, 2.5:0.0520,
+               3:0.0560, 3.5:0.0600, 4:0.0630, 4.5:0.0650, 5:0.0660};
+const dfOf  = (y,n) => 1/Math.pow(1+y/2, 2*n);
+const zPrice= (F,y,n) => F/Math.pow(1+y/2, 2*n);
+
+const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yield", gen(){
+    const F = pick([100,1000,5000,10000]);
+    let n,y;
+    /* the top of the old band put a 10.75% yield on a 20-year zero. Capped at 7%, which
+       still clears the y*n guard that keeps the price far enough below face.         */
+    do { n = pick([3,5,7,10,15,20,30]); y = pick(range(.03,.07,.0025)); }
+    while (y*n < 0.30);
+    const correct = zPrice(F,y,n);
+    return {
+      unit:"money",
+      /* Tolerance set 22 Sep 2026 from the full-grid check (gridall.js 03): the annual-compounding slip was inside 0.25% on 4 draws (smallest
+         gap 0.22%). An answer to the cent is off by at most 0.04%. */
+      tol:0.001, sep:0.0018,
+      text:`A zero coupon bond has a face value of <b>${money(F)}</b> and matures in
+            <b>${n} year${n===1?"":"s"}</b>. Its zero yield is <b>${pctS(y)} p.a.,
+            compounded semiannually</b>.`,
+      ask:"What is the price of the zero?",
+      correct,
+      cands:[
+        {val:F/Math.pow(1+y,n), msg:`You compounded annually. Treasury rates are quoted per annum <em>compounded semiannually</em>, so halve the rate and double the periods: divide by (1+${pctS(y)}/2)<sup>${2*n}</sup>, not (1+${pctS(y)})<sup>${n}</sup>.`},
+        {val:F/Math.pow(1+y,2*n), msg:`You doubled the periods but forgot to halve the rate. The rate per six-month period is ${pctS(y)} &divide; 2 = ${pctS(y/2,4)}. Both have to move together.`},
+        {val:F/Math.pow(1+y/2,n), msg:`You halved the rate but forgot to double the periods. In ${n} years there are ${2*n} six-month periods, not ${n}.`},
+        {val:F/(1+y*n), msg:`That is simple interest &mdash; you used (1 + y&times;n). Compounding means interest earns interest.`}
+      ],
+      steps:[
+        `Rate per six-month period = ${pctS(y)} &divide; 2 = ${pctS(y/2,4)}`,
+        `Number of periods = ${n} &times; 2 = ${2*n}`,
+        `P = ${money(F)} / (1 + ${(y/2).toFixed(6)})<sup>${2*n}</sup> = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"z2", topic:"zero", name:"Zero yield from a zero price", gen(){
+    const F = 1000;
+    let n,y;
+    do { n = pick([3,5,7,10,15,20,30]); y = pick(range(.035,.10,.0025)); }
+    while (y*n < 0.30);
+    /* Shown to four decimals rather than to the cent, so inverting the price
+       the student can see returns the clean yield instead of one a hair off.
+       Its sibling templates all round-trip cleanly; this one used not to. */
+    const P = Math.round(zPrice(F,y,n)*10000)/10000;
+    const correct = 2*(Math.pow(F/P, 1/(2*n)) - 1);
+    return {
+      unit:"percent",
+      text:`A <b>${n}-year</b> zero with a face value of <b>${money(F)}</b> trades at
+            <b>\$${P.toFixed(4)}</b>.`,
+      ask:"What is its zero yield, per annum compounded semiannually?",
+      correct,
+      cands:[
+        {val:Math.pow(F/P,1/n)-1, msg:`That is the annually compounded rate. To quote it the market's way, solve ${money(F)}/(1+y/2)<sup>${2*n}</sup> = ${moneyX(P)} instead.`},
+        {val:Math.pow(F/P,1/(2*n))-1, msg:`That is the rate per <em>six-month period</em>, which is one step along. Annualise it by multiplying by 2.`},
+        {val:(F/P-1)/n, msg:`That is a simple annualised return &mdash; total gain divided by the number of years. It ignores compounding.`},
+        {val:F/P-1, msg:`That is the total gain over the whole ${n} years, not a per-annum rate.`}
+      ],
+      steps:[
+        `Price = Face / (1 + y/2)<sup>${2*n}</sup>, so (1 + y/2)<sup>${2*n}</sup> = ${money(F)}/${moneyX(P)} = ${(F/P).toFixed(6)}`,
+        `1 + y/2 = ${(F/P).toFixed(6)}<sup>1/${2*n}</sup> = ${Math.pow(F/P,1/(2*n)).toFixed(6)}`,
+        `y = 2 &times; ${(Math.pow(F/P,1/(2*n))-1).toFixed(6)} = ${pctS(correct,4)}`
+      ]};
+  }},
+
+{ id:"c1", topic:"curve", also:["bond"], name:"Price a 1-year note off the zero curve", gen(){
+    const F = pick([100,1000]);
+    const c = pick(range(.02,.10,.005));
+    const cf1 = F*c/2, cf2 = F + F*c/2;
+    const y05 = CURVE[0.5], y10 = CURVE[1];
+    const correct = cf1*dfOf(y05,0.5) + cf2*dfOf(y10,1);
+    return {
+      unit:"money",
+      text:`The zero yield curve is <b>${pctS(y05)}</b> at 0.5 years and <b>${pctS(y10)}</b>
+            at 1 year, both per annum compounded semiannually. Price a <b>1-year</b>
+            T-note, face <b>${money(F)}</b>, paying ${art(c)} <b>${pctS(c)} p.a.</b> coupon.`,
+      ask:"What is the price of the note?",
+      correct,
+      cands:[
+        {val:F*c*dfOf(y05,0.5) + (F+F*c)*dfOf(y10,1), msg:`You used the full annual coupon of ${money(F*c)} for each payment. Paid semiannually, each coupon is half that: ${money(cf1)}.`},
+        {val:cf1*dfOf(y05,0.5) + F*dfOf(y10,1), msg:`You dropped the final coupon. At 12 months the note pays ${money(cf1)} of coupon <em>and</em> ${money(F)} of face value.`},
+        {val:cf1*dfOf(y05,0.5) + cf2, msg:`You left the face value undiscounted. It arrives in 12 months like the final coupon, so it needs dividing by (1+${pctS(y10)}/2)<sup>2</sup> too.`},
+        {val:cf1 + cf2, msg:`You added the cash flows without discounting anything. That is the total the note pays out, not what it is worth today.`}
+      ],
+      steps:[
+        `Coupon per period = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${money(cf1)}`,
+        `Cash flows: ${money(cf1)} at 6 months, ${money(cf2)} at 12 months`,
+        `P = ${money(cf1)}/(1+${(y05/2).toFixed(5)}) + ${money(cf2)}/(1+${(y10/2).toFixed(5)})<sup>2</sup>`,
+        `P = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"c2", topic:"curve", also:["bond"], name:"Price a 1.5-year note off the zero curve", gen(){
+    const F = 100;
+    /* DISJOINT COUPON LATTICE. c2, d3 and e2 all price a note off the house curve, and
+       two blind readers found e2's "coupon per period" step reproducing c2's arithmetic
+       exactly -- so working c2 first eliminated one of e2's four options. d3 is now a
+       2-year note; these two stay at 1.5 years but can never draw the same coupon:
+       c2 takes whole percents, e2 takes halves, d3 takes quarters.
+       The old band also ran to 20%, which no Treasury note has ever paid.
+       The floor is 5%, not 4% (14 Sep 2026): the one-rate-for-everything slip shrinks with
+       the coupon, and at 4% it sat only 2.3 cents from the key.                         */
+    const c = pick(range(.05,.13,.01));
+    const cf = F*c/2;
+    const y05=CURVE[0.5], y10=CURVE[1], y15=CURVE[1.5];
+    const correct = cf*dfOf(y05,0.5) + cf*dfOf(y10,1) + (F+cf)*dfOf(y15,1.5);
+    return {
+      unit:"money",
+      /* Tightened 14 Sep 2026. On the house curve the one-rate slip lands 2.9-7.4 cents from
+         the key and annual compounding 6 cents, so at the default 0.25% (about 27 cents)
+         both were marked correct. 0.015% is about 1.5 cents: it still accepts discount
+         factors rounded to four decimals (at most 0.4 cents off) and every present value
+         rounded to the cent (at most 1 cent off).                                        */
+      tol:0.00015, sep:0.0002,
+      text:`The zero yield curve reads <b>${pctS(y05)}</b> at 0.5 years, <b>${pctS(y10)}</b>
+            at 1 year and <b>${pctS(y15)}</b> at 1.5 years, per annum compounded
+            semiannually. Price a <b>1.5-year</b> T-note, face <b>${money(F)}</b>, paying ${art(c)}
+            <b>${pctS(c)} p.a.</b> coupon.`,
+      ask:"What is the price of the note? (To the cent.)",
+      correct,
+      cands:[
+        {val:cf*dfOf(y15,0.5)+cf*dfOf(y15,1)+(F+cf)*dfOf(y15,1.5), msg:`You used the 1.5-year rate for all three cash flows. That is what a <em>yield to maturity</em> does; pricing off the curve discounts each cash flow at its own maturity's zero yield.`},
+        {val:F*c*dfOf(y05,0.5)+F*c*dfOf(y10,1)+(F+F*c)*dfOf(y15,1.5), msg:`You used the full annual coupon ${money(F*c)} at each date. Each semiannual coupon is ${money(cf)}.`},
+        {val:cf*dfOf(y05,0.5)+cf*dfOf(y10,1)+F*dfOf(y15,1.5), msg:`You left the final coupon out. At 18 months the bond pays the last coupon <em>and</em> the face value: ${money(F+cf)}.`},
+        {val:cf/Math.pow(1+y05,0.5)+cf/(1+y10)+(F+cf)/Math.pow(1+y15,1.5), msg:`You compounded annually. Halve each rate and double each period count.`}
+      ],
+      steps:[
+        `Coupon per period = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${money(cf)}`,
+        `P = ${money(cf)}/(1+${(y05/2).toFixed(5)}) + ${money(cf)}/(1+${(y10/2).toFixed(5)})<sup>2</sup> + ${money(F+cf)}/(1+${(y15/2).toFixed(5)})<sup>3</sup>`,
+        `P = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"d1", topic:"df", name:"Discount factor from a zero yield", gen(){
+    const n = pick([1,1.5,2,2.5,3,4,5]);
+    const y = pick(range(.03,.09,.0025));
+    const correct = dfOf(y,n);
+    return {
+      unit:"number",
+      /* Tolerance set 22 Sep 2026 from the full-grid check (gridall.js 03): the annual-compounding slip was inside the 0.25% match on 109 of 175
+         draws, and on Quiz 2 Version 2 it picked the key. Its smallest gap is 0.022%; six decimals
+         typed are off by < 0.0001%. Listed third so a quiz swaps it for exactly one option. */
+      tol:0.0001, sep:0.00018,
+      text:`The zero yield for the <b>${n}-year</b> maturity is <b>${pctS(y)} p.a.,
+            compounded semiannually</b>.`,
+      ask:`What is the discount factor d<sub>${n}</sub>? (Give it to six decimals.)`,
+      correct,
+      /* order: growth factor, periods doubled, annual slip, rate halved (22 Sep 2026) */
+      cands:[
+        {val:Math.pow(1+y/2,2*n), msg:`That is the <em>growth</em> factor, the reciprocal of what you want. A discount factor brings a future dollar back to today, so it must be less than 1.`},
+        {val:1/Math.pow(1+y,2*n), msg:`You doubled the periods but did not halve the rate.`},
+        {val:1/Math.pow(1+y,n), msg:`You compounded annually. d = 1/(1+y/2)<sup>2n</sup> = 1/(1+${(y/2).toFixed(5)})<sup>${2*n}</sup>.`},
+        {val:1/Math.pow(1+y/2,n), msg:`You halved the rate but did not double the periods. ${n} years is ${2*n} six-month periods.`}
+      ],
+      steps:[
+        `d<sub>${n}</sub> = 1 / (1 + y/2)<sup>2n</sup>`,
+        `= 1 / (1 + ${(y/2).toFixed(6)})<sup>${2*n}</sup>`,
+        `= ${correct.toFixed(6)}`
+      ]};
+  }},
+
+{ id:"d2", topic:"df", name:"Zero yield from a discount factor", gen(){
+    /* MEASURED 26 Aug 2026, do not "fix" again. A reader flagged that the 6dp factor is
+       rounded while the key is the drawn y, so inverting the printed figure returns
+       5.750012% rather than 5.7500%. Enumerated the whole grid: 120 draws, worst drift
+       0.00077%, ZERO draws anywhere near the 0.25% match tolerance. Deriving the key from
+       the rounded factor instead would turn a clean 3.5000% answer into 3.49997% for a
+       discrepancy no student can see. Left as is deliberately.
+       RE-MEASURED 27 Aug 2026 after the grid moved off the house lattice, and STATING THE
+       UNITS this time, which the line above did not: those figures are RELATIVE drift.
+       New grid, 100 draws: 0.00002 percentage points absolute, 0.0006% relative. The
+       tolerance it must clear, 0.25, is in percentage points. Verdict unchanged.
+       RE-MEASURED AGAIN 27 Aug 2026 after absorbing b3's 1-2 year range: 175 draws,
+       0.00006 pp absolute, 0.0012% relative. Still ~200x inside tolerance.          */
+    /* n=2 dropped: b3 inverts a factor to a zero yield over 0.5-2 years off the same
+       lattice, so at n=2 these were the same question with the same numbers. b3 keeps
+       the short end, d2 the long.                                                  */
+    /* n=2 restored 27 Aug 2026 (it had been dropped only to separate d2 from b3, and b3
+       is now parked). The short end does NOT come back with it: at n=1 the annually
+       compounded, simply annualised and total growth distractors are the SAME NUMBER --
+       the three formulas coincide there -- so only one usable distractor survives, and
+       the 20,000-trial audit failed the moment n=1 was added. Anything under two years
+       needs a different distractor set, which is what parked b3 had. Do not widen.   */
+    const n = pick([2,2.5,3,4,5]);
+    /* OFF-LATTICE: the old grid held 5.200%, 5.600%, 6.300% and 6.600%, which are
+       CURVE[2.5], CURVE[3], CURVE[4] and CURVE[5] -- so d2 could print a house-curve
+       factor at every one of its maturities. See b3.                                 */
+    const y = pick(range(.0301,.0901,.0025));
+    const d = dfOf(y,n);
+    const correct = y;
+    /* 22 Sep 2026: the worked solution now inverts the SIX-DECIMAL factor the stem prints, not
+       the unrounded one -- "1/0.941999 = 1.061573" was the unrounded figure's last digit and
+       did not reproduce (gridall.js 03, STEPS, 47 of 125 draws). Each line below is computed
+       from the line above it. The key stays the drawn yield: on this grid 1 + y/2 is an exact
+       multiple of 1e-6, so the six-decimal chain returns it exactly -- walked over all 125
+       draws, worst gap 5e-15 relative, 0.0000% of the 0.25% match tolerance.              */
+    const dP = +d.toFixed(6);                          // the factor as printed
+    const gP = +(1/dP).toFixed(6);                     // (1+y/2)^2n from the printed factor
+    const hP = +Math.pow(gP,1/(2*n)).toFixed(6);       // 1 + y/2 from the printed growth
+    return {
+      unit:"percent",
+      text:`The discount factor for the <b>${n}-year</b> maturity is
+            <b>d<sub>${n}</sub> = ${d.toFixed(6)}</b>.`,
+      ask:"What zero yield does that imply, per annum compounded semiannually?",
+      correct,
+      cands:[
+        {val:Math.pow(1/d,1/(2*n))-1, msg:`That is the rate per six-month period. Multiply by 2 to quote it per annum.`},
+        {val:Math.pow(1/d,1/n)-1, msg:`That is the annually compounded rate. The market convention here is semiannual compounding.`},
+        {val:(1/d-1)/n, msg:`That is a simple annualised rate; it ignores compounding.`},
+        {val:1/d-1, msg:`That is the total growth over the whole ${n} years, not a per-annum rate.`}
+      ],
+      steps:[
+        `d = 1/(1+y/2)<sup>${2*n}</sup>, so (1+y/2)<sup>${2*n}</sup> = 1/d = 1/${dP.toFixed(6)} = ${gP.toFixed(6)}`,
+        `1 + y/2 = ${gP.toFixed(6)}<sup>1/${2*n}</sup> = ${hP.toFixed(6)}`,
+        `y = 2 &times; (${hP.toFixed(6)} &minus; 1) = ${pctS(correct,4)}`
+      ]};
+  }},
+
+{ id:"d3", topic:"df", also:["bond"], name:"Price a 2-year note with discount factors", gen(){
+    /* was a 1.5-year note -- the same bond c2 prices off the yields and e2 critiques,
+       so all three blind readers on the v8 sitting called Q4/Q7/Q33 one scenario worked
+       three ways. Two years gives d3 a fourth cash flow of its own. It stays cheap for
+       the student because the factors are handed over; only c2 has to convert.      */
+    const F = 100;
+    const c = pick(range(.0325,.1325,.005));   /* quarters: see c2 */
+    const cf = F*c/2;
+    const d05 = dfOf(CURVE[0.5],0.5), d10 = dfOf(CURVE[1],1),
+          d15 = dfOf(CURVE[1.5],1.5), d20 = dfOf(CURVE[2],2);
+    const correct = cf*d05 + cf*d10 + cf*d15 + (F+cf)*d20;
+    return {
+      unit:"money",
+      text:`The discount factors are <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b>,
+            <b>d<sub>1.0</sub> = ${d10.toFixed(6)}</b>, <b>d<sub>1.5</sub> = ${d15.toFixed(6)}</b>
+            and <b>d<sub>2.0</sub> = ${d20.toFixed(6)}</b>. A 2-year T-note, face
+            <b>${money(F)}</b>, pays ${art(c)} <b>${pctS(c)} p.a.</b> coupon.`,
+      ask:"What is the price of the note?",
+      correct,
+      cands:[
+        {val:cf*d05+cf*d10+cf*d15+F*d20, msg:`You discounted the face value but dropped the final coupon. The last cash flow is ${money(F)} + ${moneyX(cf)} = ${moneyX(F+cf)}.`},
+        {val:F*c*d05+F*c*d10+F*c*d15+(F+F*c)*d20, msg:`You used the annual coupon ${moneyX(F*c)} at each date instead of the semiannual ${moneyX(cf)}.`},
+        {val:(3*cf+F+cf)*d20, msg:`You discounted every cash flow by d<sub>2.0</sub>. Each cash flow gets the discount factor for its own date.`},
+        {val:cf/d05+cf/d10+cf/d15+(F+cf)/d20, msg:`You divided by the discount factors. A discount factor already <em>is</em> the present value of $1 &mdash; multiply by it.`}
+      ],
+      steps:[
+        `Coupon per period = ${moneyX(cf)}`,
+        `Four cash flows: ${moneyX(cf)} at 0.5, 1.0 and 1.5, then ${moneyX(F+cf)} at 2.0`,
+        `P = ${moneyX(cf)}&times;${d05.toFixed(6)} + ${moneyX(cf)}&times;${d10.toFixed(6)} + ${moneyX(cf)}&times;${d15.toFixed(6)} + ${moneyX(F+cf)}&times;${d20.toFixed(6)}`,
+        `P = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"b1", topic:"boot", name:"Bootstrap the six-month discount factor", gen(){
+    const c = pick(range(.035,.09,.00125));
+    const F = 100;
+    const cf = F + F*c/2;
+    const d05 = pick(range(.955,.99,.0005));
+    /* A price to the cent pins d to about four decimals, yet the question asks for six -
+       all three readers called it a scoring hazard. Quote the price to four decimals, as
+       z2 already does, and derive the key from the figure on the page.               */
+    const P = Math.round(cf*d05*10000)/10000;
+    const correct = P/cf;
+    return {
+      unit:"number",
+      /* Tolerance tightened 14 Sep 2026. At the default 0.25% the "coupon stripped out
+         undiscounted" slip, as little as 0.018% from the key on this grid, was marked
+         correct - and the question asks for six decimals. It is listed first so a quiz,
+         which takes the first three kept distractors, offers it.                      */
+      tol:0.0001, sep:0.00015,
+      /* This is a generic "bond", not a T-note, so the semiannual convention does not
+         cover it - and with a single payment the answer turns entirely on whether that
+         payment is F + c/2 or F + c. Stated explicitly; the uniformity sweep should not
+         have taken it out.                                                            */
+      text:`A <b>0.5-year</b> bond, face <b>${money(F)}</b>, paying ${art(c)}
+            <b>${pctS(c,3)} p.a.</b> coupon <b>semiannually</b>, trades at
+            <b>\$${P.toFixed(4)}</b>.`,
+      ask:"What six-month discount factor d<sub>0.5</sub> does that imply? (Six decimals.)",
+      correct,
+      cands:[
+        {val:(P-F*c/2)/F, msg:`You stripped the coupon out of the price and discounted only the face. Both arrive at the same date, so discount them together.`},
+        {val:P/(F+F*c), msg:`You added a full year's coupon. The bond matures in six months, so it pays one semiannual coupon of ${moneyX(F*c/2)}.`},
+        {val:cf/P, msg:`You inverted it. d<sub>0.5</sub> = price &divide; cash flow, and must be less than 1.`},
+        {val:P/F, msg:`You divided by the face value alone. The bond's single cash flow at six months is the face value <em>plus</em> the final coupon: ${money(F)} + ${moneyX(F*c/2)} = ${moneyX(cf)}.`}
+      ],
+      steps:[
+        `The bond's only cash flow is ${money(F)} + ${pctS(c,3)}&times;${money(F)}&divide;2 = ${moneyX(cf)} at six months`,
+        `Price = ${moneyX(cf)} &times; d<sub>0.5</sub>`,
+        `d<sub>0.5</sub> = ${moneyX(P)} / ${moneyX(cf)} = ${correct.toFixed(6)}`
+      ]};
+  }},
+
+{ id:"b2", topic:"boot", name:"Bootstrap the one-year discount factor", gen(){
+    const F = 100;
+    const c = pick(range(.045,.09,.00125));
+    const cf1 = F*c/2, cf2 = F + F*c/2;
+    const d05 = pick(range(.965,.99,.0005));
+    /* d10 < d05^2 is exactly the condition for a RISING curve. The old draw took a flat
+       0.012-0.030 off d05, which left the curve inverted on most draws - out of step with
+       every other template in this bank. Deriving d10 from d05^2 guarantees the slope. */
+    const d10 = d05*d05 - pick(range(.002,.012,.0005));
+    /* the price is displayed to the cent, so the key is derived from the displayed figure */
+    /* four decimals, not two: a cent-rounded price does not support a six-decimal d */
+    const P = Math.round((cf1*d05 + cf2*d10)*10000)/10000;
+    const correct = (P - cf1*d05)/cf2;
+    return {
+      unit:"number",
+      /* Tolerance tightened 14 Sep 2026. At the default 0.25% the "coupon subtracted at
+         face value" slip, at least 0.022% from the key, was marked correct. 0.01% still
+         accepts a coupon PV rounded to the cent (at most 0.005% off). Listed second so a
+         quiz, which takes the first three kept distractors, offers it.                */
+      tol:0.0001, sep:0.00015,
+      text:`You already know <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b>. A <b>1-year</b>
+            bond, face <b>${money(F)}</b>, coupon <b>${pctS(c,3)} p.a.</b> paid
+            semiannually, trades at <b>\$${P.toFixed(4)}</b>.`,
+      ask:"What is d<sub>1.0</sub>? (Six decimals.)",
+      correct,
+      cands:[
+        {val:P/cf2, msg:`You ignored the six-month coupon. Strip its present value out first: ${moneyX(P)} &minus; ${moneyX(cf1)}&times;${d05.toFixed(6)}, then divide by ${moneyX(cf2)}.`},
+        {val:(P-cf1)/cf2, msg:`You subtracted the coupon at face value instead of its present value. It arrives in six months, so it is worth ${moneyX(cf1)}&times;${d05.toFixed(6)} = ${money(cf1*d05)} today.`},
+        {val:cf2/(P-cf1*d05), msg:`You inverted the last step. A discount factor is price &divide; cash flow and must be below 1; anything above 1 would mean a dollar next year is worth more than a dollar today.`},
+        {val:P/F, msg:`You divided the price straight by the face value, ignoring both coupons. The buyer is paying for three things: two coupons and the principal.`}
+      ],
+      /* 22 Sep 2026: the last step substitutes the coupon's present value as the PRODUCT,
+         where it used to print the cent-rounded figure -- "($97.1845 - $2.17) / $102.25"
+         gave 0.929237 against a printed 0.929225, and the chain did not reproduce
+         (gridall.js 03, STEPS, 38,915 of 39,627 draws). d(0.5) is drawn on a 0.0005
+         lattice, so it prints exactly and the key needs no change: on all 39,627 draws the
+         answer read off the printed figures IS the key, 0.0000% of the 0.01% tolerance. */
+      steps:[
+        `Cash flows: ${moneyX(cf1)} at 6 months, ${moneyX(cf2)} at 12 months`,
+        `${moneyX(P)} = ${moneyX(cf1)}&times;${d05.toFixed(6)} + ${moneyX(cf2)}&times;d<sub>1.0</sub>`,
+        `d<sub>1.0</sub> = (price &minus; coupon &times; d<sub>0.5</sub>) / (face + coupon) = (${moneyX(P)} &minus; ${moneyX(cf1)}&times;${d05.toFixed(6)}) / ${moneyX(cf2)} = ${correct.toFixed(6)}`
+      ]};
+  }},
+
+{ id:"y1", topic:"ytm", name:"Annualise a semiannual IRR", gen(){
+    const R = pick(range(.012,.045,.0005));
+    const correct = 2*R;
+    return {
+      unit:"percent",
+      text:`Excel's <code>IRR</code> on a semiannual bond's cash flows returns
+            <b>${pctS(R,4)}</b>.`,
+      ask:"What is the bond's yield to maturity, per annum compounded semiannually?",
+      correct,
+      cands:[
+        {val:R, msg:`That is the rate per six-month period, which is what <code>IRR</code> gives you when the cash flows are six months apart. Double it to quote it per annum.`},
+        {val:Math.pow(1+R,2)-1, msg:`That is the <em>effective</em> annual rate. The market convention quotes a nominal rate: simply 2 &times; ${pctS(R,4)}.`},
+        {val:R/2, msg:`You halved it. ${pctS(R,4)} is already the six-monthly rate &mdash; it needs doubling, not halving.`},
+        {val:Math.pow(1+R,4)-1, msg:`You compounded four times. There are two six-month periods in a year, not four.`}
+      ],
+      steps:[
+        `<code>IRR</code> returns the rate per period, and the periods here are six months long`,
+        `ytm = 2 &times; ${pctS(R,4)} = ${pctS(correct,4)} p.a. compounded semiannually`
+      ]};
+  }},
+
+{ id:"s1", topic:"strips", name:"How many STRIPS from a note", gen(){
+    const n = pick([2,3,5,7,10,20,30]);
+    const correct = 2*n + 1;
+    return {
+      unit:"number",
+      /* the answer 2n+1 rests on semiannual coupons AND on the final coupon and the
+         principal being two separate securities; neither was stated.                 */
+      text:`A <b>${n}-year</b> T-note pays a coupon every six months and its principal at
+            maturity. A dealer strips it under the STRIPS program, and the principal
+            repayment becomes a security in its own right alongside the coupons.`,
+      ask:"How many separate zero coupon securities does that create?",
+      correct,
+      cands:[
+        {val:2*n, msg:`You counted the coupons but not the principal. The final principal payment becomes a zero in its own right, so there is one more.`},
+        {val:n+1, msg:`You counted annual coupons. The note pays <em>semiannually</em>, so there are ${2*n} coupons plus the principal.`},
+        {val:n, msg:`That is the number of years. Each year carries two coupon payments, and the principal is a separate piece as well.`},
+        {val:2*n+2, msg:`One too many. There are ${2*n} coupon payments and exactly one principal payment.`}
+      ],
+      steps:[
+        `${n} years &times; 2 coupons a year = ${2*n} coupon payments`,
+        `plus 1 principal payment at maturity`,
+        `${2*n} + 1 = ${correct} securities`
+      ]};
+  }},
+
+
+{ id:"z3", topic:"zero", also:["df"], name:"Price a zero from a discount factor", gen(){
+    const n = pick([1,1.5,2,2.5,3,4,5]);
+    const F = pick([1000,5000,10000,25000]);
+    /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules), so every result
+       reproduces from the page (gridall.js flagged the last digit). */
+    const d = +dfOf(CURVE[n],n).toFixed(6);
+    const correct = F*d;
+    return {
+      unit:"money",
+      text:`The discount factor for <b>${n} years</b> is <b>${d.toFixed(6)}</b>. You hold a
+            zero of that maturity with face value <b>${money(F)}</b>.`,
+      ask:"What is it worth today?",
+      correct,
+      cands:[
+        {val:F/d, msg:`You divided. A discount factor is already the present value of $1 at that date, so multiply the face value by it. Dividing gives a number larger than face, which cannot be right for a zero.`},
+        {val:F*(1-d), msg:`That is the discount &mdash; the amount by which the price falls short of face. The price itself is ${money(F)} &times; ${d.toFixed(6)}.`},
+        {val:F*dfOf(CURVE[n],n/2), msg:`You used half the maturity. The factor given, ${d.toFixed(6)}, already applies to the full ${n} years.`},
+        {val:F-d, msg:`You subtracted the discount factor from the face value. The factor is a multiplier, not a dollar amount.`}
+      ],
+      steps:[
+        `A discount factor is the price today of $1 paid at that maturity`,
+        `Price = face value &times; discount factor = ${money(F)} &times; ${d.toFixed(6)} = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"c3", topic:"curve", name:"Read the curve: price two maturities", gen(){
+    const na = pick([1,1.5,2]);
+    const nb = pick([3,4,5]);
+    const F = 1000;
+    /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules), so every result
+       reproduces from the page (gridall.js flagged the last digit). */
+    const pa = +zPrice(F,CURVE[na],na).toFixed(2), pb = +zPrice(F,CURVE[nb],nb).toFixed(2);
+    const correct = pa - pb;
+    return {
+      unit:"money",
+      text:`On the zero yield curve, the <b>${na}-year</b> zero yield is <b>${pctS(CURVE[na])}</b> and
+            the <b>${nb}-year</b> zero yield is <b>${pctS(CURVE[nb])}</b>, both p.a.
+            compounded semiannually. Both zeros have <b>${money(F)}</b> face value.`,
+      ask:`How much more does the ${na}-year zero cost than the ${nb}-year zero?`,
+      correct,
+      cands:[
+        {val:pb-pa, msg:`Wrong way round. The shorter zero is discounted for less time <em>and</em> at a lower rate here, so it is the more expensive of the two.`},
+        {val:pa+pb, msg:`You added the two prices rather than taking the difference.`},
+        {val:F-pb, msg:`That is the discount on the ${nb}-year zero alone.`},
+        {val:(CURVE[nb]-CURVE[na])*F, msg:`You applied the yield difference to the face value. Yields do not translate into price differences that directly &mdash; you have to price each zero.`}
+      ],
+      steps:[
+        `Price of a zero = face / (1 + y/2)<sup>2n</sup>`,
+        `${na}-year zero: ${money(F)}/(1+${(CURVE[na]/2).toFixed(5)})<sup>${2*na}</sup> = ${money(pa)}`,
+        `${nb}-year zero: ${money(F)}/(1+${(CURVE[nb]/2).toFixed(5)})<sup>${2*nb}</sup> = ${money(pb)}`,
+        `Difference = ${na}-year price &minus; ${nb}-year price = ${money(pa)} &minus; ${money(pb)} = ${money(correct)}`
+      ]};
+  }},
+
+{ id:"z4", topic:"zero", name:"Deep discount: the 30-year zero", gen(){
+    const y = pick(range(.05,.12,.0025));
+    const F = 1000;
+    const n = 30;
+    const correct = zPrice(F,y,n);
+    return {
+      unit:"money",
+      text:`A <b>30-year</b> zero, face <b>${money(F)}</b>, has a zero yield of
+            <b>${pctS(y)} p.a. compounded semiannually</b>.`,
+      ask:"What does it cost today?",
+      correct,
+      cands:[
+        {val:F/Math.pow(1+y,30), msg:`Annual compounding. Sixty six-month periods at ${pctS(y/2,4)} each, not thirty years at ${pctS(y)}.`},
+        {val:F/Math.pow(1+y/2,30), msg:`You used 30 periods. Thirty years of semiannual compounding is 60 periods.`},
+        {val:F*Math.pow(1+y/2,60), msg:`You grew it forward instead of discounting back. A zero always trades below its face value.`},
+        {val:F/(1+y*30), msg:`Simple interest. Over 30 years compounding makes an enormous difference.`}
+      ],
+      steps:[
+        `60 periods at ${pctS(y/2,4)} per period`,
+        `P = ${money(F)} / (1+${(y/2).toFixed(6)})<sup>60</sup> = ${money(correct)}`,
+        `The whole of the interest is delivered through the discount to face value.`
+      ]};
+  }},
+
+/* ------------------------------- component skills for Case 02 (Note 03) ---
+   Par bonds, stripping coupons, and building a zero out of coupon bonds.    */
+
+{ id:"pb1", topic:"boot", also:["df","case"], name:"Discount factor from a 0.5-year par bond", gen(){
+    const F=1000, c=pick(range(.03,.10,.0025));
+    const cf=F*(1+c/2);
+    const correct=1/(1+c/2);
+    return {
+      unit:"number",
+      text:`A <b>0.5-year</b> T-note with <b>${money(F)}</b> face value trades <b>at par</b>,
+            paying ${art(c)} <b>${pctS(c)} p.a.</b> coupon.`,
+      ask:"What discount factor d<sub>0.5</sub> does it imply? (Six decimals.)",
+      correct,
+      cands:[
+        {val:1/(1+c), msg:`You used the full annual rate. The note has six months to run, so its one cash flow is discounted at ${pctS(c)} &divide; 2 = ${pctS(c/2,4)}.`},
+        {val:1+c/2, msg:`Inverted. A discount factor is the price today of \\$1 later, so it must be below 1.`},
+        {val:1/Math.pow(1+c/2,2), msg:`You used two periods. The note matures in six months &mdash; that is one period, not two.`},
+        {val:F/(F+F*c), msg:`You added a full year of coupon. A 0.5-year note pays one semiannual coupon of ${money(F*c/2)}, so its single cash flow is ${money(cf)}.`}
+      ],
+      steps:[
+        `Trading at par means the price is ${money(F)} and the ytm equals the coupon rate, ${pctS(c)}`,
+        `Its one cash flow is ${money(F)} + ${money(F*c/2)} = ${money(cf)} at time 0.5`,
+        `${money(cf)} &times; d<sub>0.5</sub> = ${money(F)}, so d<sub>0.5</sub> = ${correct.toFixed(6)}`
+      ]};
+  }},
+
+{ id:"pb2", topic:"boot", also:["case"], name:"Bootstrap d(1.0) from a 1-year par bond", gen(){
+    const F=1000;
+    /* COLLISION BAND, do not widen. pb2, pb3 and syn1 each display d(0.5) and then imply
+       a DIFFERENT one-year factor, so no two may ever draw the same six-month rate -- and
+       none may draw 3.000%, which is CURVE[0.5]: that printed the house curve's own
+       0.985222 and contradicted d3, z3, c1, c2, c3, e2, k1 and k2 at once. The three now
+       sit on a stride-3 interleave of the eighth lattice, so they are disjoint from each
+       other and never land on a quarter point. Checked by _tools/collide.js.          */
+    const c05=pick(range(.02875,.05125,.0075));
+    /* was a disjoint 5.5-9% band against a 2.5-5% six-month rate, implying a 614bp jump
+       in six months. pb3 was retuned this week and its siblings were missed.         */
+    const c10=c05+pick(range(.005,.0125,.0025));
+    /* 22 Sep 2026: d(0.5) is quantised to the six decimals the STEM prints, so the key is
+       what the figure the student is handed actually gives. It used to be built from the
+       unrounded factor, and the printed chain then failed to reproduce its own answer
+       ("($1,000.00 - $16.64) / $1,016.875 = 0.967045" against 0.96704118; gridall.js 03,
+       STEPS, 13 of 16 draws). The key moves by at most 8.3e-9 relative -- 0.0003% of the
+       0.25% match tolerance, and nothing at six decimals.
+       The coupon's present value is also printed to six decimals rather than to the cent:
+       the answer is asked to six decimals, and a student who carried the cent-rounded
+       figure into the last line landed one in the last place off the key.               */
+    const d05=+(1/(1+c05/2)).toFixed(6);
+    const cpn=F*c10/2, last=F+cpn;
+    const correct=(F - cpn*d05)/last;
+    /* THREE DECIMALS on the coupon, not two. The collision fix moved this band onto the
+       eighth lattice -- which is right, real Treasury coupons come in eighths -- but the
+       default 2dp display turned 4.125% into "4.13%" while the key kept using the true
+       rate. All three blind readers caught it: the six-decimal answer moved in its fifth
+       place, and pb3 and syn1 printed the same "5.38%" against coupons of $26.90 and
+       $26.88. b1 and b2 already display eighths at 3dp; these now match.              */
+    return {
+      unit:"number",
+      text:`You already have <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b>. A <b>1-year</b> T-note with
+            <b>${money(F)}</b> face trades <b>at par</b>, paying ${art(c10)}
+            <b>${pctS(c10,3)} p.a.</b> coupon.`,
+      ask:"What is d<sub>1.0</sub>? (Six decimals.)",
+      correct,
+      cands:[
+        {val:F/last, msg:`You ignored the six-month coupon. The buyer is paying for that ${moneyX(cpn)} too, so strip its present value out first: ${money(F)} &minus; ${moneyX(cpn)}&times;${d05.toFixed(6)}.`},
+        {val:(F - cpn*d05)/F, msg:`You divided by the face value alone. The cash flow at one year is the face value <em>plus</em> the final coupon, ${moneyX(last)}.`},
+        {val:d05, msg:`That is d<sub>0.5</sub>, which you already knew. The one-year factor has to come out smaller than it.`},
+        {val:last/(F - cpn*d05), msg:`Inverted. A discount factor is price divided by cash flow, and must be below 1.`}
+      ],
+      steps:[
+        `At par the price is ${money(F)}. Cash flows: ${moneyX(cpn)} at 0.5, ${moneyX(last)} at 1.0`,
+        `${moneyX(cpn)} &times; d<sub>0.5</sub> + ${moneyX(last)} &times; d<sub>1.0</sub> = ${money(F)}`,
+        `PV of the coupon = ${moneyX(cpn)} &times; ${d05.toFixed(6)} = \$${(cpn*d05).toFixed(6)}`,
+        `d<sub>1.0</sub> = (price &minus; coupon &times; d<sub>0.5</sub>) / (face + coupon) = (${money(F)} &minus; ${moneyX(cpn)}&times;${d05.toFixed(6)}) / ${moneyX(last)} = ${correct.toFixed(6)}`
+      ]};
+  }},
+
+{ id:"pb3", topic:"boot", also:["case"], name:"Bootstrap d(1.5) — two coupons to strip", gen(){
+    const F=1000;
+    let c05,c10,c15,d05,d10,cpn;
+    do {
+      /* Was three disjoint bands (2-4.5%, 5-7.5%, 8-12%), which forced zero curves
+         running to 25% with six-month steps of up to 13pp -- all three blind readers
+         called it implausible. Now a base plus two moderate rising steps: the grid tops
+         out near 7.8% with a maximum step of 1.8pp, and every distractor still clears
+         this template's 0.08% separation floor.                                       */
+      c05=pick(range(.02625,.04875,.0075));   /* pb3 owns the 2.625 + 0.75k slice */
+      c10=c05+pick(range(.005,.0125,.0025));
+      c15=c10+pick(range(.005,.0125,.0025));
+      /* 22 Sep 2026: both factors are quantised to the six decimals the STEM prints them
+         to, so the key is what the two figures the student is handed actually give. Built
+         from the unrounded factors, the printed chain missed its own answer's last digit
+         ("... - 63.864271) / $1,033.125 = 0.906121" against 0.90612049; gridall.js 03,
+         STEPS, 2 of 64 draws). The key moves by at most 2.1e-8 relative, 0.02% of this
+         template's 0.01% match tolerance; at the six decimals the answer is read to it
+         moves by one in the last place on 2 of the 64 draws.                           */
+      d05=+(1/(1+c05/2)).toFixed(6);
+      d10=+((F - (F*c10/2)*d05)/(F + F*c10/2)).toFixed(6);
+      cpn=F*c15/2;
+    } while (!(d05>d10));
+    const last=F+cpn;
+    const correct=(F - cpn*(d05+d10))/last;
+    return {
+      unit:"number",
+      /* the "same rate for both coupons" slip is worth only a fraction of a
+         percent here, so the separation has to be tighter than the default */
+      /* Tolerance set 22 Sep 2026 from the full-grid check (gridall.js 03): discounting both coupons at d0.5 was inside the old 0.08%
+         match on 34 of 64 draws, and on Quiz 2's Sample it picked the key. Smallest gap 0.033%. */
+      tol:0.0001, sep:0.00025,
+      text:`You have <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b> and
+            <b>d<sub>1.0</sub> = ${d10.toFixed(6)}</b>. A <b>1.5-year</b> T-note with
+            <b>${money(F)}</b> face trades <b>at par</b>, paying ${art(c15)}
+            <b>${pctS(c15,3)} p.a.</b> coupon.`,   /* 3dp: see pb2 */
+      ask:"What is d<sub>1.5</sub>? (Six decimals.)",
+      correct,
+      /* order: slip third, so a quiz swaps it for exactly one option (22 Sep 2026) */
+      cands:[
+        {val:(F - cpn*(d05+d10))/F, msg:`You divided by the face value alone. The 1.5-year cash flow is ${money(F)} + ${moneyX(cpn)} = ${moneyX(last)}.`},
+        {val:F/last, msg:`You ignored both coupons. The buyer is paying for all three cash flows.`},
+        {val:(F - 2*cpn*d05)/last, msg:`You discounted <em>both</em> coupons at d<sub>0.5</sub>. The second one arrives at 1.0, so it is worth ${moneyX(cpn)}&times;${d10.toFixed(6)} = ${money(cpn*d10)}, not ${money(cpn*d05)}. This is the single most common slip on this material.`},
+        {val:d10, msg:`That is d<sub>1.0</sub>, which you already had. Each further maturity gives a smaller factor.`}
+      ],
+      steps:[
+        `Cash flows: ${moneyX(cpn)} at 0.5, ${moneyX(cpn)} at 1.0, ${moneyX(last)} at 1.5`,
+        `At par the price is the face value: ${money(F)} = c &times; d<sub>0.5</sub> + c &times; d<sub>1.0</sub> + (face + c) &times; d<sub>1.5</sub>`,
+        `So d<sub>1.5</sub> = (face &minus; c &times; (d<sub>0.5</sub> + d<sub>1.0</sub>)) / (face + c)`,
+        `= (${money(F)} &minus; ${moneyX(cpn)} &times; (${d05.toFixed(6)} + ${d10.toFixed(6)})) / ${moneyX(last)} = <b>${correct.toFixed(6)}</b>`,
+        `Each coupon takes the discount factor for its <em>own</em> date.`
+      ]};
+  }},
+
+{ id:"syn1", topic:"boot", also:["case","ytm"], name:"Cost of the stripped bond", gen(){
+    const F=1000;
+    /* see pb2's COLLISION BAND note -- syn1 owns the 3.125 + 0.75k slice */
+    const c05=pick(range(.03125,.05375,.0075));
+    /* the note's coupon was drawn from a band far above the six-month rate used for
+       d(0.5), so the two implied a 3.25% / 8.61% curve.                              */
+    const c10=c05+pick(range(.0075,.02,.0025));
+    const d05=1/(1+c05/2);
+    const cpn=F*c10/2;
+    const correct=F - cpn*d05;
+    return {
+      unit:"money",
+      /* "net cost for what is left" was only unambiguous if you assumed the note had
+         been bought at par first, which the stem never said. Now it does, and the ask
+         names the cash flow the cost is for.                                         */
+      text:`You <b>buy</b> a <b>1-year</b> T-note at par &mdash; face <b>${money(F)}</b>, paying ${art(c10)}
+            <b>${pctS(c10,3)} p.a.</b> coupon &mdash; and immediately sell away its six-month coupon
+            of <b>${moneyX(cpn)}</b>, for which the market pays you its present value at
+            <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b>.`,
+      ask:"What have you paid, net, for the one-year cash flow you are left with?",
+      correct,
+      cands:[
+        {val:F + cpn*d05, msg:`You added the proceeds. Selling the coupon brings money <em>in</em>, so it comes off what you paid.`},
+        {val:F, msg:`That is the price before selling the coupon. Selling it reduces your net outlay by ${money(cpn*d05)}.`},
+        {val:cpn*d05, msg:`That is what the coupon fetched, not what the remainder cost you.`},
+        {val:F - cpn - cpn*d05, msg:`You took the coupon off twice &mdash; once at face and once at present value. It is sold once.`}
+      ],
+      steps:[
+        `You pay ${money(F)} for the note`,
+        `The six-month coupon sells for ${moneyX(cpn)} &times; ${d05.toFixed(6)} = ${money(cpn*d05)}`,
+        `Net cost = ${money(F)} &minus; ${money(cpn*d05)} = ${money(correct)}`,
+        `What remains pays nothing until one year, and ${moneyX(F+cpn)} then &mdash; a zero.`
+      ]};
+  }},
+
+{ id:"syn2", topic:"ytm", also:["case","zero"], name:"Yield of the stripped bond", gen(){
+    const F=1000;
+    /* at n = 1 the annual-compounding, total-gain and simple-annualised
+       slips all collapse onto the same number, leaving nothing to diagnose */
+    const n=pick([1.5,2,2.5,3]);
+    const y=pick(range(.05,.10,.0025));
+    const cf=pick([1030,1040,1050,1060,1080]);
+    const P=Math.round(cf/Math.pow(1+y/2,2*n)*100)/100;   // shown to the cent
+    const correct=2*(Math.pow(cf/P,1/(2*n))-1);           // solve from what is shown
+    return {
+      unit:"percent",
+      /* "After stripping its coupons away, what is left of a T-note" read as a STRIPS
+         principal strip, which pays face ALONE - so the $1,040 looked like an error to
+         all three blind readers. It is not: this is the Case 02 construction, where you
+         sell the INTERMEDIATE coupons and keep the final payment entire. The stem now
+         says so. "its yield" was also ambiguous between the note and the residual.    */
+      text:`You buy a T-note and sell away every coupon except the last, leaving you a
+            single payment of <b>${money(cf)}</b> at <b>${n} year${n===1?"":"s"}</b>
+            &mdash; the face value plus the final coupon &mdash; and nothing before it.
+            Your net cost was <b>${money(P)}</b>.`,
+      ask:"What yield to maturity does that synthetic zero offer, p.a. compounded semiannually?",
+      correct,
+      cands:[
+        {val:Math.pow(cf/P,1/(2*n))-1, msg:`That is the rate per six-month period. Annualise it by multiplying by 2.`},
+        {val:Math.pow(cf/P,1/n)-1, msg:`That is annually compounded. Treasury yields are quoted per annum compounded semiannually, so solve ${money(cf)}/(1+y/2)<sup>${2*n}</sup> = ${money(P)}.`},
+        {val:cf/P-1, msg:`That is the total gain over the whole ${n} year${n===1?"":"s"}, not a per-annum rate.`},
+        {val:(cf/P-1)/n, msg:`That annualises the total gain simply, ignoring compounding.`}
+      ],
+      steps:[
+        `(1 + y/2)<sup>${2*n}</sup> = ${money(cf)} / ${money(P)} = ${(cf/P).toFixed(6)}`,
+        `1 + y/2 = ${Math.pow(cf/P,1/(2*n)).toFixed(6)}`,
+        `y = ${pctS(correct,4)} &mdash; the zero yield for the ${n}-year maturity`
+      ]};
+  }},
+
+{ id:"rep1", topic:"boot", also:["case"], name:"Replicating a zero — the long leg", gen(){
+    const F=1000;
+    const c=pick(range(.04,.10,.0025));
+    const last=F+F*c/2;
+    const target=pick([50000,100000,250000,500000,1000000]);
+    const correct=target/last;
+    return {
+      unit:"number",
+      /* The old stem stopped at "pays $1,032.50 at maturity", which read as though buying
+         the note alone delivered the client a zero. It does not - the position also throws
+         off a six-month coupon, cancelled in the second leg (rep2) by shorting the 0.5-year
+         note. Saying so up front stops the item asserting a job it has only half done.   */
+      /* All cross-references to the short leg removed. rep1 and rep2 draw their parameters
+         independently, so any language implying they are two halves of one trade is a
+         promise the generator cannot keep - three readers caught the mismatch at each of
+         three sittings. Each template now stands entirely alone.                       */
+      /* face, coupon rate and "at par" were all redundant once the maturity payment is
+         given - three readers, three sittings. Only the $1,032.50 does any work.     */
+      text:`A client wants a zero paying <b>${money(target)}</b> in one year. You plan on
+            buying an appropriate amount of a 1-year T-note that pays <b>${moneyX(last)}</b>
+            at maturity and selling the unwanted six-month coupon payment away.`,
+      ask:"How many units of the 1-year note must you buy? (Four decimals.)",
+      correct,
+      cands:[
+        {val:target/F, msg:`You divided by the face value. At maturity the note pays the face value <em>and</em> the final coupon &mdash; ${money(last)} in total.`},
+        {val:target/(F*c/2), msg:`You divided by the coupon alone. The maturity payment is ${money(last)}.`},
+        {val:last/target, msg:`Inverted. You need enough notes to generate ${money(target)}, so divide the target by what one note pays.`},
+        {val:target/(F+F*c), msg:`You added a full year of coupon. The note pays one more semiannual coupon of ${money(F*c/2)} at maturity.`}
+      ],
+      steps:[
+        `Each unit pays ${money(last)} at one year`,
+        `N &times; ${money(last)} = ${money(target)}`,
+        `N = ${correct.toFixed(4)} units`
+      ]};
+  }},
+
+{ id:"rep2", topic:"boot", also:["case"], name:"Replicating a zero — the short leg", gen(){
+    const F=1000;
+    const cB=pick(range(.05,.10,.0025));
+    const cA=pick(range(.02,.045,.0025));
+    const cfA=F*(1+cA/2);
+    const cpnB=F*cB/2, lastB=F+cpnB;
+    const target=pick([100000,250000,500000,1000000]);
+    const NB=target/lastB;
+    /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules), so every result
+       reproduces from the page (gridall.js flagged the last digit). */
+    const correct=+(NB*cpnB).toFixed(2)/cfA;
+    return {
+      unit:"number",
+      /* The unit count was never needed - the answer is the coupon divided by the short
+         note's cash flow - and displaying it invited a student to carry rep1's answer over
+         into a template whose parameters are drawn independently. Dropping it removes an
+         unused input and the false chaining at the same time.                            */
+      /* said "Your 1-year note position", which read as leg two of rep1 - but the two draw
+         their parameters independently, so rep1's units imply a different coupon. Stated as
+         its own setup, with no back-reference.                                            */
+      /* Self-contained: no reference to a "first leg", and the ask asks for the SIZE of
+         the short, because the note's own worked portfolio carries a negative weight for
+         this leg and +/-39.2236 were both defensible.                                  */
+      text:`A portfolio holds a 1-year T-note that pays <b>${money(NB*cpnB)}</b> of coupon at
+            <b>t = 0.5</b>. You want no cash flow to arrive on that date, so you short a 0.5-year
+            note whose single cash flow is <b>${money(cfA)}</b> per unit.`,
+      ask:"How large must the short position be, in units? (Four decimals, as a positive number.)",
+      correct,
+      cands:[
+        {val:NB*cpnB/F, msg:`You divided by the face value. The 0.5-year note pays its face value plus its own coupon, ${money(cfA)}, on that date.`},
+        {val:cfA/(NB*cpnB), msg:`Inverted. Divide the coupon you have to cancel by what one unit of the short note pays.`},
+        {val:NB*cpnB, msg:`That is the dollar amount to cancel, not the number of units. Each unit cancels ${money(cfA)} of it.`}
+      ],
+      steps:[
+        `Coupon to cancel at t = 0.5 = ${money(NB*cpnB)}`,
+        `Each unit shorted pays out ${money(cfA)} on that date`,
+        `N = coupon to cancel / cash flow per unit = ${money(NB*cpnB)} / ${money(cfA)} = ${correct.toFixed(4)} units, held short`,
+        `That short position is the only thing standing between this portfolio and a zero.`
+      ]};
+  }},
+
+{ id:"pyz1", topic:"curve", also:["boot","case"], name:"From par yields to a zero yield", gen(){
+    const F=1000;
+    let c05,c10;
+    /* Par and zero yields only separate enough to tell apart on a steep curve, but the
+       old guard demanded a 400bp six-month step and let the par curve reach 11%. Measured
+       over the whole grid, a 225-325bp step keeps the answer 0.57%-0.76% clear of the
+       1-year par yield against a 0.4% floor, and caps the curve at 7.75%.             */
+    /* 225-325bp still read as a doubling of the six-month rate. Measured over the grid,
+       a 75-150bp step keeps the 1-year zero 0.19-0.37% clear of the 1-year par yield, so
+       the floor comes down to 0.0015 with it.                                          */
+    do { c05=pick(range(.02,.045,.0025)); c10=c05+pick(range(.0075,.015,.0025)); }
+    while (c10-c05 < 0.0075);
+    /* 22 Sep 2026: the two discount factors are worked to EIGHT decimals, and the key is
+       what those printed figures give. At six decimals the bootstrapped d(1.0) pins the
+       zero yield only to about 5e-7, which is the fourth decimal the answer is quoted to,
+       so "($1,000.00 - $13.61) / $1,013.75 = 0.973007" then carried a wrong last digit
+       into the rate (gridall.js 03, STEPS, 37 of 44 draws). Neither factor is given in the
+       stem -- both are the solver's own working -- so the extra decimals cost the student
+       nothing. Walked over all 44 draws: the key moves by at most 1.4e-7 relative, 0.009%
+       of the 0.15% match tolerance, and the printed four-decimal answer never changes.  */
+    const d05=+(1/(1+c05/2)).toFixed(8);
+    const cpn=F*c10/2;
+    const d10=+((F-cpn*d05)/(F+cpn)).toFixed(8);
+    const correct=2*(Math.pow(1/d10,1/2)-1);
+    return {
+      unit:"percent",
+      tol:0.0015, sep:0.0015,
+      text:`The <b>0.5-year</b> par yield is <b>${pctS(c05)}</b> and the <b>1-year</b> par yield is
+            <b>${pctS(c10)}</b>, both p.a. compounded semiannually. They are the ytms of T-notes
+            trading at par with <b>${money(F)}</b> face.`,
+      ask:"What is the 1-year <em>zero</em> yield, p.a. compounded semiannually?",
+      correct,
+      cands:[
+        {val:c10, msg:`That is the 1-year <em>par</em> yield, which is not the same thing. A par bond pays a coupon at six months as well, and that early cash flow is discounted at the lower ${pctS(c05)} rate &mdash; which drags the par yield below the zero yield whenever the curve slopes up.`},
+        {val:c05, msg:`That is the 0.5-year par yield. It is used along the way &mdash; to discount the six-month coupon &mdash; but it is not the answer.`},
+        {val:d10, msg:`That is the discount factor d<sub>1.0</sub>, not a yield. Convert it with d = 1/(1+y/2)<sup>2</sup>.`},
+        {val:1/d10-1, msg:`That is the total growth over the year. Quote it the market's way: 2 &times; ((1/d)<sup>1/2</sup> &minus; 1).`}
+      ],
+      steps:[
+        `d<sub>0.5</sub> = 1/(1 + ${pctS(c05)}/2) = ${d05.toFixed(8)}`,
+        `The 1-year par bond pays ${money(cpn)} at 0.5 and ${money(F+cpn)} at 1.0 for ${money(F)}`,
+        `d<sub>1.0</sub> = (price &minus; coupon &times; d<sub>0.5</sub>) / (face + coupon) = (${money(F)} &minus; ${money(cpn)}&times;${d05.toFixed(8)}) / ${money(F+cpn)} = ${d10.toFixed(8)}`,
+        `y<sub>1.0</sub> = 2 &times; ((1/d<sub>1.0</sub>)<sup>1/2</sup> &minus; 1) = 2 &times; ((1/${d10.toFixed(8)})<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)}`,
+        `Compare: the par yield is ${pctS(c10)}, the zero yield ${pctS(correct,4)}. They agree only at the first maturity.`
+      ]};
+  }},
+
+{ id:"pyp1", topic:"curve", also:["df"], name:"From zero yields to the 1-year par yield", gen(){
+    let y05,y10;
+    /* par and zero yields sit close together, so the curve has to have some
+       slope before the two can be told apart from the number alone */
+    /* Curve steepness was set by the separation floor, not by realism: at sep 0.004 the
+       1-year par yield only cleared the 1-year zero on a 350bp six-month step. Measured
+       over the grid, a 75-150bp step gives a 0.19-0.37% gap, so the floor drops to 0.0015
+       and the curve becomes one a market could print.                                  */
+    do { y05=pick(range(.02,.045,.0025)); y10=y05+pick(range(.0075,.015,.0025)); }
+    while (y10-y05 < 0.0075);
+    const d05=dfOf(y05,0.5), d10=dfOf(y10,1);
+    const correct=2*(1-d10)/(d05+d10);
+    return {
+      unit:"percent",
+      tol:0.0015, sep:0.0015,
+      text:`The zero yield curve reads <b>${pctS(y05)}</b> at 0.5 years and <b>${pctS(y10)}</b> at
+            1 year, per annum compounded semiannually.`,
+      ask:"What is the 1-year par yield — the coupon rate that would make a 1-year note trade at par?",
+      correct,
+      cands:[
+        {val:y10, msg:`That is the 1-year <em>zero</em> yield. A par bond also pays a coupon at six months, discounted at the lower ${pctS(y05)}, which pulls the par yield below the zero yield whenever the curve slopes up.`},
+        {val:2*(1-d10)/d10, msg:`You divided by d<sub>1.0</sub> alone. The coupon is paid at 0.5 <em>and</em> 1.0, so it is discounted by d<sub>0.5</sub> + d<sub>1.0</sub>.`},
+        {val:(1-d10)/(d05+d10), msg:`That is the rate per six-month period. Double it to quote it per annum.`},
+        {val:y05, msg:`That is the 0.5-year zero yield &mdash; used to discount the first coupon, but not the answer.`}
+      ],
+      steps:[
+        `d<sub>0.5</sub> = ${d05.toFixed(6)},  d<sub>1.0</sub> = ${d10.toFixed(6)}`,
+        `At par: 100 = (c/2)(d<sub>0.5</sub> + d<sub>1.0</sub>) + 100 d<sub>1.0</sub>`,
+        `c = 2(1 &minus; ${d10.toFixed(6)}) / (${d05.toFixed(6)} + ${d10.toFixed(6)}) = ${pctS(correct,4)}`,
+        `Compare with the 1-year zero yield of ${pctS(y10)}: the par yield is lower, because part of the bond is repaid early at the cheaper short rate.`
+      ]};
+  }},
+
+{ id:"pyp2", topic:"curve", also:["df"], name:"From zero yields to the 1.5-year par yield", gen(){
+    let y05,y10,y15;
+    do {
+      /* was three disjoint bands giving 2.75%/7.75%/12.00% over 18 months. A 50-125bp
+         step separates the 1.5-year par yield from the 1.5-year zero by 0.33-0.82%, so
+         the floor drops to 0.0025 and the curve stays inside a plausible range.       */
+      y05=pick(range(.02,.04,.0025));
+      y10=y05+pick(range(.005,.0125,.0025));
+      y15=y10+pick(range(.005,.0125,.0025));
+    } while (y10-y05 < 0.005 || y15-y10 < 0.005);
+    const d05=dfOf(y05,0.5), d10=dfOf(y10,1), d15=dfOf(y15,1.5);
+    const S=d05+d10+d15;
+    const correct=2*(1-d15)/S;
+    return {
+      unit:"percent",
+      /* Tolerance set 22 Sep 2026 from the full-grid check (gridall.js 03): the 1.5-year zero yield was inside the old 0.4% match on 4 draws;
+         smallest gap 0.33%. Two decimals typed are off by at most 0.17%. */
+      tol:0.002, sep:0.003,
+      text:`The zero yield curve reads <b>${pctS(y05)}</b> at 0.5 years, <b>${pctS(y10)}</b> at
+            1 year and <b>${pctS(y15)}</b> at 1.5 years, per annum compounded semiannually.`,
+      ask:"What is the 1.5-year par yield — the coupon rate that would make a 1.5-year note trade at par?",
+      correct,
+      cands:[
+        {val:y15, msg:`That is the 1.5-year <em>zero</em> yield. The par bond pays coupons at 0.5 and 1.0 as well, discounted at the lower ${pctS(y05)} and ${pctS(y10)}, which holds the par yield below it.`},
+        {val:2*(1-d15)/(d05+d10), msg:`You left d<sub>1.5</sub> out of the sum. The final coupon is paid at 1.5 too, so all three factors go into the annuity.`},
+        {val:2*(1-d15)/d15, msg:`You divided by d<sub>1.5</sub> alone. The denominator is the sum of the factors for every coupon date.`},
+        {val:(1-d15)/S, msg:`That is the rate per six-month period. Annualise it by multiplying by 2.`}
+      ],
+      steps:[
+        `d<sub>0.5</sub> = ${d05.toFixed(6)},  d<sub>1.0</sub> = ${d10.toFixed(6)},  d<sub>1.5</sub> = ${d15.toFixed(6)}`,
+        `At par: 100 = (c/2)(d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub>) + 100 d<sub>1.5</sub>`,
+        `c = 2(1 &minus; ${d15.toFixed(6)}) / ${S.toFixed(6)} = ${pctS(correct,4)}`,
+        `The gap against the ${pctS(y15)} zero yield is wider than at one year, because more of the bond is repaid early.`
+      ]};
+  }},
+
+/* ---------------- reasoning problems: curve shape, ytm, sensitivity ------- */
+
+{ id:"ce1", topic:"ytm", also:["curve","reason"], name:"A flat curve collapses everything", gen(){
+    let y,c;
+    /* the coupon was drawn independently of the curve, so an 11% coupon could appear
+       against a 4.75% flat curve. It now sits a realistic 2-3.5pp either side.        */
+    do { y=pick(range(.03,.08,.0025)); c=y+pick([.02,.025,.03,.035,-.02,-.025,-.03]); }
+    while (c < 0.01 || Math.abs(c-y) < 0.02);
+    const n=pick([1,1.5,2,2.5,3]);
+    const ds=[]; for(let k=1;k<=2*n;k++) ds.push(1/Math.pow(1+y/2,k));
+    const P=ds.reduce((s,d)=>s+c/2*100*d,0)+100*ds[ds.length-1];
+    return {
+      unit:"percent",
+      text:`The zero yield curve is <b>completely flat at ${pctS(y)} p.a., compounded semiannually</b> — every maturity, same
+            rate. A <b>${n}-year</b> T-note pays ${art(c)} <b>${pctS(c)} p.a.</b> coupon.`,
+      ask:"What is its yield to maturity?",
+      correct:y,
+      cands:[
+        /* the current-yield distractor went with the price it needed */
+        {val:c, msg:`That is the coupon rate. It sets the cash flows, not the yield. On a flat curve the ytm is the curve rate whatever the coupon is &mdash; here the coupon is ${c>y?"above":"below"} it, so the note trades at ${c>y?"a premium":"a discount"}, and its ytm is still ${pctS(y)}.`},
+        {val:y/2, msg:`That is the rate per six-month period. Annualise it by doubling.`},
+        {val:(y+c)/2, msg:`Averaging the coupon rate and the discount rate is not how a ytm is defined. Solve the pricing equation instead — and on a flat curve you already know the answer.`}
+      ],
+      steps:[
+        `Every cash flow is discounted at the same ${pctS(y)}, because the curve is flat`,
+        `A ytm is the single rate reproducing the price. Here one rate already did it`,
+        `So the ytm is exactly ${pctS(y)} — and it would be, whatever the coupon`,
+        `On a flat curve the zero yield, the par yield and every bond's ytm are one number. Everything you have learned about them differing comes from the curve not being flat.`
+      ]};
+  }},
+
+{ id:"inv1", topic:"curve", also:["reason"], name:"Par against zero on an inverted curve", gen(){
+    const g=[0.5,1,1.5,2];
+    let z, ds, S, correct;
+    /* The inversion has to be steep enough that the par yield separates from the
+       zero yield, but not so steep that a discount factor stops falling -- that
+       would imply a negative forward rate, which is exactly what `dchk` teaches
+       cannot happen. Both conditions are enforced here. */
+    do {
+      /* a 350bp inversion inside two years implied a 0.34% p.a. forward from 1.5 to 2
+         years. 125-225bp off a 4.5-6% top inverts believably and keeps forwards well
+         clear of zero; the par-zero gap stays above the 0.004 floor.                 */
+      const top=pick(range(.05,.065,.0025)), drop=pick(range(.0125,.0175,.0025));
+      /* the middle points were unrounded thirds of the drop and printed as 6.083% /
+         4.917%; snapped to the nearest 0.05% so the stem reads like a quoted curve */
+      z=[top, Math.round((top-drop/3)*2000)/2000,
+              Math.round((top-2*drop/3)*2000)/2000, top-drop];
+      ds=z.map((y,i)=>1/Math.pow(1+y/2,2*g[i]));
+      S=ds.reduce((a,b)=>a+b,0);
+      correct=2*(1-ds[3])/S;
+    } while (!(ds[0]>ds[1] && ds[1]>ds[2] && ds[2]>ds[3])
+             /* guard lowered from 0.008 to 0.0045 alongside the gentler inversion: a
+                125-175bp drop separates the 2-year par yield from the 2-year zero by
+                0.51-0.62%, so the old 0.8% requirement was unsatisfiable and the
+                do/while spun forever.                                              */
+             || Math.abs(correct-z[3])/Math.max(correct,z[3]) < 0.0045);
+    return {
+      unit:"percent",
+      tol:0.004, sep:0.004,
+      text:`The zero curve is <b>inverted</b> (all yields p.a., compounded semiannually):
+            <b>${pctS(z[0])}</b> at 0.5 years,
+            <b>${pctS(z[1])}</b> at 1 year, <b>${pctS(z[2])}</b> at 1.5 years and
+            <b>${pctS(z[3])}</b> at 2 years.`,
+      ask:"What is the 2-year par yield?",
+      correct,
+      cands:[
+        {val:z[3], msg:`That is the 2-year <em>zero</em> yield. On this curve the par yield comes out <em>above</em> it — the opposite of the upward-sloping case, because now the early coupons are discounted at rates <em>higher</em> than the two-year rate.`},
+        {val:z[0], msg:`That is the 0.5-year zero yield, used to discount the first coupon only.`},
+        {val:2*(1-ds[3])/ds[3], msg:`You divided by d<sub>2</sub> alone. The coupon is paid at all four dates, so the denominator is the sum of all four discount factors.`},
+        {val:(1-ds[3])/S, msg:`That is the rate per six-month period. Double it.`}
+      ],
+      steps:[
+        `d = ${ds.map(x=>x.toFixed(6)).join(", ")}, summing to ${S.toFixed(6)}`,
+        `c = 2(1 &minus; ${ds[3].toFixed(6)}) / ${S.toFixed(6)} = ${pctS(correct,4)}`,
+        `The 2-year zero yield is ${pctS(z[3])}. The par yield is <em>higher</em>.`,
+        `On an upward curve the par yield sits below the zero yield. Invert the curve and the ordering flips. Neither is a rule about par yields — both follow from the shape.`
+      ]};
+  }},
+
+{ id:"cap1", topic:"boot", also:["curve","reason"], name:"Par yields all the way to a price", gen(){
+    /* Cut from four maturities to two on 26 Aug 2026. Anh: "too laborious ... there is
+       no point making the students go through a very long stretch of calculations if a
+       shorter stretch tests the same fundamental knowledge." The recursion is fully
+       established by the second point; the third and fourth were repetition. This is
+       still the ONLY template that runs par yields -> discount factors -> price end to
+       end, which is the Case 02a skill, so it was shortened rather than dropped.      */
+    const F=100;
+    let p; do { p=[pick(range(.03,.05,.0025)), pick(range(.045,.07,.0025))]; }
+    while (!(p[0]<p[1]));
+    const g=[0.5,1], d=[]; let run=0;
+    for(let i=0;i<2;i++){ const cpn=p[i]/2*F; d.push((F-cpn*run)/(F+cpn)); run+=d[i]; }
+    const c=pick(range(.03,.10,.005));
+    const correct=d.reduce((s,x)=>s+c/2*F*x,0)+F*d[1];
+    return {
+      unit:"money",
+      /* discounting at par yields instead of bootstrapped factors is only a
+         few tenths of a percent out -- tight enough to need a finer sieve, and
+         far too instructive a mistake to discard */
+      /* Tolerance set 22 Sep 2026 from the full-grid check (gridall.js 03): discounting both cash flows at d1 was inside the old 0.08%
+         match on 327 of 1395 draws; smallest gap 0.035%. */
+      tol:0.0002, sep:0.0003,
+      text:`Par yields, both p.a. compounded semiannually: <b>${pctS(p[0])}</b> at 0.5 years and
+            <b>${pctS(p[1])}</b> at 1 year. Now price a <b>1-year</b> T-note, face
+            <b>${money(F)}</b>, paying ${art(c)} <b>${pctS(c)} p.a.</b> coupon.`,
+      ask:"What is the note worth? (Bootstrap first.)",
+      correct,
+      cands:[
+        /* The old "discounted at par yields" and "used one ytm throughout" distractors
+           were kept from the four-maturity version. Over two periods both land inside
+           0.02% of the key -- under the 0.08% floor -- so usable() dropped them on 100%
+           of draws and the item silently shipped with only two crude distractors. These
+           two separate: measured over the whole grid, 100% and 73% survival.          */
+        {val:(c*F)*d[0]+(F+c*F)*d[1],
+         msg:`You used the <em>annual</em> coupon at each date. ${pctS(c)} is per annum and the note pays semiannually, so each coupon is ${money(c/2*F)}.`},
+        {val:(c/2*F+F+c/2*F)*d[1],
+         msg:`You discounted both cash flows at d<sub>1.0</sub>. The six-month coupon arrives earlier and is discounted less &mdash; at d<sub>0.5</sub> = ${d[0].toFixed(6)}.`},
+        {val:d.reduce((s,x)=>s+c/2*F*x,0)+F*d[1]-c/2*F*d[1],
+         msg:`You dropped the final coupon. At one year the note pays ${money(c/2*F)} of coupon <em>and</em> ${money(F)} of face.`},
+        {val:c/2*F*2+F, msg:`That is the sum of the cash flows with no discounting at all.`}
+      ],
+      steps:[
+        `Bootstrap: d = ${d.map(x=>x.toFixed(6)).join(", ")}`,
+        `Zero yields: ${d.map((x,i)=>pctS(2*(Math.pow(1/x,1/(2*g[i]))-1),3)).join(", ")}`,
+        `Price = ${money(c/2*F)}d<sub>0.5</sub> + ${money(F+c/2*F)}d<sub>1</sub> = ${money(correct)}`,
+        `Par yields in, discount factors out, zero yields alongside, price at the end. That is the whole chain.`
+      ]};
+  }},
+
+{ id:"s2", topic:"strips", also:["reason"], name:"Reconstructing a bond from STRIPS — the cost", gen(){
+    /* Split into two legs on 26 Aug 2026. Anh: "better to break it into two steps: first
+       ask how much the reconstruction costs, then ask how much they can make buying low
+       and selling high." That also settles a direction ambiguity all three blind readers
+       flagged - "a dealer HOLDS four STRIPS that COST x" reads as reconstitution, which
+       LOSES the gap; the profit needs whichever side is cheaper. s2b asks it explicitly. */
+    /* Face raised from $100 to $1,000. At $100 the coupon pieces cost about $2.77, and
+       rounding THAT to the cent made the 2-year coupon strip imply d = 0.923333 while the
+       principal strip implied 0.924000 - two factors for one date, inside the very
+       question that teaches the pieces must sum.                                     */
+    const F=1000, c=pick([.04,.05,.06,.07,.08]);
+    const cpn=F*c/2;
+    /* the factors used to be built by subtracting random decrements, which produced a
+       ZIGZAG zero curve (4.08 / 3.49 / 4.10 / 3.99) that no market prints. Built from a
+       monotone rising curve instead, so the five prices hang together.               */
+    /* Re-drawn when the pieces cost within 0.3% of face (22 Sep 2026, gridall.js 03): there
+       the "that is the face value" slip scored. */
+    let base,stp,d;
+    do {
+      base=pick(range(.03,.05,.0025)); stp=pick([.0025,.005]);
+      d=[0.5,1,1.5,2].map((t,i)=>1/Math.pow(1+(base+stp*i)/2,2*t));
+    } while (Math.abs(cpn*(d[0]+d[1]+d[2]+d[3]) + F*d[3] - F) < 0.003*F);
+    /* Said FOUR STRIPS and bundled the final coupon into the principal piece. A 2-year
+       note gives FIVE: four coupon STRIPS and the principal STRIP - which is exactly the
+       count s1 tests (10 years -> 21 pieces). Reader A caught the contradiction.      */
+    const strip=[cpn*d[0], cpn*d[1], cpn*d[2], cpn*d[3], F*d[3]];
+    const correct=strip.reduce((a,b)=>a+b,0);
+    return {
+      unit:"money",
+      tol:0.002,
+      text:`To build a 2-year <b>${pctS(c)} p.a.</b> T-note from scratch you buy <b>five</b>
+            STRIPS: the four coupon pieces of <b>${money(cpn)}</b> each, maturing at 0.5, 1,
+            1.5 and 2 years, and the <b>${money(F)}</b> principal piece at 2 years. They cost
+            <b>${money(strip[0])}</b>, <b>${money(strip[1])}</b>, <b>${money(strip[2])}</b>,
+            <b>${money(strip[3])}</b> and <b>${money(strip[4])}</b> respectively.`,
+      ask:"What does it cost to reconstruct one note?",
+      correct,
+      cands:[
+        {val:F+cpn*4, msg:`That adds the five <em>face</em> amounts, ignoring that each piece is bought at a discount. Add what they cost, not what they pay.`},
+        {val:strip[4], msg:`That is the principal piece alone. The four coupon STRIPS are part of the note too.`},
+        {val:correct-strip[0], msg:`You left out the first coupon STRIP, ${money(strip[0])}. All four pieces are needed to make the note whole.`},
+        {val:F, msg:`That is the face value. What the note costs to assemble depends on the four prices, not on its face.`}
+      ],
+      steps:[
+        `A 2-year note pays four coupons and its principal, so it strips into <b>five</b> securities.`,
+        `Cost = ${money(strip[0])} + ${money(strip[1])} + ${money(strip[2])} + ${money(strip[3])} + ${money(strip[4])}`,
+        `= ${money(correct)} per note.`
+      ]};
+  }},
+
+{ id:"s2b", topic:"strips", also:["reason"], name:"Reconstructing a bond from STRIPS — the trade", gen(){
+    /* Face raised from $100 to $1,000. At $100 the coupon pieces cost about $2.77, and
+       rounding THAT to the cent made the 2-year coupon strip imply d = 0.923333 while the
+       principal strip implied 0.924000 - two factors for one date, inside the very
+       question that teaches the pieces must sum.                                     */
+    const F=1000, c=pick([.04,.05,.06,.07,.08]);
+    const cpn=F*c/2;
+    /* the factors used to be built by subtracting random decrements, which produced a
+       ZIGZAG zero curve (4.08 / 3.49 / 4.10 / 3.99) that no market prints. Built from a
+       monotone rising curve instead, so the five prices hang together.               */
+    const base=pick(range(.03,.05,.0025)), stp=pick([.0025,.005]);
+    const d=[0.5,1,1.5,2].map((t,i)=>1/Math.pow(1+(base+stp*i)/2,2*t));
+    const sum=[cpn*d[0], cpn*d[1], cpn*d[2], cpn*d[3], F*d[3]].reduce((a,b)=>a+b,0);
+    /* was up to $9 on a ~$1,040 note - 87bp, orders of magnitude wider than any real
+       reconstitution spread. $0.40-$1.60 is 4-15bp, the right order.                */
+    const gap=pick(range(.4,1.6,.2))*pick([1,-1]);
+    const bond=sum+gap;
+    const correct=Math.abs(gap);
+    return {
+      unit:"money",
+      tol:0.004, sep:0.005,
+      /* s2 and s2b both opened by describing "a 2-year 6.00% p.a. T-note" and quoted
+         different prices for it, because they draw independently. This one no longer
+         restates the security's terms.                                                */
+      text:`A dealer prices a Treasury note two ways on the same screen. Bought as a bundle
+            of STRIPS the pieces come to <b>${money(sum)}</b>; the assembled note itself is
+            quoted at <b>${money(bond)}</b>.`,
+      ask:"How much is there to be made per note, buying whichever side is cheaper and selling the other?",
+      correct,
+      cands:[
+        {val:sum, msg:`That is the cost of the pieces, not the profit. The profit is the gap between the two prices.`},
+        {val:bond, msg:`That is the note's market price. The profit is the difference between it and the ${money(sum)} the pieces cost.`},
+        {val:sum+bond, msg:`You added the two. You buy one side and sell the other, so it is a difference, not a sum.`},
+        {val:correct*2, msg:`Double-counted. The gap between the two prices is captured once.`}
+      ],
+      steps:[
+        `Pieces ${money(sum)} against note ${money(bond)} &mdash; a gap of ${money(correct)}.`,
+        gap>0 ? `The pieces are the cheaper side: buy all four STRIPS, reconstitute them into the note, and sell the note.`
+               : `The note is the cheaper side: buy the note, strip it, and sell the four pieces.`,
+        `Profit = ${money(correct)} per note, and it is riskless &mdash; the cash flows on the two sides are identical by construction.`
+      ]};
+  }},
+
+{ id:"sen1", topic:"df", also:["reason"], name:"How much a rate move costs", gen(){
+    const n=pick([0.5,1,2,5,10,20,30]);
+    const y=pick(range(.03,.07,.0025));
+    const F=pick([100,1000]);
+    /* P0 is displayed to the cent, so the key is derived from the displayed figure.
+       Differencing the printed price against the unrounded one changed the answer at
+       the cent on 29% of draws.                                                      */
+    /* Rounding the shown price to the CENT left two defensible answers a cent apart -
+       exact discounting gave 4.71, differencing the printed figure gave 4.72. Four
+       decimals removes the fork instead of choosing a side of it.                    */
+    const P1=F/Math.pow(1+(y+0.01)/2,2*n);
+    /* the Math.round(...*10000)/10000 here was left over from when the stem supplied the
+       starting price to four decimals. The price is no longer shown, so rounding it only
+       put the key a hair away from what a student computes. Exact now.               */
+    const P0=F/Math.pow(1+y/2,2*n);
+    const correct=P0-P1;
+    return {
+      unit:"money",
+      /* The stem used to hand over the starting price, which the answer derives for
+         itself - and rounding THAT price is what produced two defensible answers a cent
+         apart across three sittings. Dropping it removes the unused number and the
+         rounding fork together.                                                      */
+      text:`A single cash flow of <b>${money(F)}</b> arrives in <b>${n} year${n===1?"":"s"}</b>.
+            Its zero yield is <b>${pctS(y)} p.a., compounded semiannually</b>, and that yield
+            now rises by <b>100 basis points</b>.`,
+      ask:"By how many dollars does its value fall?",
+      correct,
+      /* Before and after are each shown to the cent, so subtracting them can land a cent away
+         from the exact fall; on a short, small cash flow (about $0.48) that cent was outside the
+         0.25% tolerance and the worked solution's own figure was marked wrong. Accept anything
+         within a cent of the exact fall (22 Sep 2026).                                          */
+      tol:Math.max(0.0025, 0.011/correct), sep:Math.max(0.01, 0.022/correct),
+      cands:[
+        {val:P1, msg:`That is the new value, not the fall. Subtract it from the old one.`},
+        {val:P0, msg:`That is the old value.`},
+        {val:P0*0.01, msg:`That is 1\% of the current value. A 100 basis point move does not cost 1\% — it costs roughly 1\% <em>per year of waiting</em>, which over ${n} year${n===1?"":"s"} is a very different number.`},
+        {val:F*0.01*n, msg:`That is simple interest on the face value. The loss is a change in a discounted present value, not an interest amount.`}
+      ],
+      steps:[
+        `Value of a single cash flow = F / (1 + y/2)<sup>2T</sup>`,
+        `Before: ${money(F)} / (1+${(y/2).toFixed(5)})<sup>${2*n}</sup> = ${money(P0)}`,
+        `After:  ${money(F)} / (1+${((y+0.01)/2).toFixed(5)})<sup>${2*n}</sup> = ${money(P1)}`,
+        `Fall = value before &minus; value after = ${money(correct)}, which is ${((correct/P0)*100).toFixed(2)}\% of its value`,
+        `The further away the cash flow, the more a given rate move costs it. That is the whole idea behind duration.`
+      ]};
+  }},
+];
+
+/* ======================= CHOICE-MODE ITEMS ==============================
+   Auto-graded by which option is clicked, not by a typed number.
+     topic "error"   — a worked solution with one planted mistake
+     topic "concept" — reason about the direction of an effect, no arithmetic
+   Directional items shuffle their own options so position carries no
+   information; spot-the-error items must stay in step order.            */
+
+function shuffle(a){
+  const out = a.slice();
+  for (let i=out.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [out[i],out[j]] = [out[j],out[i]];
+  }
+  return out;
+}
+
+const CHOICE_TEMPLATES = [
+{ id:"e1", topic:"error", also:["zero"], name:"Find the mistake — pricing a zero", gen(){
+    const F = 1000, n = pick([3,5,7,10,15,20]);
+    const y = pick(range(.03,.09,.005));
+    const fault = pick(["rate","periods","direction"]);
+    const i = (fault==="rate") ? y : y/2;
+    const k = (fault==="periods") ? n : 2*n;
+    const grow = Math.pow(1+i,k);
+    const price = (fault==="direction") ? F*grow : F/grow;
+    const s = [
+      fault==="rate"
+        ? `<b>Step 1.</b> Rate per period = ${pctS(y)}`
+        : `<b>Step 1.</b> Rate per period = ${pctS(y)} &divide; 2 = ${pctS(i,4)}`,
+      fault==="periods"
+        ? `<b>Step 2.</b> Number of periods = ${k}`
+        : `<b>Step 2.</b> Number of periods = ${n} &times; 2 = ${k}`,
+      /* printed the rate from Step 1 and the period count from Step 2 all over again, so a
+         planted error in either showed twice and Step 3 became a defensible answer. It now
+         refers back instead of restating.                                               */
+      `<b>Step 3.</b> (1 + the rate from Step 1)<sup>the periods from Step 2</sup> = ${grow.toFixed(6)}`,
+      fault==="direction"
+        ? `<b>Step 4.</b> Price = ${money(F)} &times; ${grow.toFixed(6)} = ${money(price)}`
+        : `<b>Step 4.</b> Price = ${money(F)} &divide; ${grow.toFixed(6)} = ${money(price)}`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; a rate quoted per annum compounded semiannually is halved to get the rate per six-month period.`,
+      `Step 2 is fine &mdash; ${n} years of semiannual compounding is ${2*n} periods.`,
+      `Step 3 is fine &mdash; it follows from the rate and period count above it.`,
+      `Step 4 is fine &mdash; dividing the face value by the growth factor discounts it back to today.`
+    ];
+    let at, why;
+    if (fault==="rate"){
+      at=0; why=`${pctS(y)} is the <em>annual</em> rate. Compounded semiannually, the rate per six-month period is ${pctS(y)} &divide; 2 = ${pctS(y/2,4)}. Everything below inherits the doubled rate.`;
+    } else if (fault==="periods"){
+      at=1; why=`${n} years of semiannual compounding is ${2*n} periods, not ${n}. The rate was halved correctly, so the period count has to double to match. Both move together or neither does.`;
+    } else {
+      at=3; why=`The face value was <em>multiplied</em> by the growth factor. That grows money forward; here we need to bring ${money(F)} back to today, so divide. A zero must trade below its face value, and ${money(price)} is above it.`;
+    }
+    return {
+      mode:"choice",
+      text:`A student is pricing a <b>${n}-year</b> zero, face <b>${money(F)}</b>, at a zero
+            yield of <b>${pctS(y)} p.a. compounded semiannually</b>. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,q)=>({html, correct:q===at, msg: q===at ? why : fine[q]})),
+      steps:[
+        `Rate per period = ${pctS(y)} &divide; 2 = ${pctS(y/2,4)}`,
+        `Periods = ${2*n}`,
+        `Price = ${money(F)} / (1+${(y/2).toFixed(5)})<sup>${2*n}</sup> = ${money(F/Math.pow(1+y/2,2*n))}`
+      ]};
+  }},
+
+{ id:"e2", topic:"error", also:["curve"], name:"Find the mistake — pricing off the curve", gen(){
+    const F = 100, c = pick(range(.045,.115,.01)), cf = F*c/2;   /* halves: see c2 */
+    const y05=CURVE[0.5], y10=CURVE[1], y15=CURVE[1.5];
+    const fault = pick(["oneRate","coupon","lastCF"]);
+    const s = [
+      `<b>Step 1.</b> Coupon per period = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${money(fault==="coupon"?F*c:cf)}`,
+      fault==="oneRate"
+        ? `<b>Step 2.</b> Discount every cash flow at the 1.5-year rate of ${pctS(y15)}`
+        : `<b>Step 2.</b> Discount each cash flow at its own zero yield: ${pctS(y05)}, ${pctS(y10)}, ${pctS(y15)}`,
+      fault==="lastCF"
+        ? `<b>Step 3.</b> Final cash flow at 18 months = ${money(F)}`
+        : `<b>Step 3.</b> Final cash flow at 18 months = ${money(F)} + ${money(fault==="coupon"?F*c:cf)} = ${money(F+(fault==="coupon"?F*c:cf))}`,
+      `<b>Step 4.</b> Add the three present values to get the price`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; the annual coupon rate is halved to give the semiannual payment.`,
+      `Step 2 is fine &mdash; pricing off a zero yield curve means each cash flow is discounted at the zero yield for its own maturity.`,
+      `Step 3 is fine &mdash; at 18 months the note pays its last coupon together with the face value.`,
+      `Step 4 is fine &mdash; the price of a bond is the sum of the present values of its cash flows.`
+    ];
+    let at, why;
+    if (fault==="coupon"){
+      at=0; why=`${pctS(c)} is the coupon rate <em>per annum</em>. Paid semiannually, each coupon is ${money(cf)}, not ${money(F*c)}. Step 3 then inherits the doubled coupon.`;
+    } else if (fault==="oneRate"){
+      at=1; why=`Using one rate for every cash flow is what a <em>yield to maturity</em> does. The whole point of the zero curve is that the 6-month cash flow is discounted at ${pctS(y05)}, the 12-month one at ${pctS(y10)}, and only the 18-month one at ${pctS(y15)}.`;
+    } else {
+      at=2; why=`The final coupon has gone missing. At 18 months the note pays ${money(cf)} of coupon <em>and</em> ${money(F)} of face value, so the cash flow is ${money(F+cf)}.`;
+    }
+    return {
+      mode:"choice",
+      text:`A student is pricing a <b>1.5-year</b> T-note, face <b>${money(F)}</b>, coupon
+            <b>${pctS(c)} p.a.</b>, off a <b>zero yield</b> curve reading ${pctS(y05)} /
+            ${pctS(y10)} / ${pctS(y15)} at 0.5, 1 and 1.5 years, all p.a. compounded
+            semiannually. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,q)=>({html, correct:q===at, msg: q===at ? why : fine[q]})),
+      steps:[
+        `Coupon per period = ${money(cf)}`,
+        `Discount ${money(cf)} at ${pctS(y05)}, ${money(cf)} at ${pctS(y10)}, ${money(F+cf)} at ${pctS(y15)}`,
+        `Each cash flow carries the zero yield for its own maturity &mdash; that is what a curve is for.`
+      ]};
+  }},
+
+{ id:"e3", topic:"error", also:["boot"], name:"Find the mistake — the bootstrap", gen(){
+    const F=100, c=pick(range(.04,.08,.005)), cf1=F*c/2, cf2=F+F*c/2;
+    const d05=0.973378;
+    const P=pick(range(97,101,.25));
+    const fault = pick(["undiscounted","faceOnly","skipCoupon"]);
+    const s = [
+      `<b>Step 1.</b> Cash flows: ${money(cf1)} at 6 months, ${money(cf2)} at 12 months`,
+      fault==="skipCoupon"
+        ? `<b>Step 2.</b> Price = ${money(cf2)} &times; d<sub>1.0</sub>`
+        : (fault==="undiscounted"
+            ? `<b>Step 2.</b> Price = ${money(cf1)} + ${money(cf2)} &times; d<sub>1.0</sub>`
+            : `<b>Step 2.</b> Price = ${money(cf1)} &times; ${d05.toFixed(6)} + ${money(cf2)} &times; d<sub>1.0</sub>`),
+      fault==="faceOnly"
+        ? `<b>Step 3.</b> Solve: d<sub>1.0</sub> = (${money(P)} &minus; ${money(cf1*d05)}) &divide; ${money(F)}`
+        : `<b>Step 3.</b> Solve the Step 2 equation for d<sub>1.0</sub>, using the price of ${money(P)}`,
+      /* the exponent was hard-coded as 2, correct here only because n = 1; read as the
+         general formula it looks wrong, which made Step 4 a defensible answer.       */
+      `<b>Step 4.</b> Convert d<sub>1.0</sub> into a zero yield with d<sub>n</sub> = 1/(1+y/2)<sup>2n</sup>`
+    ];
+    const fine = [
+      `Step 1 is fine &mdash; a one-year bond paying semiannually has exactly these two cash flows.`,
+      `Step 2 is fine &mdash; the six-month coupon is discounted at the d<sub>0.5</sub> we already bootstrapped, leaving one unknown.`,
+      `Step 3 is fine &mdash; with only d<sub>1.0</sub> unknown, the pricing equation solves directly.`,
+      `Step 4 is fine &mdash; that is the definition of the discount factor at the one-year maturity.`
+    ];
+    let at, why;
+    if (fault==="undiscounted"){
+      at=1; why=`The six-month coupon was added at face value. It arrives in six months, so it is worth ${money(cf1)} &times; ${d05.toFixed(6)} = ${money(cf1*d05)} today. Only cash today counts as cash today.`;
+    } else if (fault==="skipCoupon"){
+      at=1; why=`The six-month coupon has vanished altogether. The bond pays ${money(cf1)} at six months, and that payment is part of what the buyer is paying for.`;
+    } else {
+      at=2; why=`The division is by the face value alone. The one-year cash flow is the face value <em>plus</em> the final coupon, ${money(cf2)}.`;
+    }
+    return {
+      mode:"choice",
+      text:`A student is bootstrapping <b>d<sub>1.0</sub></b> from a 1-year bond, face
+            <b>${money(F)}</b>, coupon <b>${pctS(c)} p.a.</b>, trading at <b>${money(P)}</b>,
+            with <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b> already known. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,q)=>({html, correct:q===at, msg: q===at ? why : fine[q]})),
+      steps:[
+        `Price = CF<sub>0.5</sub>&times;d<sub>0.5</sub> + CF<sub>1.0</sub>&times;d<sub>1.0</sub>`,
+        `${money(P)} = ${money(cf1)}&times;${d05.toFixed(6)} + ${money(cf2)}&times;d<sub>1.0</sub>`,
+        `d<sub>1.0</sub> = (${money(P)} &minus; ${money(cf1*d05)}) / ${money(cf2)}`
+      ]};
+  }},
+
+{ id:"k1", topic:"concept", also:["df"], name:"What a discount factor is", gen(){
+    const opts = shuffle([
+      {html:`The price today of $1 paid at that maturity`, correct:true,
+       msg:`Right. d<sub>n</sub> = 1/(1+y<sub>n</sub>/2)<sup>2n</sup> is exactly what you get by discounting $1 at the zero yield for maturity n &mdash; which is what such a zero costs.`},
+      {html:`The interest rate for that maturity`, correct:false,
+       msg:`No. The discount factor is derived from the rate, but it is a price, not a rate. It is a number a little below 1; a rate is a percentage.`},
+      {html:`The amount of interest earned over that maturity`, correct:false,
+       msg:`No. That would be a growth figure. A discount factor is less than 1 and multiplies a future cash flow to bring it back to today.`},
+      {html:`The yield to maturity of a coupon bond of that maturity`, correct:false,
+       msg:`No. A ytm is a single rate that summarises a coupon bond's whole cash flow stream. A discount factor belongs to one date.`}
+    ]);
+    return {mode:"choice",
+      /* said the student multiplies by discount factors "instead of" dividing by
+         (1+y/2)^2n, which frames the note's own shortcut as a bad habit. The two are the
+         same operation; the question is what the multiplier IS.                       */
+      /* these were the literals 0.985222 and 0.939556 -- right for today's house curve
+         and silently wrong the day CURVE is retuned. Derived from it now.            */
+      /* was "pricing off a zero yield curve, you keep multiplying by numbers like ..." --
+         but those numbers are not the curve, they are what you pre-compute FROM it, so the
+         opening described the wrong object. The note's own section 4 sets the scene
+         exactly: price bond after bond and you tire of punching (1.021)^3 into a
+         calculator, so you work the reciprocal out once and multiply instead. "Discount
+         function" would be the standard name for the whole set, but the note never uses
+         it, and untaught vocabulary is what blind readers flag.                       */
+      text:`Pricing bond after bond off the same curve, you find yourself multiplying cash
+            flows by pre-computed numbers like <b>${dfOf(CURVE[0.5],0.5).toFixed(6)}</b> and
+            <b>${dfOf(CURVE[1.5],1.5).toFixed(6)}</b>, rather than dividing by
+            (1+y/2)<sup>2n</sup> every time.`,
+      ask:"What is a discount factor, read most directly?",
+      options:opts,
+      steps:[
+        `d<sub>n</sub> = 1 / (1 + y<sub>n</sub>/2)<sup>2n</sup>`,
+        `Discounting $1 received at year n gives exactly that number`,
+        `So a discount factor is the price of a $1-face zero maturing at year n.`
+      ]};
+  }},
+
+{ id:"k2", topic:"concept", also:["curve"], name:"Which discount factor is largest", gen(){
+    const opts = shuffle([
+      {html:`d<sub>0.5</sub>`, correct:true,
+       msg:`Right. The nearest cash flow is discounted for the shortest time, so it loses the least value &mdash; and that holds under <em>any</em> curve with positive rates, whatever its slope. The upward slope here reinforces the ordering but is not what causes it. Strictly the largest discount factor of all is d<sub>0</sub> = 1: a dollar today is worth a dollar. Every factor falls away from 1 as the date moves out, which is why the question names three dates rather than asking outright.`},
+      /* d(2) is offered as an option although the stem gives no 2-year yield. That is
+         deliberate and it is the whole lesson: the ordering follows from the DATES, not
+         from the curve's interior, so you do not need the 2-year yield to rank it. The
+         worked solution used to print d(2) = 0.911273 anyway, computed from CURVE[2],
+         which a student could not have derived from anything on the page -- an unsourced
+         figure in a solution reads as an arithmetic step you failed to follow. It now
+         says why the value is not needed instead of quoting one.
+         (A previous fix put "d5 and d0.5 are equal" here, duplicating the "all equal"
+         option below it and turning a four-way choice into a three-way one.)        */
+      {html:`d<sub>2</sub>`, correct:false,
+       msg:`No. Two years of discounting takes more off a dollar than six months does, whatever the curve is doing in between.`},
+      {html:`d<sub>5</sub>`, correct:false,
+       msg:`No &mdash; that is the smallest. Five years at ${pctS(CURVE[5])} shrinks a dollar the most.`},
+      {html:`It depends on which way the curve slopes`, correct:false,
+       msg:`No &mdash; and this is worth holding on to. Discount factors fall as maturity lengthens whenever rates are positive, whatever the curve is doing. Invert the curve and d<sub>0.5</sub> is still the largest; inversion changes how <em>fast</em> the factors fall, not the order they fall in.`}
+    ]);
+    return {mode:"choice",
+      text:`On the zero yield curve (p.a., compounded semiannually) the 0.5-year yield is
+            <b>${pctS(CURVE[0.5])}</b> and the 5-year yield is <b>${pctS(CURVE[5])}</b>.`,
+      /* was "Which discount factor is the largest?", which is strictly answered by
+         d(0) = 1 -- a dollar today is worth a dollar -- and that was not on the list.
+         The ask now names the three dates it is choosing between. The fourth option is
+         still a coherent reply to it.                                               */
+      ask:"Of d<sub>0.5</sub>, d<sub>2</sub> and d<sub>5</sub>, which is the largest?",
+      options:opts,
+      steps:[
+        `d<sub>0.5</sub> = 1/(1 + ${pctS(CURVE[0.5])}/2) = ${dfOf(CURVE[0.5],0.5).toFixed(6)}`,
+        `d<sub>5</sub> = 1/(1 + ${pctS(CURVE[5])}/2)<sup>10</sup> = ${dfOf(CURVE[5],5).toFixed(6)}`,
+        `The stem gives no 2-year yield, and none is needed: with positive rates each further
+         date discounts a dollar more, so d<sub>2</sub> has to sit between the two &mdash;
+         below d<sub>0.5</sub> and above d<sub>5</sub>.`,
+        `d<sub>0</sub> = 1, and every factor falls away from it as the date moves out.`
+      ]};
+  }},
+
+{ id:"k3", topic:"concept", also:["df"], name:"A zero yield rises — what happens to d", gen(){
+    const n = pick([1,1.5,2,3,5]);
+    const opts = shuffle([
+      {html:`d<sub>${n}</sub> falls`, correct:true,
+       msg:`Right. d<sub>${n}</sub> = 1/(1+y/2)<sup>${2*n}</sup>. The yield sits in the denominator, so a higher yield means a smaller discount factor &mdash; and a lower price for anything paying at that date.`},
+      {html:`d<sub>${n}</sub> rises`, correct:false,
+       msg:`No. Rates and prices move in opposite directions, and a discount factor <em>is</em> a price &mdash; the price of a $1 zero.`},
+      {html:`d<sub>${n}</sub> is unchanged; only the ytm moves`, correct:false,
+       msg:`No. The discount factor is computed directly from the zero yield, so it moves whenever that yield moves.`},
+      {html:`It depends on the coupon of the bond being priced`, correct:false,
+       msg:`No. A discount factor belongs to a date, not to a bond. The same d<sub>${n}</sub> prices any cash flow arriving at year ${n}.`}
+    ]);
+    return {mode:"choice",
+      text:`The <b>${n}-year</b> zero yield rises by 25 basis points. Nothing else on the
+            curve moves.`,
+      ask:`What happens to d<sub>${n}</sub>?`,
+      options:opts,
+      steps:[
+        `d<sub>${n}</sub> = 1 / (1 + y<sub>${n}</sub>/2)<sup>${2*n}</sup>`,
+        `A larger y makes the denominator larger, so d gets smaller`,
+        `Every cash flow arriving at year ${n} is now worth less.`
+      ]};
+  }},
+
+{ id:"k4", topic:"concept", also:["strips"], name:"Why STRIPS needs a government program", gen(){
+    const opts = shuffle([
+      {html:`Because without it the pieces are claims on a dealer, not on the Treasury itself`, correct:true,
+       msg:`Right. Physically created zeros needed a custodian and a transfer agent, and if the trust defaulted the government owed nothing. STRIPS zeros are direct obligations of the government, tracked in its own book-entry system.`},
+      {html:`Because the Treasury issues no zeros beyond one year, so someone has to manufacture them`, correct:false,
+       msg:`That is true, and it is why zeros have to be <em>created</em> &mdash; but it does not say why creating them needs a <em>government</em> program. Dealers already manufactured zeros before STRIPS, using a custodian bank and a transfer agent. The question is what was wrong with doing it that way.`},
+      {html:`Because privately created zeros would be too illiquid for anyone to trade`, correct:false,
+       msg:`Liquidity is what the program <em>improved</em>, not the problem it had to solve. The older arrangement was costly and risky: a custodian to hold the bond, a transfer agent to track each piece, and no government obligation at all if the trust company defaulted. Note that STRIPS zeros are still less liquid than the T-notes they come from.`},
+      {html:`Because the pieces would otherwise sell for less than the whole note is worth`, correct:false,
+       msg:`No &mdash; and if they did, that gap would be an arbitrage, not a reason for a program. What the pieces are worth is settled by the curve. What STRIPS settles is who owes you the money when each piece matures.`}
+    ]);
+    return {mode:"choice",
+      text:`The government does not issue zero coupon bonds beyond one year, but through
+            <b>STRIPS</b> it lets dealers sell a coupon bond's cash flows separately.`,
+      ask:"Why does creating zeros need a government program at all?",
+      options:opts,
+      steps:[
+        `Before STRIPS, creating a zero meant a custodian bank holding the bond and a transfer agent tracking ownership &mdash; costly.`,
+        `Worse, if the trust defaulted, the government had no obligation to honour the payments &mdash; risky.`,
+        `STRIPS makes each piece a direct obligation of the government, recorded in its book-entry system.`
+      ]};
+  }},
+
+{ id:"k5", topic:"concept", also:["ytm"], name:"Yield to maturity against the curve", gen(){
+    const opts = shuffle([
+      {html:`The single rate that reproduces the price from every cash flow`, correct:true,
+       msg:`Right. The curve gives the price; the ytm is a one-number summary of that price. It is an output, not an input.`},
+      {html:`The average of the zero yields across the bond's maturities`, correct:false,
+       msg:`No. It is close to a value-weighted average in practice, but it is defined by solving the pricing equation, not by averaging.`},
+      {html:`The zero yield that applies at the bond's final maturity date`, correct:false,
+       msg:`No. That rate discounts only the last cash flow. The ytm has to account for the coupons too.`},
+      {html:`The coupon rate the bond pays, expressed per annum`, correct:false,
+       msg:`Only when the bond trades exactly at par do those two coincide. Otherwise they differ.`}
+    ]);
+    return {mode:"choice",
+      /* The old stem ran the two facts together ("priced off the curve ... then reported
+         a single ytm"), and the old ask, "What is that yield to maturity?", read as a
+         request for a NUMBER - which the stem had already printed - when every option is
+         a definition. Two sentences, and an ask that plainly wants the meaning.        */
+      /* the $108.40 and the 4.1652% were both scene-setting - neither is needed to say
+         what a ytm IS. The contrast that matters is three rates in, one number out.  */
+      text:`You priced a <b>1.5-year</b> T-note off the zero yield curve, discounting each of
+            its three cash flows at its own zero yield. You then summarised the result as a
+            single yield to maturity, quoted p.a. compounded semiannually.`,
+      ask:"What does that single number represent?",
+      options:opts,
+      /* these steps used to work a specific bond -- 108.40 = 5/(1+y/2) + ... giving
+         2.0826% and then 4.1652%. The Group 4 pass removed that price and ytm from the
+         STEM as unused, and left them here, so the solution produced three figures a
+         student could not find anywhere on the page. Same defect Anh caught in k2's
+         d(2). The stem is numberless, so the solution is too.                       */
+      steps:[
+        `Pricing off the curve used three different rates &mdash; one for each cash flow date.`,
+        `The ytm is the single rate y that reproduces that same price from the same cash flows:
+         P = CF<sub>0.5</sub>/(1+y/2) + CF<sub>1.0</sub>/(1+y/2)<sup>2</sup> + CF<sub>1.5</sub>/(1+y/2)<sup>3</sup>`,
+        `Three rates in, one number out &mdash; and it is the price that produces the ytm, not
+         the other way round.`
+      ]};
+  }},
+
+{ id:"k6", topic:"concept", also:["curve"], name:"What an inverted curve is", gen(){
+    const opts = shuffle([
+      {html:`Lending long earns a lower rate than lending short`, correct:true,
+       msg:`Right. That is what inversion means &mdash; the curve slopes down instead of up.`},
+      {html:`Bond prices are falling across all maturities`, correct:false,
+       msg:`No. Inversion is about the <em>shape</em> of the curve at a point in time, not about which way prices have been moving.`},
+      {html:`Long rates have fallen while short rates have not moved`, correct:false,
+       msg:`That is often how an inversion comes about, but it is not what one is. Inversion describes where the rates <em>sit</em> today, not how they got there: long rates can fall a long way and still stay above short ones, leaving the curve upward sloping.`},
+      {html:`The market is expecting a recession`, correct:false,
+       msg:`That is what an inversion may <em>signal</em> &mdash; it has preceded most postwar recessions &mdash; but it is not what the word describes. Plenty of things could invert a curve; the word only tells you the long end sits below the short end.`}
+    ]);
+    return {mode:"choice",
+      text:`Historically the zero yield curve has been upward sloping most of the time,
+            occasionally hump-shaped, and sometimes <b>inverted</b>.`,
+      ask:"What is an inverted curve?",
+      options:opts,
+      steps:[
+        `An upward-sloping curve pays you more for lending longer.`,
+        `An inverted curve pays you <em>less</em> for lending longer.`,
+        `The most recent inversion of the 10-year against the 2-year ran from July 2022 to August 2024, the longest in the series.`
+      ]};
+  }},
+
+{ id:"k7", topic:"concept", also:["boot"], name:"Why the bootstrap runs in order", gen(){
+    const opts = shuffle([
+      {html:`Because each new bond adds exactly one unknown discount factor`, correct:true,
+       msg:`Right. That is the whole trick. The 0.5-year bond gives d<sub>0.5</sub> outright; the 1-year bond then has only d<sub>1.0</sub> left unknown, and so on.`},
+      {html:`Because going shortest-first is simply the tidiest way to organise the arithmetic`, correct:false,
+       msg:`It is forced, not tidy. Start instead with the 2-year bond and you have one equation carrying four unknown discount factors, with no way to go further. The order is what makes each step solvable at all.`},
+      {html:`Because the discount factors have to be computed from the longest maturity backwards`, correct:false,
+       msg:`Backwards is exactly wrong. A long bond has many unknown discount factors at once and cannot be solved on its own.`},
+      {html:`Because short-term rates determine long-term rates`, correct:false,
+       msg:`The bootstrap makes no such claim. It is arithmetic on observed prices, not a theory of what sets rates &mdash; and it works whatever shape the curve turns out to have.`}
+    ]);
+    return {mode:"choice",
+      text:`The bootstrap works from the shortest maturity outward: d<sub>0.5</sub> first,
+            then d<sub>1.0</sub>, then d<sub>1.5</sub>, and so on.`,
+      ask:"Why must it run in that order?",
+      options:opts,
+      steps:[
+        `A 0.5-year bond has one cash flow, so its price gives d<sub>0.5</sub> immediately.`,
+        `A 1-year bond has two cash flows, but one of them is already priced by d<sub>0.5</sub>.`,
+        `One equation, one unknown, at every step.`
+      ]};
+  }},
+
+{ id:"k8", topic:"concept", also:["boot"], name:"Why bootstrap rather than read STRIPS", gen(){
+    const opts = shuffle([
+      {html:`STRIPS trade less actively, so their prices carry noise`, correct:true,
+       msg:`Right. That noise would flow into the discount factors and then mislead every price computed from them. Bootstrapping builds the curve from the more liquid instruments instead.`},
+      {html:`STRIPS prices are not published anywhere public`, correct:false,
+       msg:`No, they are observable. The problem is the quality of the prices, not their availability.`},
+      {html:`STRIPS are obligations of the dealer, not the government`, correct:false,
+       msg:`No &mdash; a STRIPS zero is a direct obligation of the government, recorded in its own book-entry system. That is exactly what the program fixed relative to the older trust arrangements, where the pieces really were claims on a trust company. See the STRIPS question in this bank.`},
+      {html:`The bootstrap gives more maturities than STRIPS can`, correct:false,
+       msg:`No. If anything STRIPS offers a dense set of maturities. The issue is the reliability of the prices at those maturities.`}
+    ]);
+    return {mode:"choice",
+      text:`Zero yields could be read straight off STRIPS prices, yet the market builds the
+            curve from coupon bonds instead.`,
+      ask:"Why?",
+      options:opts,
+      steps:[
+        `Zero yields implied from STRIPS prices can carry market noise.`,
+        `That noise passes into the curve and the discount factors, and then into every bond priced off them.`,
+        `T-bills, T-notes and T-bonds are more liquid, so the bootstrap starts from those.`
+      ]};
+  }},
+
+{ id:"k9", topic:"concept", also:["zero"], name:"Where a zero's interest comes from", gen(){
+    const opts = shuffle([
+      {html:`Entirely from the discount to face value at which it is bought`, correct:true,
+       msg:`Right. A 30-year $1,000 zero bought at $53.54 grows to $1,000 at maturity, which is exactly 10% p.a. compounded semiannually. The interest is the discount.`},
+      {html:`It earns no interest, since it pays no coupons`, correct:false,
+       msg:`No. Every bond earns interest; a zero simply delivers all of it at once, through the discount.`},
+      {html:`From a coupon paid at maturity along with the face value`, correct:false,
+       msg:`No. A zero pays only the face value. There is no coupon at any date, including maturity.`},
+      {html:`From reinvesting the coupons at the zero yield`, correct:false,
+       msg:`There are no coupons to reinvest. That is one reason zeros are convenient &mdash; no reinvestment assumption is needed.`}
+    ]);
+    return {mode:"choice",
+      text:`A 30-year zero with a face value of <b>$1,000</b> can sell for as little as
+            <b>$53.54</b>, and pays nothing at all until maturity.`,
+      ask:"Where does the holder's interest come from?",
+      options:opts,
+      steps:[
+        `Put $53.54 in an account paying 10% p.a. compounded semiannually &mdash; 5% per six months.`,
+        `After 30 years: $53.54 &times; (1.05)<sup>60</sup> = $1,000.`,
+        `So the zero is implicitly offering 10% p.a., delivered as the discount.`
+      ]};
+  }},
+
+{ id:"k10", topic:"concept", also:["strips"], name:"Stripping and the law of one price", gen(){
+    const opts = shuffle([
+      {html:`Buy the note, strip it, and sell the pieces`, correct:true,
+       msg:`Right. If the parts fetch more than the whole, you buy the whole and sell the parts. That trade is what keeps the two prices in line.`},
+      {html:`Buy the pieces, reconstitute them, and sell the note`, correct:false,
+       msg:`That is the trade for the opposite mispricing &mdash; when the pieces are <em>cheaper</em> than the note.`},
+      {html:`Nothing &mdash; the gap is just the cost of stripping`, correct:false,
+       msg:`Stripping and reconstituting do cost something, and that is exactly why small gaps survive rather than closing to zero. But a gap has to be <em>within</em> those costs for that to hold. One wide enough to clear them is a trade, and it is traders taking it that keeps the gap down near the cost in the first place.`},
+      {html:`Buy the note and hold it to maturity`, correct:false,
+       msg:`Holding to maturity just collects the note's own cash flows; you receive face value and coupons whatever the pieces were fetching today. The mispricing is only captured by selling the dear side <em>now</em>, while it is dear.`}
+    ]);
+    return {mode:"choice",
+      text:`A 10-year T-note can be split into 21 zeros under STRIPS. Suppose the 21 pieces,
+            valued off the zero curve, are together worth <b>more</b> than the note itself
+            costs to buy.`,
+      /* was "What is the trade?" directly after "than the note trades for" - the same word
+         twice in adjacent sentences, meaning two different things. The ask now also says
+         what kind of answer is wanted.                                                  */
+      ask:"How do you make a riskless profit here?",
+      options:opts,
+      steps:[
+        `A coupon bond is a portfolio of zeros &mdash; that is the whole content of pricing off a curve.`,
+        `If the portfolio is worth more than the bond, buy the bond and sell the portfolio.`,
+        `Doing so pushes the two prices back together, which is why the gap stays small.`
+      ]};
+  }},
+
+/* ------------------------------- component skills for Case 02 (Note 03) --- */
+
+{ id:"ecase", topic:"error", also:["boot","case"], name:"Find the mistake — stripping two coupons", gen(){
+    const F=1000;
+    /* was 8-12%, which against the two supplied factors implied a 1.5-year zero of 8.18%
+       - a 430bp jump in one six-month step. Kept near the curve it has to sit on.     */
+    /* .035-.055 fixed the 8.18% blow-out but left the curve HUMPED (3.56/3.86/3.50).
+       .045-.065 keeps the 1.5-year point above the 1-year one and still realistic.   */
+    const c15=pick([.045,.05,.055,.06,.065]);
+    const cpn=F*c15/2, last=F+cpn;
+    /* COLLISION BAND: b2 also displays a drawn d(0.5) and implies a different one-year
+       factor. b2 owns the 4-decimal lattice; ecase is offset 2.5bp off it so the two can
+       never print the same factor. Invisible to a student, checked by collide.js.    */
+    const d05=pick(range(.97525,.98775,.0025));
+    /* a 400-700bp one-step drop in the discount factor implied a 2.02% six-month rate
+       against a 10.29% eighteen-month rate. 150-300bp keeps the curve believable.    */
+    const d10=d05-pick(range(.015,.030,.0025));
+    const fault=pick(["sameRate","faceOnly","undiscounted"]);
+    const pv = fault==="sameRate"      ? cpn*d05 + cpn*d05
+             : fault==="undiscounted"  ? cpn + cpn
+             :                           cpn*d05 + cpn*d10;
+    const den = fault==="faceOnly" ? F : last;
+    /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules), so every step
+       reproduces from the page (gridall.js flagged the last digit). */
+    const pvr=+pv.toFixed(2), pvok=+(cpn*d05+cpn*d10).toFixed(2);
+    const s=[
+      `<b>Step 1.</b> Cash flows: ${money(cpn)} at 0.5, ${money(cpn)} at 1.0, ${money(last)} at 1.5`,
+      fault==="sameRate"
+        ? `<b>Step 2.</b> PV of the coupons = ${money(cpn)}&times;${d05.toFixed(6)} + ${money(cpn)}&times;${d05.toFixed(6)} = ${money(pv)}`
+        : (fault==="undiscounted"
+            ? `<b>Step 2.</b> PV of the coupons = ${money(cpn)} + ${money(cpn)} = ${money(pv)}`
+            : `<b>Step 2.</b> PV of the coupons = ${money(cpn)}&times;${d05.toFixed(6)} + ${money(cpn)}&times;${d10.toFixed(6)} = ${money(pv)}`),
+      `<b>Step 3.</b> Strip them out: ${money(F)} &minus; ${money(pvr)} = ${money(F-pvr)}`,
+      fault==="faceOnly"
+        ? `<b>Step 4.</b> d<sub>1.5</sub> = ${money(F-pvr)} &divide; ${money(F)} = ${((F-pvr)/den).toFixed(6)}`
+        : `<b>Step 4.</b> d<sub>1.5</sub> = ${money(F-pvr)} &divide; ${money(last)} = ${((F-pvr)/den).toFixed(6)}`
+    ];
+    const fine=[
+      `Step 1 is fine &mdash; a 1.5-year note paying semiannually has exactly these three cash flows.`,
+      `Step 2 is fine &mdash; each coupon is discounted at the factor for its own date.`,
+      `Step 3 is fine &mdash; the bond's price less the value of the coupons is what the final cash flow costs.`,
+      `Step 4 is fine &mdash; that final cash flow is the face value plus the last coupon.`
+    ];
+    let at, why;
+    if (fault==="sameRate"){
+      at=1; why=`Both coupons were discounted at d<sub>0.5</sub>. The second one arrives at time 1.0, so it is worth ${money(cpn)}&times;${d10.toFixed(6)} = ${money(cpn*d10)}, not ${money(cpn*d05)}. A cash flow always takes the discount factor for its <em>own</em> date &mdash; that is the whole point of having a curve.`;
+    } else if (fault==="undiscounted"){
+      at=1; why=`The coupons were added at face value, undiscounted. They arrive in six and twelve months, so they are worth ${money(cpn*d05)} and ${money(cpn*d10)} today, not ${money(cpn)} each.`;
+    } else {
+      at=3; why=`The division is by the face value alone. At 1.5 years the note pays the face value <em>and</em> its last coupon, so the denominator is ${money(last)}.`;
+    }
+    return {
+      mode:"choice",
+      text:`A student bootstraps <b>d<sub>1.5</sub></b> from a 1.5-year T-note, face
+            <b>${money(F)}</b>, coupon <b>${pctS(c15)} p.a.</b>, trading <b>at par</b>, with
+            <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b> and <b>d<sub>1.0</sub> = ${d10.toFixed(6)}</b>
+            already known. Here is their work:`,
+      ask:"Which step introduces the mistake?",
+      options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      steps:[
+        `PV of the coupons = coupon &times; d<sub>0.5</sub> + coupon &times; d<sub>1.0</sub> = ${money(cpn)}&times;${d05.toFixed(6)} + ${money(cpn)}&times;${d10.toFixed(6)} = ${money(pvok)}`,
+        `Price of the final cash flow = price &minus; PV of the coupons = ${money(F)} &minus; ${money(pvok)} = ${money(F-pvok)}`,
+        `d<sub>1.5</sub> = price of the final cash flow / final cash flow = ${money(F-pvok)} &divide; ${money(last)} = ${((F-pvok)/last).toFixed(6)}`
+      ]};
+  }},
+
+
+{ id:"kwhich", topic:"concept", also:["case","df"], name:"Which factor discounts which cash flow", gen(){
+    const opts = shuffle([
+      {html:`d<sub>1.0</sub> &mdash; the date this cash flow arrives`, correct:true,
+       msg:`Right. A discount factor belongs to a <em>date</em>, not to a bond. Every cash flow landing at one year is discounted by d<sub>1.0</sub>, whatever security it came from.`},
+      {html:`d<sub>0.5</sub>, since that is the factor we bootstrapped first`, correct:false,
+       msg:`No. The order you computed them in has nothing to do with which one applies. This is the most common error in the whole bootstrap.`},
+      {html:`d<sub>1.5</sub>, since the bond matures at 1.5 years`, correct:false,
+       msg:`No. That would be discounting a one-year cash flow as though it arrived six months later than it does. Only the bond's <em>final</em> cash flow uses d<sub>1.5</sub>.`},
+      {html:`The average of d<sub>0.5</sub> and d<sub>1.0</sub> &mdash; it falls between them`, correct:false,
+       msg:`No averaging is involved. Each cash flow is discounted once, by the factor for its own date.`}
+    ]);
+    return {mode:"choice",
+      text:`You are bootstrapping <b>d<sub>1.5</sub></b> from a 1.5-year par bond. It pays a coupon
+            at 0.5, another at 1.0, and face plus coupon at 1.5.`,
+      ask:"Which discount factor applies to the coupon arriving at one year?",
+      options:opts,
+      steps:[
+        `The 0.5 coupon takes d<sub>0.5</sub>.`,
+        `The 1.0 coupon takes d<sub>1.0</sub>.`,
+        `Only the 1.5 cash flow takes d<sub>1.5</sub> &mdash; which is the one unknown you are solving for.`
+      ]};
+  }},
+
+{ id:"kpy1", topic:"concept", also:["curve"], name:"What a par yield is", gen(){
+    const opts = shuffle([
+      {html:`The yield to maturity of a bond trading at par`, correct:true,
+       msg:`Right. And because it trades at par, that ytm is also its coupon rate. Plot par yields against maturity and you have the par yield curve.`},
+      {html:`The yield on a zero coupon bond of that maturity`, correct:false,
+       msg:`That is the <em>zero</em> yield. The two coincide only at the shortest maturity, where a par bond has a single cash flow and so is effectively a zero.`},
+      {html:`The yield to maturity of the newest bond of that maturity`, correct:false,
+       msg:`Close, and it is how the number is often read off in practice. A new issue is priced near par, so the on-the-run bond's ytm sits near the par yield. But the par yield is defined by the price being <em>exactly</em> par, not by which bond is newest &mdash; and a note issued last quarter has since drifted away from par.`},
+      {html:`The average of the zero yields out to that maturity`, correct:false,
+       msg:`It behaves a little like a weighted average, but it is not defined that way &mdash; it is whatever single rate reproduces a price of par.`}
+    ]);
+    return {mode:"choice",
+      text:`The yield curves reported in the financial press are <b>par yield curves</b>.`,
+      ask:"What is a par yield?",
+      options:opts,
+      steps:[
+        `A par bond sells for exactly its face value.`,
+        `Two things are then always true: price equals par, and coupon rate equals ytm.`,
+        `The par yield is that ytm.`
+      ]};
+  }},
+
+{ id:"kpy2", topic:"concept", also:["curve","df"], name:"Which curve prices a bond", gen(){
+    const opts = shuffle([
+      {html:`The press reports par yields; the zero curve prices securities`, correct:true,
+       msg:`Right, and the bridge between them is the bootstrap: from a set of par yields you can always construct the zero curve, and it is the zero curve that gives you the discount factors.`},
+      {html:`The press reports zero yields, and those price other securities`, correct:false,
+       msg:`The published curve is a par yield curve. Zero yields have to be implied from it.`},
+      {html:`Either curve prices a bond equally well &mdash; they are the same numbers`, correct:false,
+       msg:`They agree only at the first maturity. Past that they diverge, and discounting a cash flow at a par yield gives the wrong price.`},
+      {html:`The par curve prices bonds; the zero curve is only of theoretical interest`, correct:false,
+       msg:`Backwards. A cash flow on a given date is priced by the discount factor for that date, which comes from the zero curve.`}
+    ]);
+    return {mode:"choice",
+      text:`You have a par yield curve from the newspaper and a zero yield curve you bootstrapped
+            from it.`,
+      ask:"Which is which, and which one prices a bond?",
+      options:opts,
+      steps:[
+        `Par yields are the ytms of par bonds &mdash; that is what gets published.`,
+        `Bootstrapping turns them into discount factors, and so into zero yields.`,
+        `Each cash flow is then discounted by the factor for its own date. That is the zero curve doing the work.`
+      ]};
+  }},
+
+{ id:"kpy3", topic:"concept", also:["curve"], name:"Where par and zero yields agree", gen(){
+    const opts = shuffle([
+      {html:`Only at the shortest maturity, where the par bond is a zero`, correct:true,
+       msg:`Right. A 0.5-year par bond pays once, so it <em>is</em> a zero and its ytm is the zero yield. Add a second cash flow and the two part company. Two caveats worth knowing: on a perfectly <em>flat</em> curve they agree at every maturity, and on a <em>humped</em> curve they can cross again further out. On a curve that rises throughout, the shortest maturity is the only meeting point.`},
+      {html:`At every maturity &mdash; they are two names for the same number`, correct:false,
+       msg:`No. On an upward-sloping curve the zero yield sits above the par yield at every maturity beyond the first.`},
+      {html:`Only when the curve happens to be inverted`, correct:false,
+       msg:`Inversion changes which one is higher, not whether they agree. They still differ.`},
+      {html:`Only at the longest maturity on the curve`, correct:false,
+       msg:`The opposite end. The gap widens as maturity lengthens, because more coupons are discounted at rates other than the final one.`}
+    ]);
+    return {mode:"choice",
+      /* the 3% -> 6% par curve was hardcoded here, so every retuning of the bank's drawn
+         curves missed it. 3.00% -> 3.60% is a real shape and makes the same point.    */
+      text:`Bootstrapping a curve whose 0.5-year par yield is <b>3.00%</b> and 1-year par yield
+            is <b>3.60%</b> gives zero yields of <b>3.000%</b> and <b>3.605%</b> &mdash; all
+            quoted p.a., compounded semiannually.`,
+      /* Twice repaired. "Where do they agree?" is false on a FLAT curve (they agree
+         everywhere), and "only at the shortest maturity" is not a theorem even on a
+         sloped curve - on a HUMPED curve the two can cross again further out. Anchored
+         to a monotone curve, which is what the stem actually supplies.               */
+      ask:"On a curve that rises throughout, like this one, where do par and zero yields agree?",
+      options:opts,
+      steps:[
+        `At 0.5 years the par bond has one cash flow, so par yield = zero yield = 3.000%.`,
+        `At 1 year the par bond also pays a coupon at 0.5, discounted at the lower 3% rate.`,
+        `That drags the par yield below the zero yield: 3.600% against 3.605%.`
+      ]};
+  }},
+
+/* ---------------- reasoning problems: predict before you calculate -------- */
+
+{ id:"ce2", topic:"concept", also:["ytm","curve","reason"], name:"Two bonds, one curve, two yields", gen(){
+    const opts = shuffle([
+      {html:`No &mdash; the low-coupon bond shows the higher ytm`, correct:true,
+       msg:`Right. A ytm is one rate summarising a bond's own cash flows. The low-coupon bond has more of its value at the far end, where the curve is higher, so its summary rate comes out higher. Same maturity, same curve, different number.`},
+      {html:`Yes &mdash; same maturity and same curve means same ytm`, correct:false,
+       msg:`Only if the curve is flat. Otherwise the two bonds put different weights on different parts of it, and the summary rates differ.`},
+      {html:`No, and the difference means one of the two is mispriced`, correct:false,
+       msg:`Both are priced off the identical curve, so neither can be mispriced. The difference is the coupon effect, not an error.`},
+      {html:`Yes, provided both are priced off the same discount factors`, correct:false,
+       msg:`They are priced off the same discount factors &mdash; and still have different ytms. That is exactly the point.`}
+    ]);
+    return {mode:"choice",
+      text:`Two 2-year T-notes, both \$100 face, are priced off the <b>same</b> zero curve, which
+            slopes upward. One pays a <b>2% p.a.</b> coupon, the other <b>10% p.a.</b>`,
+      ask:"Must they have the same yield to maturity?",
+      options:opts,
+      steps:[
+        `Off a curve of 3\%, 4\%, 5\%, 6\% the 2\% note yields 5.9738\% and the 10\% note 5.8811\%.`,
+        `Both are priced correctly. Neither is cheap or dear.`,
+        `This is why a scatter of ytms against maturity is a cloud rather than a curve &mdash; and why you cannot read mispricing off it.`
+      ]};
+  }},
+
+{ id:"kinv", topic:"concept", also:["curve","reason"], name:"Is the par yield always below the zero yield?", gen(){
+    const opts = shuffle([
+      {html:`No &mdash; it depends on the shape of the curve`, correct:true,
+       msg:`Right. The par bond's early coupons are discounted at the short rates. When those sit below the long rate they drag the par yield down; when the curve is inverted they sit above it and push the par yield up; and on a perfectly flat curve every rate is the same and the two coincide at every maturity.`},
+      {html:`Yes &mdash; a par yield is always below the zero yield of the same maturity`, correct:false,
+       msg:`Only on an upward-sloping curve. Invert the curve and the ordering reverses. A 2-year zero yield of 4\% against a curve starting at 6\% gives a par yield of about 4.03\%.`},
+      {html:`No &mdash; they are always equal`, correct:false,
+       msg:`They agree only at the shortest maturity, where a par bond has one cash flow and so is a zero.`},
+      {html:`Yes, unless the bond trades at a premium`, correct:false,
+       msg:`A par bond trades at par by definition &mdash; that is what makes it a par bond. Premium and discount do not enter.`}
+    ]);
+    return {mode:"choice",
+      /* said EVERY par yield came out below the zero yield, which is false at the shortest
+         maturity where the par bond has one cash flow and the two are equal - exactly what
+         kpy3 and ktrader assert. The bank was contradicting itself.                    */
+      text:`On the upward-sloping curve you have been working with, every par yield beyond the
+            shortest maturity came out <b>below</b> the zero yield of the same maturity.`,
+      /* "Is that a general rule?" left the scope open: a general rule for UPWARD-sloping
+         curves (yes, and the "always below" option would be correct) or for ALL curves
+         (no, which is what is keyed). Naming the scope settles it.                     */
+      ask:"Is that true of every yield curve?",
+      options:opts,
+      steps:[
+        `Upward curve (3\%, 4\%, 5\%, 6\%): 2-year zero 6.000\%, par 5.926\%. Par below.`,
+        `Inverted curve (6\%, 5\%, 4.5\%, 4\%): 2-year zero 4.000\%, par 4.027\%. Par above.`,
+        `Nothing about par yields caused either. Both follow from the shape of the curve.`
+      ]};
+  }},
+
+{ id:"dchk", topic:"concept", also:["df","reason"], name:"Can this be a real set of discount factors?", gen(){
+    const bad = pick([true,false]);
+    /* The "possible" set has to imply a curve that does NOT slope upward, or the
+       wrong option ("this means the curve rises") is accidentally true of the
+       numbers. Three blind readers all caught that. These factors fall
+       throughout while their zero yields fall too, which is the whole point. */
+    const d = bad ? [0.985, 0.970, 0.955, 0.962]
+                  : pick([[0.970, 0.952, 0.940, 0.932],
+                          [0.968, 0.947, 0.933, 0.924],
+                          [0.966, 0.944, 0.929, 0.919]]);
+    /* Every "possible" set implies a strictly INVERTED curve. The old correct option
+       said the factors "do not tell you the curve slopes upward" -- true, but the
+       numbers positively tell you it slopes DOWN, and discount factors fully determine
+       the yields anyway, so "does not tell you" was false as a general claim. The point
+       is narrower: monotone factors do not reveal the SHAPE by inspection. Convert. */
+    const gy=[0.5,1,1.5,2];
+    const zy=d.map((x,i)=>2*(Math.pow(1/x,1/(2*gy[i]))-1));
+    const opts = shuffle(bad ? [
+      /* said a rising discount factor means "a dollar later is worth more today", which is
+         impossible - but that is precisely what NEGATIVE nominal rates deliver, and Europe
+         and Japan printed them for the better part of a decade. Two readers caught it. The
+         option now names the negative rate instead of calling it impossible.           */
+      {html:`No &mdash; d<sub>2</sub> above d<sub>1.5</sub> implies a negative rate over that six months`, correct:true,
+       msg:`Right. A rising discount factor means the six-month rate from 1.5 to 2 years is <em>negative</em>. That is not an arithmetic impossibility &mdash; Japan and the euro area lived with negative policy rates for years &mdash; but this course works in positive-rate markets, and a set of Treasury factors that rises with maturity is a set someone has mistyped.`},
+      {html:`Yes, and it implies an inverted zero curve`, correct:false,
+       msg:`An inverted curve still has falling discount factors. Rising ones are a different problem &mdash; they need a negative forward rate.`},
+      {html:`Yes &mdash; discount factors can move either way`, correct:false,
+       msg:`Not with positive rates. Each further date discounts a dollar more heavily.`},
+      {html:`Cannot say without knowing the coupon rates`, correct:false,
+       msg:`Discount factors belong to dates, not to bonds. No coupon is involved.`}
+    ] : [
+      {html:`Yes &mdash; but their falling tells you only that rates are positive, not which way the curve slopes`, correct:true,
+       msg:`Right. Falling discount factors mean rates are positive and nothing more. The shape is in there &mdash; the factors fix the yields completely &mdash; but you have to <em>convert</em> to see it, not read it off the fact that they fall. Do the conversion here and the curve turns out to be <b>inverted</b>: ${zy.map((y,i)=>pctS(y,2)).join(", ")} at 0.5, 1, 1.5 and 2 years.`},
+      {html:`Yes, and it means the zero curve must slope upward`, correct:false,
+       msg:`It does not follow. Discount factors fall whenever rates are positive, inverted curves included &mdash; and this set is inverted, running ${pctS(zy[0],2)} down to ${pctS(zy[3],2)}. Falling steeply early and gently later gives falling zero yields.`},
+      {html:`No &mdash; the factors fall too quickly to be plausible`, correct:false,
+       msg:`They imply zero yields between ${pctS(zy[3],2)} and ${pctS(zy[0],2)}, which is entirely ordinary.`},
+      {html:`No &mdash; d<sub>0.5</sub> should be above 1`, correct:false,
+       msg:`A discount factor above 1 would mean a dollar later is worth more than a dollar now.`}
+    ]);
+    return {mode:"choice",
+      text:`Somebody hands you these discount factors:
+            <b>d<sub>0.5</sub> = ${d[0].toFixed(3)}</b>, <b>d<sub>1</sub> = ${d[1].toFixed(3)}</b>,
+            <b>d<sub>1.5</sub> = ${d[2].toFixed(3)}</b>, <b>d<sub>2</sub> = ${d[3].toFixed(3)}</b>.`,
+      ask:"Can this be right?",
+      options:opts,
+      steps:[
+        `A discount factor is the price today of \$1 later. With positive rates it must fall as the date moves out.`,
+        `That is a statement about the <em>factors</em>, not about the <em>yields</em>.`,
+        `Yields can rise, fall or hump while the factors fall throughout &mdash; the two monotonicities are different questions.`,
+        bad ? `` : `Convert this set and the yields come out ${zy.map(y=>pctS(y,2)).join(", ")} &mdash; falling, not rising.`
+      ]};
+  }},
+
+{ id:"kboot2", topic:"concept", also:["boot","reason"], name:"Why one bond is not enough", gen(){
+    const opts = shuffle([
+      {html:`No &mdash; one price is one equation with four unknowns`, correct:true,
+       msg:`Right. And that is the whole reason the bootstrap needs a ladder of bonds: each new maturity contributes one equation containing exactly one new unknown, because every earlier factor is already solved.`},
+      {html:`Yes &mdash; the four cash flows give four equations`, correct:false,
+       msg:`The bond has four cash flows but only one price. Four cash flows in a single pricing equation are four terms, not four equations.`},
+      {html:`Yes, provided you also know the bond's yield to maturity`, correct:false,
+       msg:`The ytm is derived from the same single price. It carries no new information, so it cannot resolve four unknowns.`},
+      {html:`No, but knowing the coupon rate would be enough`, correct:false,
+       msg:`You already know the coupon rate &mdash; it is what defines the cash flows. It is the discount factors that are unknown.`}
+    ]);
+    return {mode:"choice",
+      text:`You observe a single <b>2-year</b> coupon bond and its price. It pays four cash flows,
+            at 0.5, 1, 1.5 and 2 years.`,
+      ask:"Can you determine d<sub>0.5</sub>, d<sub>1</sub>, d<sub>1.5</sub> and d<sub>2</sub> from it alone?",
+      options:opts,
+      steps:[
+        `Price = CF<sub>0.5</sub>d<sub>0.5</sub> + CF<sub>1</sub>d<sub>1</sub> + CF<sub>1.5</sub>d<sub>1.5</sub> + CF<sub>2</sub>d<sub>2</sub> &mdash; one equation, four unknowns.`,
+        `Now suppose d<sub>0.5</sub>, d<sub>1</sub> and d<sub>1.5</sub> are already known from shorter bonds.`,
+        `One equation, one unknown. It solves. That is the bootstrap, and it is why it has to run short to long.`
+      ]};
+  }},
+
+{ id:"ktrader", topic:"error", also:["reason","concept"], name:"Which trader is wrong?", gen(){
+    const claims = [
+      /* was "The 2-year zero yield is 5%, so I discount every cash flow at 5%" - which is
+         correct if the curve happens to be FLAT at 5%, so the stem's promise of exactly one
+         false claim failed at that corner. Naming the upward slope closes it.         */
+      {html:`"The curve slopes upward, and the 2-year zero yield is 5% p.a., compounded semiannually, so I discount every cash flow of a 2-year bond at 5%."`,
+       bad:true, why:`Wrong. The 2-year zero yield prices a cash flow arriving <em>at</em> two years. The coupons arriving at 0.5, 1 and 1.5 years take their own rates. Using one rate for all of them is what a ytm does, and a ytm is an output, not an input.`,
+       ok:` &mdash; each cash flow takes the zero yield for its own date.`},
+      {html:`"A bond paying a 6% p.a. coupon semiannually must have a 6% yield to maturity, p.a. compounded semiannually."`,
+       bad:true, why:`Wrong. That holds only when the bond trades exactly at par. Above par the ytm is below the coupon rate; below par it is above.`,
+       ok:` &mdash; coupon rate and ytm coincide only at par.`},
+      {html:`"A 10-year T-note produces 20 STRIPS, because it makes 20 coupon payments."`,
+       bad:true, why:`Wrong &mdash; 21. The principal repayment is stripped as a security in its own right, alongside the 20 coupons.`,
+       ok:` &mdash; 20 coupons plus the principal makes 21.`},
+      {html:`"The zero curve slopes upward, so the discount factors must slope upward too."`,
+       bad:true, why:`Wrong, and backwards. Discount factors <em>fall</em> as maturity lengthens whenever rates are positive, whatever the curve is doing. Rising factors would mean a dollar later is worth more than a dollar now.`,
+       ok:` &mdash; discount factors fall as maturity lengthens.`},
+      /* All four true claims replaced 27 Aug 2026. Three were VERBATIM the correct
+         option of another template in this bank -- k1 ("the price today of $1 paid at
+         that maturity"), kpy3 ("they agree at the shortest maturity") and k7
+         ("bootstrapping runs from the shortest maturity outward") -- so meeting ktrader
+         first handed a student the answer to three other questions. A fourth, "a par
+         bond's ytm equals its coupon rate", could be drawn alongside this template's OWN
+         false claim that a 6% coupon implies a 6% ytm, giving that draw away from the
+         inside. Replacements come straight from the note and are nobody's keyed answer.
+         Check any future claim against every other template's correct option first.  */
+      {html:`"T-bills are themselves zero coupon securities."`,
+       bad:false, why:``, ok:`. A bill pays no coupon &mdash; only face value, at a maturity of a year or less. Zeros beyond a year have to come from STRIPS.`},
+      {html:`"A zero pays its holder nothing at all until the maturity date."`,
+       bad:false, why:``, ok:`. That is what makes it a zero, and it is why it has to be sold at a discount to its face value.`},
+      {html:`"Zero yields differ from maturity to maturity &mdash; that is what makes a curve a curve."`,
+       bad:false, why:``, ok:`, and it is the whole reason one single rate will not price a bond properly.`},
+      {html:`"You can replicate a zero by combining coupon bonds in the right amounts."`,
+       bad:false, why:``, ok:`. Two coupon bonds held in the right quantities reproduce a zero's cash flows exactly, which is what pins its price to theirs.`}
+    ];
+    const wrong = pick(claims.filter(c=>c.bad));
+    const rights = shuffle(claims.filter(c=>!c.bad)).slice(0,3);   // now four options in total
+    /* number the four selected speakers 1..4 -- they used to keep their index
+       from the master list, so a paper could show "Traders 4, 8, 6 and 7" */
+    const opts = shuffle([wrong, ...rights]).map((c,i)=>({
+      html:`<b>Trader ${i+1}.</b> ` + c.html, correct:c===wrong,
+      msg:c===wrong ? c.why : `Trader ${i+1} is right${c.ok}` }));   /* the number shown, not the master-list index */
+    return {mode:"choice",
+      text:`Four traders are talking on a desk. Exactly one of them has said something false.`,
+      ask:"Which one?",
+      options:opts,
+      steps:[
+        `Each cash flow is discounted at the zero yield for its own date; a ytm summarises the whole bond.`,
+        `Coupon rate equals ytm only at par. A 10-year note strips into 21 pieces, not 20.`,
+        `Discount factors fall with maturity whenever rates are positive, whatever shape the yield curve has.`
+      ]};
+  }},
+
+{ id:"sen2", topic:"reason", also:["df","concept"], name:"Which cash flow suffers most", gen(){
+    const y=pick(range(.035,.065,.0025));
+    const set=pick([[0.5,5,30],[1,10,30],[0.5,10,20],[2,5,15],[1,5,30]]);
+    const F=100;
+    const loss=set.map(n=>{
+      const a=F/Math.pow(1+y/2,2*n), b=F/Math.pow(1+(y+0.01)/2,2*n);
+      return {n, a, b, pct:(a-b)/a};
+    });
+    const win=loss[loss.length-1];          // the longest always loses the largest share
+    const opts = shuffle(loss.map(L=>({
+      html:`The \$100 arriving in <b>${L.n} year${L.n===1?"":"s"}</b>`,
+      correct: L===win,
+      msg: L===win
+        ? `Right. It loses ${(L.pct*100).toFixed(1)}\% of its value, against ${(loss[0].pct*100).toFixed(1)}\% for the ${loss[0].n}-year. The same rate applies for ${L.n} years instead of ${loss[0].n}, and the effect compounds over every one of them.`
+        : `No. It loses only ${(L.pct*100).toFixed(1)}\% of its value. A rate change is applied once per period, so the longer a cash flow waits, the more periods it is applied over.`
+    })).concat([{
+      html:`They all lose the same share of their value`, correct:false,
+      msg:`No &mdash; not remotely. Here the range runs from ${(loss[0].pct*100).toFixed(1)}\% to ${(win.pct*100).toFixed(1)}\%. Time to maturity is the whole story.`
+    }]));
+    return {mode:"choice",
+      text:`Three separate cash flows of <b>\$100</b> each arrive in <b>${set[0]}</b>,
+            <b>${set[1]}</b> and <b>${set[2]}</b> years. Every zero yield is <b>${pctS(y)} p.a.,
+            compounded semiannually</b>, and
+            every one of them now rises by <b>100 basis points</b>.`,
+      ask:"Which cash flow loses the largest share of its value?",
+      options:opts,
+      steps:[
+        ...loss.map(L=>`${L.n}-year: ${money(L.a)} &rarr; ${money(L.b)}, a fall of ${(L.pct*100).toFixed(2)}\%`),
+        `The further off a cash flow is, the more a given rate move costs it &mdash; and not in proportion, but compounding with every extra period.`,
+        `Notice what did <em>not</em> matter: the ${pctS(y)} level, the size of the move, and the \$100 amounts are all common to the three. The ranking follows from maturity alone, which is why it needs no arithmetic to see.`,
+        `In dollars the ranking can differ: the ${loss[loss.length-1].n}-year loses ${money(win.a-win.b)} while the ${loss[loss.length-2].n}-year loses ${money(loss[loss.length-2].a-loss[loss.length-2].b)}, because the long one had less value to begin with. As a share of value there is no contest. Both measures matter, and they get names later: duration and dollar duration.`
+      ]};
+  }},
+];
+
+const TOPICS = [
+  {key:"all", label:"Mixed"},
+  {key:"zero", label:"Zeros & zero yields"},
+  {key:"curve", label:"The zero curve"},
+  {key:"df", label:"Discount factors"},
+  {key:"boot", label:"Bootstrap"},
+  {key:"case",       label:"Case 02 prep"},
+  {key:"ytm", label:"Yield to maturity"},
+  {key:"strips", label:"STRIPS"},
+  {key:"error", label:"Find the mistake"},
+  {key:"reason", label:"Reason it out"},
+  {key:"concept", label:"Concepts"}
+];
+
+/* ----------------------------------------------------------------- state */
+let active = "all", current = null, tries = 0;
+let peeked = false, solved = false, tallied = false;  // tallied = already counted in `attempted`
+const stats = {att:0, first:0, streak:0, peek:0};
+
+const $ = id => document.getElementById(id);
+
+function buildTopics(){
+  const box = $("topics");
+  TOPICS.forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = t.label;
+    b.setAttribute("aria-pressed", String(t.key===active));
+    b.onclick = ()=>{
+      active = t.key;
+      [...box.children].forEach(c=>c.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");
+      seqIdx = 0;                 // a new topic restarts the sequence
+      newQuestion();
+    };
+    box.appendChild(b);
+  });
+}
+
+const ALL_TEMPLATES = TEMPLATES.concat(CHOICE_TEMPLATES);
+
+/* A template's primary topic is `topic`; it may also list secondary topics in
+   `also`, so one item can appear under several chips. */
+function inTopic(t, key){
+  return t.topic === key || (Array.isArray(t.also) && t.also.includes(key));
+}
+
+/* ---- progress: distinct templates solved without opening the solution ---- */
+const PROG_KEY = "practice-progress:" + document.title;
+let mastered = new Set();
+try { mastered = new Set(JSON.parse(localStorage.getItem(PROG_KEY) || "[]")); }
+catch (e) { mastered = new Set(); }
+
+function saveProgress(){
+  try { localStorage.setItem(PROG_KEY, JSON.stringify([...mastered])); } catch (e) {}
+}
+function markMastered(id){
+  if (!id || mastered.has(id)) return;
+  mastered.add(id);
+  saveProgress();
+}
+
+/* Templates are drawn WITHOUT immediate repeats. Sampling with replacement
+   looks fine on the full bank, but a topic holding only three or four
+   templates repeats roughly one press in three, which reads as the button
+   being broken. Hold the most recent half of the pool out of the draw. */
+let recentIds = [];
+/* Questions seen this session, so the arrow keys can step back and forth through them. */
+let history = [], histIdx = -1;
+let navKey = false;      // true while an arrow key is doing the rendering
+let order = "shuffle";   // "shuffle" | "seq"
+let seqIdx = 0;
+
+function newQuestion(replay){
+  let q;
+  if (replay){ q = replay.q; }
+  else {
+  const pool = active==="all" ? ALL_TEMPLATES : ALL_TEMPLATES.filter(t=>inTopic(t,active));
+  let tpl;
+  if (order === "seq"){
+    /* walk the bank in order, wrapping at the end */
+    if (seqIdx >= pool.length) seqIdx = 0;
+    tpl = pool[seqIdx];
+    seqIdx = (seqIdx + 1) % pool.length;
+    $("seqPos").textContent = `${seqIdx === 0 ? pool.length : seqIdx} of ${pool.length}`;
+  } else {
+    const hold = Math.max(1, Math.floor(pool.length / 2));
+    let choices = pool.filter(t => !recentIds.slice(0, hold).includes(t.id));
+    if (!choices.length) choices = pool;        // pool of one, or all held out
+    tpl = pick(choices);
+    recentIds.unshift(tpl.id);
+    if (recentIds.length > 40) recentIds.length = 40;
+    $("seqPos").textContent = "";
+  }
+  q = tpl.gen();
+  q.name = tpl.name;
+  q.id   = tpl.id;
+  q.seqPos = $("seqPos").textContent;   // carried so stepping back shows its own position
+  if (q.mode !== "choice") q.distractors = usable(q.correct, q.cands, q.sep);
+  }
+  current = q;
+  if (replay){
+    tries = replay.tries; peeked = replay.peeked; solved = replay.solved; tallied = replay.tallied;
+  } else {
+    tries = 0; peeked = false; solved = false; tallied = false;
+    history = history.slice(0, histIdx + 1);           // a new draw discards anything ahead
+    history.push({q, tries:0, peeked:false, solved:false, tallied:false, fb:"", ans:""});
+    if (history.length > 50){ history.shift(); }
+    histIdx = history.length - 1;
+  }
+
+  const isChoice = q.mode === "choice";
+  $("qmeta").textContent = q.name;
+  $("qtext").innerHTML   = q.text;
+  $("qask").innerHTML    = q.ask;
+  /* Hide the input and Check individually, NOT the whole row -- the
+     "New question" button lives in that row and must stay reachable
+     on choice questions. */
+  $("ans").hidden   = isChoice;
+  $("check").hidden = isChoice;
+  $("opts").hidden     = !isChoice;
+  const box = $("opts");
+  box.innerHTML = "";              // always clear, even when the panel is hidden
+  if (isChoice){
+    q.options.forEach((o,k)=>{
+      const btn = document.createElement("button");
+      btn.className = "opt"; btn.innerHTML = o.html;
+      btn.onclick = () => pickOption(k);
+      box.appendChild(btn);
+    });
+  }
+  $("ans").value = "";
+  $("ans").placeholder = q.unit==="money" ? "e.g. 1234.56"
+                     : q.unit==="percent" ? "e.g. 12.34  (percent)"
+                     : "e.g. 0.973378";
+  $("ans").disabled = false;
+  $("check").disabled = false;
+  $("fb").innerHTML = "";
+  $("steps").innerHTML = q.steps.map(s=>`<div>${s}</div>`).join("");
+  const d = $("soldetails"); d.hidden = false; d.open = false;
+  if (replay){
+    /* Put the question back exactly as it was left --- the feedback, what was typed, and
+       whether it had already been answered. The tallied/solved flags come back with it,
+       so revisiting a question never re-counts an attempt or re-awards mastery. */
+    $("fb").innerHTML = replay.fb || "";
+    $("ans").value    = replay.ans || "";
+    $("seqPos").textContent = q.seqPos || "";
+    if (isChoice && q.wrong){
+      [...$("opts").children].forEach((b,j)=>{
+        if (q.wrong.indexOf(j) >= 0){ b.classList.add("wrong"); b.disabled = true; }
+      });
+    }
+    if (solved || q.done){
+      if (isChoice){
+        [...$("opts").children].forEach((b,j)=>{ b.disabled = true;
+          if (q.options[j].correct) b.classList.add("right"); });
+      } else { $("ans").disabled = true; $("check").disabled = true; }
+    }
+    d.open = peeked || solved;
+  }
+  /* Arriving by arrow key must not park the cursor in the answer box: a restored answer
+     sitting there would swallow the next arrow press and strand the student. */
+  if (navKey) $("ans").blur();
+  else if (!isChoice && !$("ans").disabled) $("ans").focus();
+}
+
+function parseInput(raw){
+  const cleaned = raw.replace(/[$,%\s,]/g,"");
+  if (cleaned === "" ) return NaN;
+  return Number(cleaned);
+}
+
+function say(kind, title, body){
+  $("fb").innerHTML = `<div class="fb ${kind}"><strong>${title}</strong>${body}</div>`;
+}
+
+function pickOption(k){
+  const q = current;
+  if (q.done) return;
+  const o    = q.options[k];
+  const btns = [...$("opts").children];
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }
+
+  if (o.correct){
+    q.done = true; solved = true;
+    btns.forEach((b2,j)=>{ b2.disabled = true; if (q.options[j].correct) b2.classList.add("right"); });
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "It still counts as attempted, just not toward first-try accuracy or your streak. " + o.msg);
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok", tries===1 ? "Correct — first try." : "Correct.", o.msg);
+    }
+    $("soldetails").open = true;
+  } else {
+    stats.streak = 0;
+    btns[k].classList.add("wrong");
+    btns[k].disabled = true;
+    (q.wrong || (q.wrong = [])).push(k);   // remembered so a revisit keeps it eliminated
+    say("no","Not that one.", o.msg);
+  }
+  render();
+}
+
+function check(){
+  const raw = $("ans").value;
+  const parsed = parseInput(raw);
+  if (!Number.isFinite(parsed)){
+    say("hint","Enter a number","Type your answer as a number — you can include $ , or % and it will be ignored.");
+    return;
+  }
+  const q = current;
+  const val = q.unit==="percent" ? parsed/100 : parsed;
+  const TOL = q.tol || REL_MATCH;
+
+  /* Unit slips are formatting mistakes, not wrong answers, so they cost
+     neither an attempt nor first-try credit. Guarded so a genuinely
+     correct entry can never be mistaken for one. */
+  if (!near(val, q.correct, TOL)){
+    if (q.unit==="percent" && near(parsed, q.correct, TOL)){
+      say("hint","Right number, wrong units.",
+          `You entered <code>${raw}</code> as a decimal. This box wants a percent — enter <code>${(q.correct*100).toFixed(4).replace(/\.?0+$/,"")}</code> instead.`);
+      return;
+    }
+    if (near(val*100, q.correct, TOL) || near(val/100, q.correct, TOL)){
+      say("hint","Check your units.","Your figure is off by a factor of 100. Re-read what the box is asking for.");
+      return;
+    }
+  }
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }   // count each question once, right or wrong
+
+  if (near(val, q.correct, TOL)){
+    solved = true;
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "That is a perfectly good way to learn, and it still counts as attempted. It does " +
+          "not count toward first-try accuracy or your streak, so those numbers stay honest. " +
+          "Try the next one before opening the solution.");
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok","Correct.", tries===1 ? "First try — well done." : "Got there.");
+    }
+    $("check").disabled = true; $("ans").disabled = true;
+    $("soldetails").open = true;
+    render(); return;
+  }
+
+  stats.streak = 0;
+  const hit = q.distractors.find(d => near(val, d.val, TOL));
+  say("no", hit ? "Not quite — and I can see why." : "Not quite.",
+      hit ? hit.msg
+          : "That does not match any of the usual slips, so it may be an arithmetic error. Try again, or open the worked solution below.");
+  render();
+}
+
+function render(){
+  $("sAtt").textContent    = stats.att;
+  $("sFirst").textContent  = stats.first;
+  $("sAcc").textContent    = stats.att ? Math.round(stats.first/stats.att*100)+"%" : "—";
+  $("sStreak").textContent = stats.streak;
+  $("sPeek").textContent   = stats.peek;
+  const total = ALL_TEMPLATES.length;
+  $("pTotal").textContent  = total;
+  $("pDone").textContent   = mastered.size;
+  $("progfill").style.width = (total ? 100*mastered.size/total : 0).toFixed(1) + "%";
+}
+
+$("check").onclick = check;
+$("next").onclick  = () => newQuestion();   // arrow fn: never pass the click Event as `replay`
+
+/* ---- arrow keys: right for the next question, left for the previous one -------------
+   Ignored while the answer box is being typed in, where the arrows move the caret, and
+   ignored with a modifier held so the browser's own shortcuts still work.            */
+function snapshotQuestion(){
+  const h = history[histIdx];
+  if (!h) return;
+  h.tries = tries; h.peeked = peeked; h.solved = solved; h.tallied = tallied;
+  h.fb = $("fb").innerHTML; h.ans = $("ans").value;
+}
+function goBack(){
+  if (histIdx <= 0) return;
+  snapshotQuestion(); histIdx--;
+  navKey = true; newQuestion(history[histIdx]); navKey = false;
+}
+function goForward(){
+  snapshotQuestion();
+  navKey = true;
+  if (histIdx < history.length - 1){ histIdx++; newQuestion(history[histIdx]); }
+  else newQuestion();
+  navKey = false;
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  const t = e.target;
+  if (t && (t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  /* Inside the answer box the arrows belong to the caret --- but only while it still has
+     somewhere to go. Once it sits at the end you are pressing toward, the press is free,
+     so a half-typed answer never traps a student in the field. */
+  if (t && t.tagName === "INPUT" && !t.disabled){
+    const at = t.selectionStart, to = t.selectionEnd, n = String(t.value).length;
+    if (at === null || at !== to) return;                       // a selection: leave it alone
+    if (e.key === "ArrowRight" ? at < n : at > 0) return;
+  }
+  e.preventDefault();
+  if (e.key === "ArrowRight") goForward(); else goBack();
+});
+$("ans").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("check").disabled) check(); });
+$("soldetails").addEventListener("toggle", ()=>{
+  if ($("soldetails").open && !solved && !peeked){
+    peeked = true;
+    stats.peek++;
+    if (!tallied){ tallied = true; stats.att++; }  // opening it counts as engaging with the question
+    render();
+  }
+});
+
+function setOrder(o){
+  order = o; seqIdx = 0;
+  $("mShuffle").setAttribute("aria-pressed", String(o === "shuffle"));
+  $("mSeq").setAttribute("aria-pressed",     String(o === "seq"));
+  newQuestion();
+}
+$("mShuffle").onclick = () => setOrder("shuffle");
+$("mSeq").onclick     = () => setOrder("seq");
+
+$("pReset").onclick = () => {
+  if (!mastered.size) return;
+  mastered.clear(); saveProgress(); render();
+};
+
+buildTopics();
+newQuestion();
+render();
+</script>
+</body>
+</html>
