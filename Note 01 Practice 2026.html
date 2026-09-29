@@ -335,9 +335,12 @@ const TEMPLATES = [
       steps:[
         `Each coupon = coupon rate × face ÷ 2 = ${pctS(c)} × ${money(F)} ÷ 2 = ${money(cpn)}, paid ${n} times`,
         `Periodic rate = ${pctS(y)} ÷ 2 = ${pctS(y/2,3)}, i.e. ${i5}`,
-        `Price = Σ C/(1+y/2)<sup>k</sup> for k = 1…n, plus F/(1+y/2)<sup>n</sup>`,
-        `Price = Σ ${money(cpn)}/(1+${i5})<sup>k</sup> for k = 1…${n},  plus ${money(F)}/(1+${i5})<sup>${n}</sup>`,
-        `Price = ${money(correct)}`
+        /* Annuity formula, not a sum of n terms: the quiz allows only a calculator (Anh, 28 Sep
+           2026). The face value's PV is rounded to cents first and the coupons' PV is the rest,
+           so the printed sum reproduces the printed price. */
+        `Price = PV of the coupons (an annuity) + PV of the face value = (C/r) &times; (1 &minus; 1/(1+r)<sup>n</sup>) + F/(1+r)<sup>n</sup>, with r = y/2`,
+        `= (${money(cpn)}/${i5}) &times; (1 &minus; 1/(1+${i5})<sup>${n}</sup>) + ${money(F)}/(1+${i5})<sup>${n}</sup>`,
+        `= ${money(+(correct - Math.round(F/Math.pow(1+y/m,n)*100)/100).toFixed(2))} + ${money(Math.round(F/Math.pow(1+y/m,n)*100)/100)} = <b>${money(correct)}</b>`
       ]};
   }},
 
@@ -1793,7 +1796,7 @@ const CHOICE_TEMPLATES = [
       steps:[
         `Monthly rate = APR / 12 = ${pctS(apr)} / 12 = ${pctS(per,4)}`,
         `Monthly payments must be discounted at the monthly rate, over ${n} months`,
-        `PV = Σ C/(1+i)<sup>k</sup> for k = 1…${n} = Σ ${money(C)}/(1 + ${pctS(apr)}/12)<sup>k</sup> for k = 1…${n} = ${money(right)}`,
+        `Ordinary annuity: PV = (C/i) &times; (1 &minus; 1/(1+i)<sup>n</sup>) = (${money(C)}/${per.toFixed(6)}) &times; (1 &minus; 1/(1+${per.toFixed(6)})<sup>${n}</sup>) = ${money(right)}`,
         `Converting to an EAR was not wrong &mdash; it was simply the wrong tool for cash flows that do not arrive annually.`
       ]};
   }},
