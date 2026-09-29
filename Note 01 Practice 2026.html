@@ -647,7 +647,9 @@ const TEMPLATES = [
         {val:price, msg:`That is the sticker price — what you would get if you discounted the payments at the dealer's own ${pctS(promo)} rate. But you must discount at <em>your</em> cost of funds, ${pctS(cof)}, which is what the money is actually worth to you.`},
         {val:cash, msg:`That is the value of the <em>rebate</em> option, ${money(price)} − ${money(rebate)}. The question asks for the financing option.`},
         {val:C*n, msg:`That adds up all ${n} payments without discounting: ${money(C)} × ${n}. Payments spread over ${yrs} years are worth less than their face total.`},
-        {val:(price/n)/ic*(1-1/Math.pow(1+ic,n)), msg:`You split the price evenly over ${n} months, as if the financing were at 0%. It is at ${pctS(promo)}, so the dealer's payment is higher than ${money(price)}/${n}.`},
+        /* Left out when the dealer's rate IS 0%: splitting the price evenly is then the right
+           payment, so this slip equalled the key (gridall 01, 29 Sep 2026: 86,066 draws). */
+        ...(promo===0 ? [] : [{val:(price/n)/ic*(1-1/Math.pow(1+ic,n)), msg:`You split the price evenly over ${n} months, as if the financing were at 0%. It is at ${pctS(promo)}, so the dealer's payment is higher than ${money(price)}/${n}.`}]),
         {val:C/cof*(1-1/Math.pow(1+cof,yrs)), msg:`You discounted with annual periods. There are ${n} monthly payments, not ${yrs} annual ones, so use the monthly rate ${pctS(ic,4)} over ${n} periods.`}
       ],
       steps:[
