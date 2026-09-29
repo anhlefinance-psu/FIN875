@@ -1796,7 +1796,7 @@ const CHOICE_TEMPLATES = [
       steps:[
         `Monthly rate = APR / 12 = ${pctS(apr)} / 12 = ${pctS(per,4)}`,
         `Monthly payments must be discounted at the monthly rate, over ${n} months`,
-        `Ordinary annuity: PV = (C/i) &times; (1 &minus; 1/(1+i)<sup>n</sup>) = (${money(C)}/${per.toFixed(6)}) &times; (1 &minus; 1/(1+${per.toFixed(6)})<sup>${n}</sup>) = ${money(right)}`,
+        `Ordinary annuity: PV = (C/i) &times; (1 &minus; 1/(1+i)<sup>n</sup>) = (${money(C)}/${per.toFixed(6)}) &times; (1 &minus; 1/(1+${per.toFixed(6)})<sup>${n}</sup>) = ${money(C/(+per.toFixed(6))*(1-1/Math.pow(1+(+per.toFixed(6)),n)))}`,
         `Converting to an EAR was not wrong &mdash; it was simply the wrong tool for cash flows that do not arrive annually.`
       ]};
   }},
