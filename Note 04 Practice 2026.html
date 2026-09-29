@@ -396,9 +396,9 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
       ],
       sep:0.0008,
       steps:[
-        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d(${t}) = 1/(1+${(rt/2).toFixed(5)})<sup>${2*t}</sup> = ${dt6.toFixed(6)} and d(${T}) = 1/(1+${(rT/2).toFixed(5)})<sup>${2*T}</sup> = ${dT6.toFixed(6)}`,
-        `The forward discount factor from ${t} to ${T} is d(${t},${T}) = d(${T})/d(${t}) = ${(dT6/dt6).toFixed(6)}`,
-        `It spans ${2*(T-t)} six-month period${2*(T-t)===1?"":"s"}, so d(${t},${T}) = 1/(1+f/2)<sup>${2*(T-t)}</sup> and f = 2 &times; ((d(${t})/d(${T}))${root} &minus; 1)`,
+        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d<sub>${t}</sub> = 1/(1+${(rt/2).toFixed(5)})<sup>${2*t}</sup> = ${dt6.toFixed(6)} and d<sub>${T}</sub> = 1/(1+${(rT/2).toFixed(5)})<sup>${2*T}</sup> = ${dT6.toFixed(6)}`,
+        `The forward price is F<sub>${t}</sub><sup>${T}</sup> = d<sub>${T}</sub>/d<sub>${t}</sub> = ${(dT6/dt6).toFixed(6)}`,
+        `It spans ${2*(T-t)} six-month period${2*(T-t)===1?"":"s"}, so F<sub>${t}</sub><sup>${T}</sup> = 1/(1+f/2)<sup>${2*(T-t)}</sup> and f = 2 &times; ((d<sub>${t}</sub>/d<sub>${T}</sub>)${root} &minus; 1)`,
         `f = 2 &times; ((${powT}/${powt})${root} &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually`
       ]};
   }},
