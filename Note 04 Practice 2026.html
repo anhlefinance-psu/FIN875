@@ -254,8 +254,8 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:(1+r/2)/d1, msg:`You inverted it. The forward price of a zero is below $1 face, not above it.`}
       ],
       steps:[
-        `d(0.5) = 1 / (1 + ${(r/2).toFixed(5)}) = ${(1/(1+r/2)).toFixed(6)}`,
-        `F = d(1) / d(0.5) = d(1) &times; (1 + ${(r/2).toFixed(5)}) = ${d1.toFixed(4)} &times; ${(1+r/2).toFixed(5)}`,
+        `d<sub>0.5</sub> = 1 / (1 + ${(r/2).toFixed(5)}) = ${(1/(1+r/2)).toFixed(6)}`,
+        `F<sub>0.5</sub><sup>1</sup> = d<sub>1</sub> / d<sub>0.5</sub> = d<sub>1</sub> &times; (1 + ${(r/2).toFixed(5)}) = ${d1.toFixed(4)} &times; ${(1+r/2).toFixed(5)}`,
         `= ${correct.toFixed(4)} &mdash; by then the 1-year zero has become a 0.5-year zero.`
       ]};
   }},
@@ -345,7 +345,7 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:4*(1/F-1), msg:`You annualised by 4. A six-month period goes into a year twice, not four times.`}
       ],
       steps:[
-        `That price <em>is</em> the forward discount factor from time 0.5 to time 1: d(0.5,1) = ${F.toFixed(4)}`,
+        `That price <em>is</em> the forward price F<sub>0.5</sub><sup>1</sup> = ${F.toFixed(4)}`,
         `A discount factor and its rate: d = 1/(1+f/2), so f = 2 &times; (1/d &minus; 1)`,
         `f = 2 &times; (1/${F.toFixed(4)} &minus; 1) = 2 &times; ${(1/F-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually`
       ]};
@@ -484,7 +484,7 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:1-F, msg:`That is the discount as a fraction of face value, not a rate on the amount lent.`}
       ],
       steps:[
-        `That price <em>is</em> the forward discount factor from time 1 to time 2: d(1,2) = ${F.toFixed(4)}`,
+        `That price <em>is</em> the forward price F<sub>1</sub><sup>2</sup> = ${F.toFixed(4)}`,
         `It spans ${2*(T-t)} six-month periods, so d = 1/(1+f/2)<sup>2</sup> and (1+f/2)<sup>2</sup> = 1/${F.toFixed(4)} = ${(1/F).toFixed(6)}`,
         `f = 2 &times; ((1/d)<sup>1/2</sup> &minus; 1) = 2 &times; ((1/${F.toFixed(4)})<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually`
       ]};
@@ -523,9 +523,9 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:2*rT-rt, msg:`That extrapolates the drop in a straight line &mdash; a shortcut, and the question asks for the exact rate. Rates compound, so the relation is a product: (1+r<sub>1</sub>/2)<sup>2</sup> = (1+r<sub>0.5</sub>/2)(1+f/2).`}
       ],
       steps:[
-        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d(0.5) = 1/(1+${(rt/2).toFixed(5)}) = ${d05P.toFixed(6)} and d(1) = 1/(1+${(rT/2).toFixed(5)})<sup>2</sup> = ${d10P.toFixed(6)}`,
-        `The forward discount factor from 0.5 to 1 is d(0.5,1) = d(1)/d(0.5) = ${(d10P/d05P).toFixed(6)}`,
-        `d(0.5,1) = 1/(1+f/2), so f = 2 &times; (1/d(0.5,1) &minus; 1) = 2 &times; ((1+${(rT/2).toFixed(5)})<sup>2</sup>/(1+${(rt/2).toFixed(5)}) &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually — <em>below</em> both spot rates`,
+        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d<sub>0.5</sub> = 1/(1+${(rt/2).toFixed(5)}) = ${d05P.toFixed(6)} and d<sub>1</sub> = 1/(1+${(rT/2).toFixed(5)})<sup>2</sup> = ${d10P.toFixed(6)}`,
+        `The forward price is F<sub>0.5</sub><sup>1</sup> = d<sub>1</sub>/d<sub>0.5</sub> = ${(d10P/d05P).toFixed(6)}`,
+        `F<sub>0.5</sub><sup>1</sup> = 1/(1+f/2), so f = 2 &times; (1/F<sub>0.5</sub><sup>1</sup> &minus; 1) = 2 &times; ((1+${(rT/2).toFixed(5)})<sup>2</sup>/(1+${(rt/2).toFixed(5)}) &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually — <em>below</em> both spot rates`,
         `On an upward-sloping curve the forward rate sits above both. Invert the curve and it sits below both. Neither is a rule about forward rates; both follow from the shape.`
       ]};
   }},
@@ -639,9 +639,9 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:f-rt, msg:`That is the gap between them, not a level.`}
       ],
       steps:[
-        `Discount factors chain along the timeline: d(1) = d(0.5) &times; d(0.5,1)`,
+        `Discount factors chain along the timeline: d<sub>1</sub> = d<sub>0.5</sub> &times; F<sub>0.5</sub><sup>1</sup>`,
         `= 1/(1+${(rt/2).toFixed(5)}) &times; 1/(1+${(f/2).toFixed(5)}) = ${(1/((1+rt/2)*(1+f/2))).toFixed(6)}`,
-        `r<sub>1</sub> = 2 &times; ((1/d(1))<sup>1/2</sup> &minus; 1) = 2 &times; (((1+${(rt/2).toFixed(5)})&times;(1+${(f/2).toFixed(5)}))<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually, which sits between ${pctS(rt)} and ${pctS(f)} as it must.`
+        `r<sub>1</sub> = 2 &times; ((1/d<sub>1</sub>)<sup>1/2</sup> &minus; 1) = 2 &times; (((1+${(rt/2).toFixed(5)})&times;(1+${(f/2).toFixed(5)}))<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually, which sits between ${pctS(rt)} and ${pctS(f)} as it must.`
       ]};
   }},
 
@@ -1034,7 +1034,14 @@ const CHOICE_TEMPLATES = [
         : (fault==="wrongLeg"
             ? `<b>Step 3.</b> Substituting: (1+${(rt/2).toFixed(5)})<sup>2</sup> = (1+${(rT/2).toFixed(5)})(1+f/2)`
             : `<b>Step 3.</b> Substituting: (1+${(rT/2).toFixed(5)})<sup>2</sup> = (1+${(rt/2).toFixed(5)})(1+f/2)`),
-      `<b>Step 4.</b> Solving gives f = ${pctS(shown,3)}`
+      /* Step 4 used to print ${pctS(shown,3)}. For two of the three faults - addRates and
+         noHalving - that figure sits within 17bp of the true forward rate at EVERY draw on
+         the grid, because both slips linearise to 2r(1) - r(0.5) and only differ in second
+         order. So the error was invisible in the number, and a student who computed
+         correctly saw a near-match and blamed Step 4 instead. No re-draw can widen it.
+         The step is procedural now: the mistake has to be found by reading the algebra,
+         which is the skill the item is for. (25 Sep 2026) */
+      `<b>Step 4.</b> Solve that equation for f`
     ];
     const fine=[
       `Step 1 is fine &mdash; that is exactly the no-arbitrage condition.`,
