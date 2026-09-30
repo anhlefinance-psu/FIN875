@@ -222,8 +222,7 @@ const TEMPLATES = [
       ],
       steps:[
         `Discount ${n} times at ${pctS(r)}: PV = FV / (1+r)<sup>${n}</sup>`,
-        `PV = ${money(FV)} / (1 + ${r})<sup>${n}</sup> = ${money(FV)} / ${Math.pow(1+r,n).toFixed(6)}`,
-        `PV = ${money(correct)}`
+        `PV = ${money(FV)} / (1 + ${+r.toFixed(6)})<sup>${n}</sup> = ${money(correct)}`
       ]};
   }},
 
@@ -250,20 +249,21 @@ const TEMPLATES = [
         {val:Math.exp(apr)-1, msg:`That is the continuously compounded answer, e<sup>r</sup> − 1. Here interest compounds ${label} — only ${m} times a year, not continuously.`}
       ],
       steps:[
-        `Rate per period = APR / m = ${pctS(apr)} / ${m} = ${pctS(apr/m,4)}`,
-        `EAR = (1 + APR/m)<sup>m</sup> − 1 = (1 + ${(apr/m).toFixed(6)})<sup>${m}</sup> − 1`,
-        `EAR = ${pctS(correct,4)}`
+        `Compounding ${m} times a year at APR/${m} a period: EAR = (1 + APR/m)<sup>m</sup> − 1`,
+        `EAR = (1 + ${+apr.toFixed(6)}/${m})<sup>${m}</sup> − 1 = ${pctS(correct,4)}`
       ]};
   }},
 
 { id:"t3", topic:"cont", also:["discount"], name:"Continuous compounding", gen(){
     let FV,r,t;
     do { FV=pick(range(500,5000,250)); r=pick(range(.04,.14,.0025)); t=pick([2,3,4,5,6,7,8,10,12,15]); }
-    while (r*t < 0.30);
+    while (r*t < 0.30 ||
+           /* FV x the printed factor on a half cent rounds either way (29 Sep 2026) */
+           Math.abs((FV*+Math.exp(-r*t).toFixed(8)*100) % 1 - 0.5) < 1e-6);
     const correct = FV*Math.exp(-r*t);
     /* the worked solution multiplies by the factor as printed, so its last line reproduces
        from the page (22 Sep 2026) */
-    const df = +Math.exp(-r*t).toFixed(6);
+    const df = +Math.exp(-r*t).toFixed(8);   // 8 dp (was 6): FV x factor was a cent off on 1.3% of draws (29 Sep 2026)
     return {
       unit:"money",
       text:`You will receive <b>${money(FV)}</b> in <b>${t} years</b>. The <b>continuously
@@ -277,8 +277,8 @@ const TEMPLATES = [
       ],
       steps:[
         `Under continuous compounding: PV = FV × e<sup>−rt</sup>`,
-        `−rt = −${r} × ${t} = ${(-r*t).toFixed(4)}, so e<sup>−rt</sup> = ${df.toFixed(6)}`,
-        `PV = FV × e<sup>−rt</sup> = ${money(FV)} × ${df.toFixed(6)} = ${money(FV*df)}`
+        `−rt = −${+r.toFixed(6)} × ${t} = −${(r*t).toFixed(4)}, so e<sup>−rt</sup> = ${df.toFixed(8)}`,
+        `PV = FV × e<sup>−rt</sup> = ${money(FV)} × ${df.toFixed(8)} = ${money(FV*df)}`
       ]};
   }},
 
@@ -362,9 +362,7 @@ const TEMPLATES = [
       ],
       steps:[
         `PV = (C/r) × (1 − 1/(1+r)<sup>n</sup>)`,
-        `= (${money(C)} / ${r}) × (1 − 1/(1+${r})<sup>${n}</sup>)`,
-        `= ${money(C/r)} × ${(1-1/Math.pow(1+r,n)).toFixed(6)}`,
-        `PV = ${money(correct)}`
+        `= (${money(C)} / ${+r.toFixed(6)}) × (1 − 1/(1+${+r.toFixed(6)})<sup>${n}</sup>) = ${money(correct)}`
       ]};
   }},
 
@@ -462,8 +460,7 @@ const TEMPLATES = [
       steps:[
         `Monthly rate i = APR / 12 = ${pctS(apr)} / 12 = ${pctS(i,4)}`,
         `Plan A is an ordinary annuity: PV = (M/i)(1 − 1/(1+i)<sup>12</sup>)`,
-        `PV = (${money(M)} / (${apr}/12)) × (1 − 1/(1 + ${apr}/12)<sup>12</sup>) = ${money(correct)}`,
-        `PV of Plan A = ${money(correct)}   (for comparison, Plan B = ${money(L + L/Math.pow(1+i,6))})`
+        `PV = (${money(M)} / (${+apr.toFixed(6)}/12)) × (1 − 1/(1 + ${+apr.toFixed(6)}/12)<sup>12</sup>) = ${money(correct)}`
       ]};
   }},
 
@@ -508,7 +505,7 @@ const TEMPLATES = [
         `Rate earned over ${k} months: i<sub>${k}</sub> = (1+i)<sup>${k}</sup> − 1 = (1 + ${apr}/12)<sup>${k}</sup> − 1 = ${pctS(ik,4)}`,
         `Valued one full ${k}-month period before its first payment, the stream is worth X / i<sub>${k}</sub> = ${money(X)} / ((1 + ${apr}/12)<sup>${k}</sup> − 1) = ${money(Xik)}`,
         ...(j<k
-          ? [`The first payment is at month ${j}, i.e. ${k-j} month${k-j===1?'':'s'} earlier than that, so bring it forward ${k-j} month${k-j===1?'':'s'}:`,
+          ? [`That value sits one full period before the first payment, at month ${j} &minus; ${k} = &minus;${k-j}: ${k-j} month${k-j===1?'':'s'} <em>before</em> today. Grow it ${k-j} month${k-j===1?'':'s'} to today:`,
              `P = (X / i<sub>${k}</sub>) × (1+i)<sup>${k-j}</sup> = ${money(Xik)} × (1 + ${apr}/12)<sup>${k-j}</sup> = ${money(Xik*Math.pow(1+im,k-j))}`]
           : [`The first payment is at month ${k}, one full period away, so that is already the price: P = ${money(Xik)}`])
       ]};
@@ -587,11 +584,14 @@ const TEMPLATES = [
       ear = pick(range(.05,.26,.0025));
       m   = pick([2,4,12]);
       correct = m*(Math.pow(1+ear,1/m)-1);
-    } while (Math.abs(Math.log(1+ear)-correct) < 0.003*correct);
+    } while (Math.abs(Math.log(1+ear)-correct) < 0.003*correct ||
+             /* m x the printed r (8 dp) must round to the key: 2 of 242 draws sit on the edge (29 Sep 2026) */
+             (m*+(100*+(Math.pow(1+ear,1/m)-1).toFixed(8)).toFixed(6)).toFixed(4) !== (100*correct).toFixed(4));
     const label = {2:"semiannually",4:"quarterly",12:"monthly"}[m];
     /* the periodic rate as printed (four decimals of a percent), so APR = m x that reproduces
        from the page; it is within 0.0006 of a point of the key (22 Sep 2026) */
-    const per = +(Math.pow(1+ear,1/m)-1).toFixed(6);
+    const per = +(Math.pow(1+ear,1/m)-1).toFixed(8);   // 8 dp, so m x r reproduces the 4-dp key (29 Sep 2026 audit)
+    const per_word = {2:"half-yearly",4:"quarterly",12:"monthly"}[m], per_unit = {2:"half year",4:"quarter",12:"month"}[m];
     return {
       unit:"percent",
       text:`A savings product advertises an <b>effective annual rate of ${pctS(ear)}</b>.
@@ -605,9 +605,9 @@ const TEMPLATES = [
         {val:Math.log(1+ear), msg:`That is the continuously compounded equivalent, ln(1+EAR). Here compounding is ${label}, only ${m} times a year.`}
       ],
       steps:[
-        `Undo the compounding to get the periodic rate: (1 + EAR)<sup>1/${m}</sup> − 1`,
-        `= (1 + ${ear.toFixed(4)})<sup>1/${m}</sup> − 1 = ${pctS(per,4)} per period`,
-        `APR = m × periodic rate = ${m} × ${pctS(per,4)} = ${pctS(m*per,4)}`
+        `Compounding the ${per_word} rate r ${m} times a year gives the EAR: (1 + r)<sup>${m}</sup> &minus; 1 = EAR`,
+        `Solve for r: r = (1 + EAR)<sup>1/${m}</sup> &minus; 1 = (1 + ${ear.toFixed(4)})<sup>1/${m}</sup> &minus; 1 = ${per.toFixed(8)} = ${pctS(per,6)} per ${per_unit}`,
+        `APR = ${m} &times; r = ${m} &times; ${pctS(per,6)} = ${pctS(correct,4)}`
       ]};
   }},
 
@@ -653,11 +653,12 @@ const TEMPLATES = [
         {val:C/cof*(1-1/Math.pow(1+cof,yrs)), msg:`You discounted with annual periods. There are ${n} monthly payments, not ${yrs} annual ones, so use the monthly rate ${pctS(ic,4)} over ${n} periods.`}
       ],
       steps:[
-        `Step 1 — the dealer sets the payment at their rate, ${pctS(promo)} ÷ 12 = ${pctS(ip,4)}:`,
-        promo===0 ? `C = price / n = ${money(price)} / ${n} = ${money(C)}`
-                  : `C = price × i / (1 − 1/(1+i)<sup>n</sup>) = ${money(price)} × (${promo}/12) / (1 − 1/(1 + ${promo}/12)<sup>${n}</sup>) = ${money(C)}`,
-        `Step 2 — you value that stream at <em>your</em> cost of funds, ${pctS(cof)} ÷ 12 = ${pctS(ic,4)}:`,
-        `PV = (C / i) × (1 − 1/(1+i)<sup>n</sup>) = (${money(Cp)} / (${cof}/12)) × (1 − 1/(1 + ${cof}/12)<sup>${n}</sup>) = ${money(Cp/ic*(1-1/Math.pow(1+ic,n)))}`,
+        promo===0
+          ? `Step 1 — at 0% the dealer simply splits the price into ${n} payments: C = price / n = ${money(price)} / ${n} = ${money(C)}`
+          : `Step 1 — the dealer sets the payment so that, at <em>its</em> rate of ${pctS(promo)} (monthly i<sub>d</sub> = ${pctS(promo)} ÷ 12), the payments are worth the price: price = (C/i<sub>d</sub>) × (1 − 1/(1+i<sub>d</sub>)<sup>n</sup>)`,
+        ...(promo===0 ? [] : [`C = price × i<sub>d</sub> / (1 − 1/(1+i<sub>d</sub>)<sup>n</sup>) = ${money(price)} × (${+promo.toFixed(6)}/12) / (1 − 1/(1 + ${+promo.toFixed(6)}/12)<sup>${n}</sup>) = ${money(C)}`]),
+        `Step 2 — you value that stream at <em>your</em> cost of funds, ${pctS(cof)} (monthly i<sub>y</sub> = ${pctS(cof)} ÷ 12):`,
+        `PV = (C / i<sub>y</sub>) × (1 − 1/(1+i<sub>y</sub>)<sup>n</sup>) = (${money(Cp)} / (${+cof.toFixed(6)}/12)) × (1 − 1/(1 + ${+cof.toFixed(6)}/12)<sup>${n}</sup>) = ${money(Cp/ic*(1-1/Math.pow(1+ic,n)))}`,
         `Compare with the rebate option at ${money(cash)} → <b>${correct < cash ? 'financing' : 'the rebate'} wins</b>.`
       ]};
   }}
@@ -669,7 +670,9 @@ const TEMPLATES = [
 { id:"g1", topic:"grow", also:["simple"], name:"Growing a single sum forward", gen(){
     let P,r,n;
     do { P=pick(range(500,8000,250)); r=pick(range(.03,.14,.0025)); n=pick([3,4,5,6,8,10,12,15,20]); }
-    while (r*n < 0.30);
+    while (r*n < 0.30 ||
+           /* FV on a half cent rounds either way on a calculator: 4 in 20,000 draws (29 Sep 2026) */
+           Math.abs((P*Math.pow(1+r,n)*100) % 1 - 0.5) < 1e-6);
     const correct = P*Math.pow(1+r,n);
     return {
       unit:"money",
@@ -684,9 +687,8 @@ const TEMPLATES = [
         {val:P*(1+Math.pow(r,n)), msg:`The exponent belongs on (1+r), not on r by itself. Each year multiplies the balance by ${(1+r).toFixed(4)}, so after ${n} years the factor is ${(1+r).toFixed(4)}<sup>${n}</sup>.`}
       ],
       steps:[
-        `Each year multiplies the balance by (1 + ${r}) = ${(1+r).toFixed(6)}`,
-        `After ${n} years: FV = ${money(P)} &times; ${(1+r).toFixed(6)}<sup>${n}</sup> = ${money(P)} &times; ${Math.pow(1+r,n).toFixed(6)}`,
-        `FV = ${money(correct)}`
+        `Each year multiplies the balance by (1 + r), so after n years: FV = P &times; (1 + r)<sup>n</sup>`,
+        `FV = ${money(P)} &times; (1 + ${+r.toFixed(6)})<sup>${n}</sup> = ${money(correct)}`
       ]};
   }},
 
@@ -787,10 +789,10 @@ const TEMPLATES = [
         {val:comp-P, msg:`That is all the interest Account A earns, including the ordinary interest B earns too. The gap is only the part B misses.`}
       ],
       steps:[
-        `Account A: ${money(P)} &times; ${(1+r).toFixed(4)}<sup>${n}</sup> = ${money(comp)}`,
-        `Account B: ${money(P)} &times; (1 + ${pctS(r)} &times; ${n}) = ${money(simp)}`,
-        `Gap = ${money(comp)} &minus; ${money(simp)} = ${money(correct)}`,
-        `Over ${n} years at ${pctS(r)}, interest on interest is worth ${(correct/simp*100).toFixed(0)}% of everything the simple account manages.`
+        `Account A compounds: FV = P &times; (1 + r)<sup>n</sup> = ${money(P)} &times; (1 + ${+r.toFixed(6)})<sup>${n}</sup> = ${money(comp)}`,
+        `Account B earns simple interest: FV = P &times; (1 + r &times; n) = ${money(P)} &times; (1 + ${+r.toFixed(6)} &times; ${n}) = ${money(simp)}`,
+        /* the difference of the two printed balances, so it reproduces; the key stays exact (29 Sep 2026) */
+        `Gap = ${money(comp)} &minus; ${money(simp)} = ${money((Math.round(comp*100)-Math.round(simp*100))/100)}`
       ]};
   }},
 
@@ -963,7 +965,11 @@ const TEMPLATES = [
     } while (C <= L*i*1.25 || C > L*0.09 ||
              /* the un-rounded solve must stay distinguishable from the count */
              gap < 0.006 ||
+             /* a last payment of a few cents (exact n just past a whole number) reads as "n = 30.00" (29 Sep 2026) */
+             exact - Math.floor(exact) < 0.02 ||
              [L*Math.pow(1+i,12)/C, L/(C-L*i)].some(v => near(v, correct, sep)));
+    /* printed figures, so the log step reproduces from the page (29 Sep 2026 audit) */
+    const x6 = +(L*i/C).toFixed(6), nP = -Math.log(+(1-x6).toFixed(6))/Math.log(+(1+i).toFixed(4));
     return {
       unit:"number",
       tol:Math.min(0.004, gap*0.45),
@@ -980,11 +986,11 @@ const TEMPLATES = [
         {val:Math.log(L/C)/Math.log(1+i), msg:`Close in shape, but the annuity formula gives n = &minus;ln(1 &minus; L&times;i/C) / ln(1+i). The term inside the logarithm is 1 &minus; L&times;i/C, not L/C.`}
       ],
       steps:[
-        `Monthly interest on the opening balance = ${money(L)} &times; ${pctS(i,3)} = ${money(L*i)}`,
-        `Your ${money(C)} clears that and puts ${money(C-L*i)} against the principal in month one`,
-        `n = &minus;ln(1 &minus; L&times;i/C) / ln(1+i) = &minus;ln(1 &minus; ${(L*i/C).toFixed(6)}) / ln(${(1+i).toFixed(4)}) = ${exact.toFixed(2)}`,
-        `Payments arrive whole months apart, so ${correct-1} of them leaves a balance outstanding &mdash; round up.`,
-        `n = ${correct} payments &mdash; about ${(correct/12).toFixed(1)} years.`
+        `The payments must be worth the balance: L = (C/i) &times; (1 &minus; 1/(1+i)<sup>n</sup>)`,
+        `${money(L)} = (${money(C)} / ${i.toFixed(4)}) &times; (1 &minus; 1/(${(1+i).toFixed(4)})<sup>n</sup>)`,
+        `Solve for the bracket: 1 &minus; 1/(${(1+i).toFixed(4)})<sup>n</sup> = L &times; i / C = ${money(L)} &times; ${i.toFixed(4)} / ${money(C)} = ${x6.toFixed(6)}, so 1/(${(1+i).toFixed(4)})<sup>n</sup> = ${(1-x6).toFixed(6)}`,
+        `Take logs: n = &minus;ln(${(1-x6).toFixed(6)}) / ln(${(1+i).toFixed(4)}) = ${nP.toFixed(2)}`,
+        `After ${correct-1} full payments a little is still owed, so one more, smaller payment clears it: n = ${correct} payments, about ${(correct/12).toFixed(1)} years.`
       ]};
   }},
 
@@ -1065,9 +1071,11 @@ const TEMPLATES = [
         {val:C1*(1+r)+C2*Math.pow(1+r,2)+C3*Math.pow(1+r,3), msg:`You grew the payments forward instead of discounting them back. Future money is worth <em>less</em> today, not more.`}
       ],
       steps:[
-        `PV = ${money(C1)}/(1+${r}) + ${money(C2)}/(1+${r})<sup>2</sup> + ${money(C3)}/(1+${r})<sup>3</sup>`,
+        `PV = ${money(C1)}/(1+${+r.toFixed(6)}) + ${money(C2)}/(1+${+r.toFixed(6)})<sup>2</sup> + ${money(C3)}/(1+${+r.toFixed(6)})<sup>3</sup>`,
         `= ${money(C1/(1+r))} + ${money(C2/Math.pow(1+r,2))} + ${money(C3/Math.pow(1+r,3))}`,
-        `PV = ${money(correct)}`
+        /* the sum of the three terms as printed, so this line reproduces (29 Sep 2026 audit: the
+           exact total differed by a cent on a third of draws); the key stays exact */
+        `PV = ${money([C1/(1+r), C2/Math.pow(1+r,2), C3/Math.pow(1+r,3)].reduce((t,v)=>t+Math.round(v*100)/100,0))}`
       ]};
   }},
 
@@ -1106,8 +1114,9 @@ const TEMPLATES = [
         {val:P*(1+aprA*t), msg:`That is simple interest on Account A &mdash; ${pctS(aprA)} of the original ${money(P)} each year, with no interest on interest.`}
       ],
       steps:[
-        `Account A: ${money(P)} &times; (1 + ${aprA})<sup>${t}</sup> = ${money(FA)}`,
-        `Account B: ${money(P)} &times; (1 + ${aprB}/${mB})<sup>${mB*t}</sup> = ${money(FB)}`,
+        `Compounded m times a year for t years: FV = P &times; (1 + APR/m)<sup>m&times;t</sup>`,
+        `Account A (annual, m = 1): FV = ${money(P)} &times; (1 + ${+aprA.toFixed(6)})<sup>${t}</sup> = ${money(FA)}`,
+        `Account B (${label}, m = ${mB}, so m &times; t = ${mB} &times; ${t} = ${mB*t}): FV = ${money(P)} &times; (1 + ${+aprB.toFixed(6)}/${mB})<sup>${mB*t}</sup> = ${money(FB)}`,
         `Account ${aWins?"A":"B"} wins with ${money(correct)}.`,
         `A quoted rate is not comparable to another quoted rate until both are on the same compounding footing.`
       ]};
@@ -1133,8 +1142,7 @@ const TEMPLATES = [
       ],
       steps:[
         `FV = PV &times; e<sup>rt</sup>, so ln(FV/PV) = r &times; t`,
-        `r = ln(${money(FV)} / ${money(PV)}) / ${t} = ${Math.log(FV/PV).toFixed(6)} / ${t}`,
-        `r = ${pctS(correct,3)}`
+        `r = ln(${money(FV)} / ${money(PV)}) / ${t} = ${pctS(correct,3)}`
       ]};
   }},
 
@@ -1168,33 +1176,6 @@ const TEMPLATES = [
       ]};
   }},
 
-{ id:"a1", topic:"annuity", name:"The rate an annuity implies", gen(){
-    const C=pick(range(400,1200,50));
-    const r=pick(range(.03,.12,.0025));
-    const n=pick([5,8,10,12,15,20]);
-    const PV=C/r*(1-Math.pow(1+r,-n));
-    const correct=r;
-    return {
-      unit:"percent", tol:0.004,
-      text:`An investment costs <b>${money(PV)}</b> today and pays <b>${money(C)}</b> at the end of each
-            year for <b>${n} years</b>. (You will need a calculator or spreadsheet for this one &mdash;
-            there is no formula that solves it directly.)`,
-      ask:"What interest rate per year, compounded annually, makes those cash flows exactly worth the price?",
-      correct,
-      cands:[
-        {val:C*n/PV-1, msg:`That compares total payments to the price and calls the surplus a rate. It ignores <em>when</em> each payment arrives, which is the only thing that determines the answer.`},
-        {val:C/PV, msg:`That is the first year's payment as a fraction of the price &mdash; a yield-on-cost figure. It overstates the true rate, because part of every payment is your own capital coming back.`},
-        {val:(C*n-PV)/PV/n, msg:`Total profit spread evenly over ${n} years. Simple interest again: it ignores that the money is returned gradually and can be reinvested.`},
-        {val:C/PV*n, msg:`That multiplies a yield-on-cost figure by the number of years, which compounds one error with another.`}
-      ],
-      steps:[
-        `Set the price equal to the annuity: ${money(PV)} = (${money(C)}/r)(1 &minus; (1+r)<sup>&minus;${n}</sup>)`,
-        `There is no closed form &mdash; solve numerically, by trial or with a solver`,
-        `r = ${pctS(correct,3)}`,
-        `The annuity formula is a relationship among four quantities, not just a way of computing PV.`
-      ]};
-  }},
-
 { id:"a2", topic:"annuity", name:"How many payments will it take?", gen(){
     const C=pick(range(300,1000,50));
     let r,n;
@@ -1203,6 +1184,8 @@ const TEMPLATES = [
     do { r=pick(range(.02,.09,.005)); n=pick([6,8,10,12,15,20]); } while (near(1/r, n, REL_SEP));
     const PV=C/r*(1-Math.pow(1+r,-n));
     const correct=n;
+    /* from the printed price (to the cent), so the steps reproduce from the page (29 Sep 2026) */
+    const x6 = +(1 - (+PV.toFixed(2))*r/C).toFixed(6), nP = -Math.log(x6)/Math.log(1+r);
     return {
       unit:"number",
       tol:0.006,
@@ -1218,9 +1201,9 @@ const TEMPLATES = [
         {val:PV/(C-PV*r), msg:`That assumes the interest charge stays fixed at ${money(PV*r)} for the whole term. It falls as the balance falls.`}
       ],
       steps:[
-        `PV = (C/r)(1 &minus; (1+r)<sup>&minus;n</sup>)`,
-        `Rearrange: (1+r)<sup>&minus;n</sup> = 1 &minus; PV&times;r/C = ${(1-PV*r/C).toFixed(6)}`,
-        `n = &minus;ln(${(1-PV*r/C).toFixed(6)}) / ln(1+${r}) = ${correct}`,
+        `The payments must be worth the price: PV = (C/r) &times; (1 &minus; 1/(1+r)<sup>n</sup>)`,
+        `Solve for the discount term: 1/(1+r)<sup>n</sup> = 1 &minus; PV &times; r / C = 1 &minus; ${money(PV)} &times; ${+r.toFixed(6)} / ${money(C)} = ${x6.toFixed(6)}`,
+        `Take logs: n = &minus;ln(${x6.toFixed(6)}) / ln(${+(1+r).toFixed(6)}) = ${nP.toFixed(2)}, so n = ${correct} payments`,
         `The same formula answers a loan question and an investment question &mdash; it is not a "loan formula".`
       ]};
   }},
@@ -1233,7 +1216,9 @@ const TEMPLATES = [
     const correct=perp-ann;
     /* the tail in the worked solution is the difference of the two figures printed above it,
        so it reproduces from the page; it can sit a cent from the key (22 Sep 2026) */
-    const tailP=(Math.round(perp*100)-Math.round(ann*100))/100;
+    /* the tail worked the simple way (29 Sep 2026): the perpetuity from year n+1, valued at year n
+       as C/r and brought back n years, from C/r as printed so it reproduces from the page */
+    const tailD=(+perp.toFixed(2))/Math.pow(1+r,n);
     return {
       unit:"money", tol:0.002,
       text:`A perpetuity pays <b>${money(C)}</b> a year forever. The discount rate is <b>${pctS(r)} per year, compounded annually</b>,
@@ -1247,10 +1232,9 @@ const TEMPLATES = [
         {val:C*n, msg:`That adds up ${n} payments without discounting anything, and it describes the wrong part of the stream besides.`}
       ],
       steps:[
-        `Whole perpetuity = C/r = ${money(perp)}`,
-        `First ${n} payments = (C/r)(1 &minus; (1+r)<sup>&minus;${n}</sup>) = ${money(ann)}`,
-        `Tail = whole &minus; first ${n} payments = ${money(perp)} &minus; ${money(ann)} = ${money(tailP)}, which is ${(100*correct/perp).toFixed(0)}% of the value`,
-        `Equivalently the tail is just the whole perpetuity discounted ${n} years: ${money(perp)}/(1+${r})<sup>${n}</sup>.`
+        `From year ${n+1} on, the payments are a perpetuity whose first payment comes one year after year ${n}, so at year ${n} they are worth C/r = ${money(C)} / ${+r.toFixed(6)} = ${money(perp)}`,
+        `Bring that back ${n} years: tail = (C/r) / (1 + r)<sup>${n}</sup> = ${money(perp)} / (1 + ${+r.toFixed(6)})<sup>${n}</sup> = ${money(tailD)}`,
+        `The whole perpetuity is worth C/r = ${money(perp)} today, so the tail is ${(100*correct/perp).toFixed(0)}% of its value`
       ]};
   }},
 
@@ -1495,7 +1479,8 @@ const CHOICE_TEMPLATES = [
       options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
       steps:[
         `Monthly rate i = ${pctS(apr)} &divide; 12 = ${pctS(apr/12,4)},  n = ${n}`,
-        `C = L &times; i / (1 &minus; 1/(1+i)<sup>n</sup>) = ${money(trueC)}`,
+        `The payments must be worth the loan: L = (C/i) &times; (1 &minus; 1/(1+i)<sup>n</sup>), so C = L &times; i / (1 &minus; 1/(1+i)<sup>n</sup>)`,
+        `C = ${money(L)} &times; (${+apr.toFixed(6)}/12) / (1 &minus; 1/(1 + ${+apr.toFixed(6)}/12)<sup>${n}</sup>) = ${money(trueC)}`,
         `L/n charges no interest; L&times;i charges only interest. The annuity formula balances the two.`
       ]};
   }},
@@ -1562,18 +1547,19 @@ const CHOICE_TEMPLATES = [
       ask:`Which price falls by the ${more ? "<b>larger</b>" : "<b>smaller</b>"} percentage?`,
       options: shuffle([
         {html:`The ${a}-year bond`, correct: !more,
-         msg: more ? `Not quite — the shorter bond moves <em>less</em>. Its payment is discounted only ${a} times, so the rate change compounds through fewer periods (${(chA*100).toFixed(1)}% vs ${(chB*100).toFixed(1)}%).`
-                   : `Right. Its payment is discounted only ${a} times, so the rate change compounds through fewer periods — it falls ${(chA*100).toFixed(1)}% against the longer bond's ${(chB*100).toFixed(1)}%.`},
+         msg: more ? `Not quite — the shorter bond moves <em>less</em>. Its payment is discounted only ${a} times, so the rate change compounds through fewer periods (${(chA*100).toFixed(1).replace('-','&minus;')}% vs ${(chB*100).toFixed(1).replace('-','&minus;')}%).`
+                   : `Right. Its payment is discounted only ${a} times, so the rate change compounds through fewer periods — it falls ${(chA*100).toFixed(1).replace('-','&minus;')}% against the longer bond's ${(chB*100).toFixed(1).replace('-','&minus;')}%.`},
         {html:`The ${b}-year bond`, correct: more,
-         msg: more ? `Right. Its payment is discounted ${b} times, so the same rate change compounds through far more periods — ${(chB*100).toFixed(1)}% against ${(chA*100).toFixed(1)}% for the shorter bond.`
-                   : `Not quite — the longer bond moves <em>more</em>. Discounting ${b} times means the rate change compounds through many more periods (${(chB*100).toFixed(1)}% vs ${(chA*100).toFixed(1)}%).`},
+         msg: more ? `Right. Its payment is discounted ${b} times, so the same rate change compounds through far more periods — ${(chB*100).toFixed(1).replace('-','&minus;')}% against ${(chA*100).toFixed(1).replace('-','&minus;')}% for the shorter bond.`
+                   : `Not quite — the longer bond moves <em>more</em>. Discounting ${b} times means the rate change compounds through many more periods (${(chB*100).toFixed(1).replace('-','&minus;')}% vs ${(chA*100).toFixed(1).replace('-','&minus;')}%).`},
         {html:`Both fall by the same percentage`, correct:false,
          msg:`No. Both are discounted at the same rate, but over different lengths of time — and the number of periods is precisely what makes the percentage change differ.`}
       ]),
       steps:[
         `A zero maturing in n years is worth F/(1+r)<sup>n</sup>.`,
         `Raising r divides by a larger number — and that larger number is raised to the power n.`,
-        `${a}-year: ${(chA*100).toFixed(1)}%   ·   ${b}-year: ${(chB*100).toFixed(1)}%`,
+        `% change in price = [F/(1+r<sub>1</sub>)<sup>n</sup>] / [F/(1+r<sub>0</sub>)<sup>n</sup>] &minus; 1 = ((1 + r<sub>0</sub>)/(1 + r<sub>1</sub>))<sup>n</sup> &minus; 1`,
+        `${a}-year: (${+(1+r0).toFixed(4)}/${+(1+r1).toFixed(4)})<sup>${a}</sup> &minus; 1 = ${(chA*100).toFixed(1).replace('-','&minus;')}%   ·   ${b}-year: (${+(1+r0).toFixed(4)}/${+(1+r1).toFixed(4)})<sup>${b}</sup> &minus; 1 = ${(chB*100).toFixed(1).replace('-','&minus;')}%`,
         `The longer you wait for your money, the more a change in rates matters. That sensitivity is what we later call duration.`
       ]};
   }},
@@ -1612,7 +1598,7 @@ const CHOICE_TEMPLATES = [
       ask:"What happens to the price?",
       options: shuffle([
         {html:`It ${up ? "falls" : "rises"}`, correct:true,
-         msg:`Right. P = C/r, so r sits in the denominator: ${money(C)}/${(up?r0:r1)} = ${money(hi)} becomes ${money(C)}/${(up?r1:r0)} = ${money(lo)}. ${up ? "A higher rate means you need less money on deposit to generate the same payment." : "A lower rate means you need more principal to generate the same payment."}`},
+         msg:`Right. P = C/r, so r sits in the denominator: ${money(C)}/${+(up?r0:r1).toFixed(4)} = ${money(hi)} becomes ${money(C)}/${+(up?r1:r0).toFixed(4)} = ${money(lo)}. ${up ? "A higher rate means you need less money on deposit to generate the same payment." : "A lower rate means you need more principal to generate the same payment."}`},
         {html:`It ${up ? "rises" : "falls"}`, correct:false,
          msg:`The other way. Think of it as a bank balance: at ${pctS(up?r1:r0)} you need ${money(lo)} on deposit to earn ${money(C)} a year, but at ${pctS(up?r0:r1)} you need ${money(hi)}. Rate and price move in opposite directions.`},
         {html:`It is unchanged — the payment did not change`, correct:false,
@@ -1620,8 +1606,8 @@ const CHOICE_TEMPLATES = [
       ]),
       steps:[
         `P = C/r — the rate is in the denominator.`,
-        `At ${pctS(up?r0:r1)}: P = ${money(C)} / ${(up?r0:r1)} = ${money(hi)}`,
-        `At ${pctS(up?r1:r0)}: P = ${money(C)} / ${(up?r1:r0)} = ${money(lo)}`,
+        `At ${pctS(up?r0:r1)}: P = ${money(C)} / ${+(up?r0:r1).toFixed(4)} = ${money(hi)}`,
+        `At ${pctS(up?r1:r0)}: P = ${money(C)} / ${+(up?r1:r0).toFixed(4)} = ${money(lo)}`,
         `Rates up, prices down. Always, for any fixed stream of payments.`
       ]};
   }},
@@ -1757,8 +1743,8 @@ const CHOICE_TEMPLATES = [
       options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
       steps:[
         `PV = FV &times; e<sup>&minus;rt</sup>`,
-        `rt = ${r} &times; ${t} = ${(r*t).toFixed(4)}`,
-        `PV = ${money(FV*Math.exp(-r*t))}`
+        `rt = ${+r.toFixed(6)} &times; ${t} = ${(r*t).toFixed(4)}`,
+        `PV = ${money(FV)} &times; e<sup>&minus;${(r*t).toFixed(4)}</sup> = ${money(FV)} &times; ${Math.exp(-r*t).toFixed(8)} = ${money(FV*+Math.exp(-r*t).toFixed(8))}`
       ]};
   }},
 
@@ -1798,7 +1784,7 @@ const CHOICE_TEMPLATES = [
       steps:[
         `Monthly rate = APR / 12 = ${pctS(apr)} / 12 = ${pctS(per,4)}`,
         `Monthly payments must be discounted at the monthly rate, over ${n} months`,
-        `Ordinary annuity: PV = (C/i) &times; (1 &minus; 1/(1+i)<sup>n</sup>) = (${money(C)}/${per.toFixed(6)}) &times; (1 &minus; 1/(1+${per.toFixed(6)})<sup>${n}</sup>) = ${money(C/(+per.toFixed(6))*(1-1/Math.pow(1+(+per.toFixed(6)),n)))}`,
+        `Ordinary annuity: PV = (C/i) &times; (1 &minus; 1/(1+i)<sup>n</sup>) = (${money(C)} / (${+apr.toFixed(6)}/12)) &times; (1 &minus; 1/(1 + ${+apr.toFixed(6)}/12)<sup>${n}</sup>) = ${money(right)}`,
         `Converting to an EAR was not wrong &mdash; it was simply the wrong tool for cash flows that do not arrive annually.`
       ]};
   }},
@@ -1911,7 +1897,7 @@ const CHOICE_TEMPLATES = [
 { id:"d11", topic:"concept", name:"Premium, par, or discount?", gen(){
     const c=pick([4,5,6,7,8]);
     let y; do { y=pick([3,4,5,6,7,8,9]); } while (y===c);
-    const rel = y>c ? "above" : "below";
+    const rel = c>y ? "above" : "below";
     return {
       mode:"choice",
       text:`A bond pays a <b>${c}% p.a.</b> coupon, paid semiannually. The market's required yield on it is <b>${y}% p.a., compounded semiannually</b>.`,

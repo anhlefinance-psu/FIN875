@@ -181,6 +181,7 @@ const money = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maxi
    a price the stem already prints to four decimals -- and NOT for a present value, which
    is a genuine cent quantity and would sprout meaningless digits.                     */
 const moneyX = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:4});
+const money4 = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:4, maximumFractionDigits:4});   // intermediate PVs (29 Sep 2026)
 const pct   = (v,d=4) => (v*100).toFixed(d).replace(/\.?0+$/,"") + "%";
 const pctS  = (v,d=2) => (v*100).toFixed(d) + "%";
 /* "a 8.75%" is wrong: eight takes "an". Pick the article from the spoken form.
@@ -245,7 +246,7 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       steps:[
         `Rate per six-month period = ${pctS(y)} &divide; 2 = ${pctS(y/2,4)}`,
         `Number of periods = ${n} &times; 2 = ${2*n}`,
-        `P = ${money(F)} / (1 + ${(y/2).toFixed(6)})<sup>${2*n}</sup> = ${money(correct)}`
+        `Price of a zero = face value / (1 + y/2)<sup>2n</sup> = ${money(F)} / (1 + ${+(y/2).toFixed(6)})<sup>${2*n}</sup> = ${money(correct)}`
       ]};
   }},
 
@@ -274,7 +275,7 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       steps:[
         `Price = Face / (1 + y/2)<sup>${2*n}</sup>, so (1 + y/2)<sup>${2*n}</sup> = ${money(F)}/${moneyX(P)} = ${(F/P).toFixed(6)}`,
         `1 + y/2 = ${(F/P).toFixed(6)}<sup>1/${2*n}</sup> = ${Math.pow(F/P,1/(2*n)).toFixed(6)}`,
-        `y = 2 &times; ${(Math.pow(F/P,1/(2*n))-1).toFixed(6)} = ${pctS(correct,4)}`
+        `y = 2 &times; (${Math.pow(F/P,1/(2*n)).toFixed(6)} &minus; 1) = ${pctS(correct,4)}`
       ]};
   }},
 
@@ -300,8 +301,8 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       steps:[
         `Coupon per period = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${money(cf1)}`,
         `Cash flows: ${money(cf1)} at 6 months, ${money(cf2)} at 12 months`,
-        `P = ${money(cf1)}/(1+${(y05/2).toFixed(5)}) + ${money(cf2)}/(1+${(y10/2).toFixed(5)})<sup>2</sup>`,
-        `P = ${money(correct)}`
+        `Each cash flow is priced at the zero yield for its own date: PV = CF / (1 + y<sub>n</sub>/2)<sup>2n</sup>`,
+        `P = ${money(cf1)}/(1 + ${+(y05/2).toFixed(6)}) + ${money(cf2)}/(1 + ${+(y10/2).toFixed(6)})<sup>2</sup> = ${money4(cf1/(1+y05/2))} + ${money4(cf2/Math.pow(1+y10/2,2))} = ${money(correct)}`
       ]};
   }},
 
@@ -341,8 +342,9 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       ],
       steps:[
         `Coupon per period = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${money(cf)}`,
-        `P = ${money(cf)}/(1+${(y05/2).toFixed(5)}) + ${money(cf)}/(1+${(y10/2).toFixed(5)})<sup>2</sup> + ${money(F+cf)}/(1+${(y15/2).toFixed(5)})<sup>3</sup>`,
-        `P = ${money(correct)}`
+        `Cash flows: ${money(cf)} at 0.5, ${money(cf)} at 1.0 and ${money(F+cf)} at 1.5 years. Each is priced at the zero yield for its own date: PV = CF / (1 + y<sub>n</sub>/2)<sup>2n</sup>`,
+        `P = ${money(cf)}/(1 + ${+(y05/2).toFixed(6)}) + ${money(cf)}/(1 + ${+(y10/2).toFixed(6)})<sup>2</sup> + ${money(F+cf)}/(1 + ${+(y15/2).toFixed(6)})<sup>3</sup>`,
+        `= ${money4(cf/(1+y05/2))} + ${money4(cf/Math.pow(1+y10/2,2))} + ${money4((F+cf)/Math.pow(1+y15/2,3))} = ${money(correct)}`
       ]};
   }},
 
@@ -442,6 +444,8 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
     const d05 = dfOf(CURVE[0.5],0.5), d10 = dfOf(CURVE[1],1),
           d15 = dfOf(CURVE[1.5],1.5), d20 = dfOf(CURVE[2],2);
     const correct = cf*d05 + cf*d10 + cf*d15 + (F+cf)*d20;
+    /* the sum of the factors as printed (six decimals each), for the coupon-times-sum route (29 Sep 2026) */
+    const Sd = +[d05,d10,d15,d20].reduce((t,v)=>t+(+v.toFixed(6)),0).toFixed(6);
     return {
       unit:"money",
       text:`The discount factors are <b>d<sub>0.5</sub> = ${d05.toFixed(6)}</b>,
@@ -457,10 +461,10 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:cf/d05+cf/d10+cf/d15+(F+cf)/d20, msg:`You divided by the discount factors. A discount factor already <em>is</em> the present value of $1 &mdash; multiply by it.`}
       ],
       steps:[
-        `Coupon per period = ${moneyX(cf)}`,
-        `Four cash flows: ${moneyX(cf)} at 0.5, 1.0 and 1.5, then ${moneyX(F+cf)} at 2.0`,
-        `P = ${moneyX(cf)}&times;${d05.toFixed(6)} + ${moneyX(cf)}&times;${d10.toFixed(6)} + ${moneyX(cf)}&times;${d15.toFixed(6)} + ${moneyX(F+cf)}&times;${d20.toFixed(6)}`,
-        `P = ${money(correct)}`
+        `Coupon every six months = ${pctS(c)} &times; ${money(F)} &divide; 2 = ${moneyX(cf)}, paid at 0.5, 1.0, 1.5 and 2.0 years, with the ${money(F)} face at 2.0`,
+        `Price = each cash flow &times; the discount factor for its date. The four coupons are the same amount, so P = coupon &times; (d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub> + d<sub>2.0</sub>) + face &times; d<sub>2.0</sub>`,
+        `d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub> + d<sub>2.0</sub> = ${d05.toFixed(6)} + ${d10.toFixed(6)} + ${d15.toFixed(6)} + ${d20.toFixed(6)} = ${Sd.toFixed(6)}`,
+        `P = ${moneyX(cf)} &times; ${Sd.toFixed(6)} + ${money(F)} &times; ${d20.toFixed(6)} = ${money4(cf*Sd)} + ${money4(F*(+d20.toFixed(6)))} = ${money(cf*Sd + F*(+d20.toFixed(6)))}`
       ]};
   }},
 
@@ -666,8 +670,8 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:F/(1+y*30), msg:`Simple interest. Over 30 years compounding makes an enormous difference.`}
       ],
       steps:[
-        `60 periods at ${pctS(y/2,4)} per period`,
-        `P = ${money(F)} / (1+${(y/2).toFixed(6)})<sup>60</sup> = ${money(correct)}`,
+        `Rate per six months = ${pctS(y)} &divide; 2 = ${pctS(y/2,4)}; periods = 30 &times; 2 = 60`,
+        `Price of a zero = face value / (1 + y/2)<sup>2n</sup> = ${money(F)} / (1 + ${+(y/2).toFixed(6)})<sup>60</sup> = ${money(correct)}`,
         `The whole of the interest is delivered through the discount to face value.`
       ]};
   }},
@@ -692,9 +696,9 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:F/(F+F*c), msg:`You added a full year of coupon. A 0.5-year note pays one semiannual coupon of ${money(F*c/2)}, so its single cash flow is ${money(cf)}.`}
       ],
       steps:[
-        `Trading at par means the price is ${money(F)} and the ytm equals the coupon rate, ${pctS(c)}`,
-        `Its one cash flow is ${money(F)} + ${money(F*c/2)} = ${money(cf)} at time 0.5`,
-        `${money(cf)} &times; d<sub>0.5</sub> = ${money(F)}, so d<sub>0.5</sub> = ${correct.toFixed(6)}`
+        `Trading at par means the price is the face value, ${money(F)}`,
+        `Its one cash flow is face + coupon = ${money(F)} + ${pctS(c)} &times; ${money(F)} &divide; 2 = ${moneyX(cf)} at time 0.5`,
+        `Price = cash flow &times; d<sub>0.5</sub>: ${money(F)} = ${moneyX(cf)} &times; d<sub>0.5</sub>, so d<sub>0.5</sub> = ${money(F)} / ${moneyX(cf)} = ${correct.toFixed(6)}`
       ]};
   }},
 
@@ -744,7 +748,6 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       steps:[
         `At par the price is ${money(F)}. Cash flows: ${moneyX(cpn)} at 0.5, ${moneyX(last)} at 1.0`,
         `${moneyX(cpn)} &times; d<sub>0.5</sub> + ${moneyX(last)} &times; d<sub>1.0</sub> = ${money(F)}`,
-        `PV of the coupon = ${moneyX(cpn)} &times; ${d05.toFixed(6)} = \$${(cpn*d05).toFixed(6)}`,
         `d<sub>1.0</sub> = (price &minus; coupon &times; d<sub>0.5</sub>) / (face + coupon) = (${money(F)} &minus; ${moneyX(cpn)}&times;${d05.toFixed(6)}) / ${moneyX(last)} = ${correct.toFixed(6)}`
       ]};
   }},
@@ -846,7 +849,9 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
     const y=pick(range(.05,.10,.0025));
     const cf=pick([1030,1040,1050,1060,1080]);
     const P=Math.round(cf/Math.pow(1+y/2,2*n)*100)/100;   // shown to the cent
-    const correct=2*(Math.pow(cf/P,1/(2*n))-1);           // solve from what is shown
+    /* each step from the figure printed above it, eight decimals (29 Sep 2026) */
+    const r8=+(cf/P).toFixed(8), q8=+Math.pow(r8,1/(2*n)).toFixed(8);
+    const correct=2*(q8-1);                                // solve from what is shown
     return {
       unit:"percent",
       /* "After stripping its coupons away, what is left of a T-note" read as a STRIPS
@@ -867,9 +872,11 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:(cf/P-1)/n, msg:`That annualises the total gain simply, ignoring compounding.`}
       ],
       steps:[
-        `(1 + y/2)<sup>${2*n}</sup> = ${money(cf)} / ${money(P)} = ${(cf/P).toFixed(6)}`,
-        `1 + y/2 = ${Math.pow(cf/P,1/(2*n)).toFixed(6)}`,
-        `y = ${pctS(correct,4)} &mdash; the zero yield for the ${n}-year maturity`
+        `Your net cost buys one payment of ${money(cf)} in ${n} years, so price = payment / (1 + y/2)<sup>2n</sup>: ${money(P)} = ${money(cf)} / (1 + y/2)<sup>${2*n}</sup>`,
+        `(1 + y/2)<sup>${2*n}</sup> = ${money(cf)} / ${money(P)} = ${r8.toFixed(8)}`,
+        /* eight decimals: at six the last digit of y was out on 51% of draws (29 Sep 2026) */
+        `1 + y/2 = ${r8.toFixed(8)}<sup>1/${2*n}</sup> = ${q8.toFixed(8)}`,
+        `y = 2 &times; (${q8.toFixed(8)} &minus; 1) = ${pctS(correct,4)}, the zero yield for the ${n}-year maturity`
       ]};
   }},
 
@@ -989,7 +996,7 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:1/d10-1, msg:`That is the total growth over the year. Quote it the market's way: 2 &times; ((1/d)<sup>1/2</sup> &minus; 1).`}
       ],
       steps:[
-        `d<sub>0.5</sub> = 1/(1 + ${pctS(c05)}/2) = ${d05.toFixed(8)}`,
+        `The 0.5-year par note costs ${money(F)} and pays ${money(F)} + ${moneyX(F*c05/2)} = ${moneyX(F+F*c05/2)} at 0.5 years, so ${money(F)} = ${moneyX(F+F*c05/2)} &times; d<sub>0.5</sub> and d<sub>0.5</sub> = ${money(F)} / ${moneyX(F+F*c05/2)} = ${d05.toFixed(8)}`,
         `The 1-year par bond pays ${money(cpn)} at 0.5 and ${money(F+cpn)} at 1.0 for ${money(F)}`,
         `d<sub>1.0</sub> = (price &minus; coupon &times; d<sub>0.5</sub>) / (face + coupon) = (${money(F)} &minus; ${money(cpn)}&times;${d05.toFixed(8)}) / ${money(F+cpn)} = ${d10.toFixed(8)}`,
         `y<sub>1.0</sub> = 2 &times; ((1/d<sub>1.0</sub>)<sup>1/2</sup> &minus; 1) = 2 &times; ((1/${d10.toFixed(8)})<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)}`,
@@ -1007,7 +1014,9 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
        and the curve becomes one a market could print.                                  */
     do { y05=pick(range(.02,.045,.0025)); y10=y05+pick(range(.0075,.015,.0025)); }
     while (y10-y05 < 0.0075);
-    const d05=dfOf(y05,0.5), d10=dfOf(y10,1);
+    /* the factors as printed, to six decimals, so the par yield reproduces from the page:
+       from unrounded factors the last digit was out on 27% of draws (29 Sep 2026) */
+    const d05=+dfOf(y05,0.5).toFixed(6), d10=+dfOf(y10,1).toFixed(6);
     const correct=2*(1-d10)/(d05+d10);
     return {
       unit:"percent",
@@ -1023,9 +1032,10 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:y05, msg:`That is the 0.5-year zero yield &mdash; used to discount the first coupon, but not the answer.`}
       ],
       steps:[
-        `d<sub>0.5</sub> = ${d05.toFixed(6)},  d<sub>1.0</sub> = ${d10.toFixed(6)}`,
-        `At par: 100 = (c/2)(d<sub>0.5</sub> + d<sub>1.0</sub>) + 100 d<sub>1.0</sub>`,
-        `c = 2(1 &minus; ${d10.toFixed(6)}) / (${d05.toFixed(6)} + ${d10.toFixed(6)}) = ${pctS(correct,4)}`,
+        `Turn each zero yield into a discount factor, d<sub>n</sub> = 1/(1 + y<sub>n</sub>/2)<sup>2n</sup>: d<sub>0.5</sub> = 1/(1 + ${+y05.toFixed(6)}/2) = ${d05.toFixed(6)}; d<sub>1.0</sub> = 1/(1 + ${+y10.toFixed(6)}/2)<sup>2</sup> = ${d10.toFixed(6)}`,
+        `The par yield is the coupon rate c that makes a 1-year note sell for exactly its face value. On $100 face it pays $100 &times; c/2 at 0.5 years and $100 + $100 &times; c/2 at 1 year, so at par: $100 = $100 &times; c/2 &times; d<sub>0.5</sub> + ($100 + $100 &times; c/2) &times; d<sub>1.0</sub>`,
+        `Divide by $100 and put the coupon terms together: c/2 &times; (d<sub>0.5</sub> + d<sub>1.0</sub>) = 1 &minus; d<sub>1.0</sub>, so c = 2 &times; (1 &minus; d<sub>1.0</sub>) / (d<sub>0.5</sub> + d<sub>1.0</sub>)`,
+        `c = 2 &times; (1 &minus; ${d10.toFixed(6)}) / (${d05.toFixed(6)} + ${d10.toFixed(6)}) = ${pctS(correct,4)}`,
         `Compare with the 1-year zero yield of ${pctS(y10)}: the par yield is lower, because part of the bond is repaid early at the cheaper short rate.`
       ]};
   }},
@@ -1040,8 +1050,9 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       y10=y05+pick(range(.005,.0125,.0025));
       y15=y10+pick(range(.005,.0125,.0025));
     } while (y10-y05 < 0.005 || y15-y10 < 0.005);
-    const d05=dfOf(y05,0.5), d10=dfOf(y10,1), d15=dfOf(y15,1.5);
-    const S=d05+d10+d15;
+    /* the factors as printed, six decimals, so their sum and the par yield reproduce (29 Sep 2026) */
+    const d05=+dfOf(y05,0.5).toFixed(6), d10=+dfOf(y10,1).toFixed(6), d15=+dfOf(y15,1.5).toFixed(6);
+    const S=+(d05+d10+d15).toFixed(6);
     const correct=2*(1-d15)/S;
     return {
       unit:"percent",
@@ -1059,9 +1070,11 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:(1-d15)/S, msg:`That is the rate per six-month period. Annualise it by multiplying by 2.`}
       ],
       steps:[
-        `d<sub>0.5</sub> = ${d05.toFixed(6)},  d<sub>1.0</sub> = ${d10.toFixed(6)},  d<sub>1.5</sub> = ${d15.toFixed(6)}`,
-        `At par: 100 = (c/2)(d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub>) + 100 d<sub>1.5</sub>`,
-        `c = 2(1 &minus; ${d15.toFixed(6)}) / ${S.toFixed(6)} = ${pctS(correct,4)}`,
+        `Turn each zero yield into a discount factor, d<sub>n</sub> = 1/(1 + y<sub>n</sub>/2)<sup>2n</sup>: d<sub>0.5</sub> = ${d05.toFixed(6)}, d<sub>1.0</sub> = 1/(1 + ${+y10.toFixed(6)}/2)<sup>2</sup> = ${d10.toFixed(6)}, d<sub>1.5</sub> = 1/(1 + ${+y15.toFixed(6)}/2)<sup>3</sup> = ${d15.toFixed(6)}`,
+        `A par note sells for its face value. On $100 face with coupon rate c it pays $100 &times; c/2 at 0.5, 1.0 and 1.5 years, plus $100 at 1.5 years: $100 = $100 &times; c/2 &times; (d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub>) + $100 &times; d<sub>1.5</sub>`,
+        `Divide by $100 and solve for c: c = 2 &times; (1 &minus; d<sub>1.5</sub>) / (d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub>)`,
+        `d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub> = ${d05.toFixed(6)} + ${d10.toFixed(6)} + ${d15.toFixed(6)} = ${S.toFixed(6)}`,
+        `c = 2 &times; (1 &minus; ${d15.toFixed(6)}) / ${S.toFixed(6)} = ${pctS(correct,4)}`,
         `The gap against the ${pctS(y15)} zero yield is wider than at one year, because more of the bond is repaid early.`
       ]};
   }},
@@ -1113,8 +1126,9 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
          4.917%; snapped to the nearest 0.05% so the stem reads like a quoted curve */
       z=[top, Math.round((top-drop/3)*2000)/2000,
               Math.round((top-2*drop/3)*2000)/2000, top-drop];
-      ds=z.map((y,i)=>1/Math.pow(1+y/2,2*g[i]));
-      S=ds.reduce((a,b)=>a+b,0);
+      /* the factors as printed, six decimals, so the sum and the par yield reproduce (29 Sep 2026) */
+      ds=z.map((y,i)=>+(1/Math.pow(1+y/2,2*g[i])).toFixed(6));
+      S=+ds.reduce((a,b)=>a+b,0).toFixed(6);
       correct=2*(1-ds[3])/S;
     } while (!(ds[0]>ds[1] && ds[1]>ds[2] && ds[2]>ds[3])
              /* guard lowered from 0.008 to 0.0045 alongside the gentler inversion: a
@@ -1138,8 +1152,10 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         {val:(1-ds[3])/S, msg:`That is the rate per six-month period. Double it.`}
       ],
       steps:[
-        `d = ${ds.map(x=>x.toFixed(6)).join(", ")}, summing to ${S.toFixed(6)}`,
-        `c = 2(1 &minus; ${ds[3].toFixed(6)}) / ${S.toFixed(6)} = ${pctS(correct,4)}`,
+        `Turn each zero yield into a discount factor, d<sub>n</sub> = 1/(1 + y<sub>n</sub>/2)<sup>2n</sup>: d<sub>0.5</sub> = ${ds[0].toFixed(6)}, d<sub>1.0</sub> = ${ds[1].toFixed(6)}, d<sub>1.5</sub> = ${ds[2].toFixed(6)}, d<sub>2.0</sub> = ${ds[3].toFixed(6)}`,
+        `The 2-year par yield is the coupon rate c at which a 2-year note sells for its face value. On $100 face: $100 = $100 &times; c/2 &times; (d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub> + d<sub>2.0</sub>) + $100 &times; d<sub>2.0</sub>, so c = 2 &times; (1 &minus; d<sub>2.0</sub>) / (d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub> + d<sub>2.0</sub>)`,
+        `Sum of the factors = ${ds.map(x=>x.toFixed(6)).join(" + ")} = ${S.toFixed(6)}`,
+        `c = 2 &times; (1 &minus; ${ds[3].toFixed(6)}) / ${S.toFixed(6)} = ${pctS(correct,4)}`,
         `The 2-year zero yield is ${pctS(z[3])}. The par yield is <em>higher</em>.`,
         `On an upward curve the par yield sits below the zero yield. Invert the curve and the ordering flips. Neither is a rule about par yields — both follow from the shape.`
       ]};
@@ -1194,11 +1210,9 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
         /* Each step states its equation before the numbers (Anh, 28 Sep 2026: the quiz deck
            showed only "Bootstrap: d = ..."). Par coupons are printed to three decimals of a
            dollar: a par yield on the 0.25% grid gives a half-coupon on the $0.125 grid. */
-        `A par bond is priced at face, so each par yield gives one equation. The 0.5-year par bond pays $${(F+p[0]/2*F).toFixed(3)} at 0.5: $${F.toFixed(2)} = $${(F+p[0]/2*F).toFixed(3)} &times; d<sub>0.5</sub>, so d<sub>0.5</sub> = ${d[0].toFixed(6)}`,
-        `The 1-year par bond pays $${(p[1]/2*F).toFixed(3)} at 0.5 and $${(F+p[1]/2*F).toFixed(3)} at 1: $${F.toFixed(2)} = $${(p[1]/2*F).toFixed(3)} &times; d<sub>0.5</sub> + $${(F+p[1]/2*F).toFixed(3)} &times; d<sub>1</sub>, so d<sub>1</sub> = ($${F.toFixed(2)} &minus; $${(p[1]/2*F).toFixed(3)} &times; ${d[0].toFixed(6)}) / $${(F+p[1]/2*F).toFixed(3)} = ${d[1].toFixed(6)}`,
-        `Zero yields alongside: ${d.map((x,i)=>pctS(2*(Math.pow(1/x,1/(2*g[i]))-1),3)).join(" and ")}`,
-        `Price of the note = coupon &times; d<sub>0.5</sub> + (face + coupon) &times; d<sub>1</sub> = ${money(c/2*F)} &times; ${d[0].toFixed(6)} + ${money(F+c/2*F)} &times; ${d[1].toFixed(6)} = <b>${money(correct)}</b>`,
-        `Par yields in, discount factors out, zero yields alongside, price at the end. That is the whole chain.`
+        `A par bond is priced at face, so each par yield gives one equation. The 0.5-year par bond pays $${(F+p[0]/2*F).toFixed(3)} at 0.5: $${F.toFixed(2)} = $${(F+p[0]/2*F).toFixed(3)} &times; d<sub>0.5</sub>, so d<sub>0.5</sub> = $${F.toFixed(2)} / $${(F+p[0]/2*F).toFixed(3)} = ${d[0].toFixed(6)}`,
+        `The 1-year par bond pays $${(p[1]/2*F).toFixed(3)} at 0.5 and $${(F+p[1]/2*F).toFixed(3)} at 1: $${F.toFixed(2)} = $${(p[1]/2*F).toFixed(3)} &times; d<sub>0.5</sub> + $${(F+p[1]/2*F).toFixed(3)} &times; d<sub>1.0</sub>, so d<sub>1.0</sub> = ($${F.toFixed(2)} &minus; $${(p[1]/2*F).toFixed(3)} &times; ${d[0].toFixed(6)}) / $${(F+p[1]/2*F).toFixed(3)} = ${d[1].toFixed(6)}`,
+        `Price of the note = coupon &times; d<sub>0.5</sub> + (face + coupon) &times; d<sub>1.0</sub> = ${money(c/2*F)} &times; ${d[0].toFixed(6)} + ${money(F+c/2*F)} &times; ${d[1].toFixed(6)} = <b>${money(correct)}</b>`
       ]};
   }},
 
@@ -1227,8 +1241,10 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
     /* Said FOUR STRIPS and bundled the final coupon into the principal piece. A 2-year
        note gives FIVE: four coupon STRIPS and the principal STRIP - which is exactly the
        count s1 tests (10 years -> 21 pieces). Reader A caught the contradiction.      */
-    const strip=[cpn*d[0], cpn*d[1], cpn*d[2], cpn*d[3], F*d[3]];
-    const correct=strip.reduce((a,b)=>a+b,0);
+    /* each piece as the stem prints it, to the cent, and the key is their sum: from the unrounded
+       prices the key was a cent off the printed pieces on 42% of draws (29 Sep 2026) */
+    const strip=[cpn*d[0], cpn*d[1], cpn*d[2], cpn*d[3], F*d[3]].map(v=>Math.round(v*100)/100);
+    const correct=+strip.reduce((a,b)=>a+b,0).toFixed(2);
     return {
       unit:"money",
       tol:0.002,
@@ -1242,13 +1258,12 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       cands:[
         {val:F+cpn*4, msg:`That adds the five <em>face</em> amounts, ignoring that each piece is bought at a discount. Add what they cost, not what they pay.`},
         {val:strip[4], msg:`That is the principal piece alone. The four coupon STRIPS are part of the note too.`},
-        {val:correct-strip[0], msg:`You left out the first coupon STRIP, ${money(strip[0])}. All four pieces are needed to make the note whole.`},
+        {val:correct-strip[0], msg:`You left out the first coupon STRIP, ${money(strip[0])}. All five pieces are needed to make the note whole.`},
         {val:F, msg:`That is the face value. What the note costs to assemble depends on the four prices, not on its face.`}
       ],
       steps:[
-        `A 2-year note pays four coupons and its principal, so it strips into <b>five</b> securities.`,
-        `Cost = ${money(strip[0])} + ${money(strip[1])} + ${money(strip[2])} + ${money(strip[3])} + ${money(strip[4])}`,
-        `= ${money(correct)} per note.`
+        `A 2-year note pays four coupons and its principal, so it strips into <b>five</b> securities, and the note costs what its five pieces cost: cost = the sum of the STRIPS prices.`,
+        `Cost = ${money(strip[0])} + ${money(strip[1])} + ${money(strip[2])} + ${money(strip[3])} + ${money(strip[4])} = ${money(correct)} per note.`
       ]};
   }},
 
@@ -1289,8 +1304,8 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       ],
       steps:[
         `Pieces ${money(sum)} against note ${money(bond)} &mdash; a gap of ${money(correct)}.`,
-        gap>0 ? `The pieces are the cheaper side: buy all four STRIPS, reconstitute them into the note, and sell the note.`
-               : `The note is the cheaper side: buy the note, strip it, and sell the four pieces.`,
+        gap>0 ? `The pieces are the cheaper side: buy the STRIPS, reconstitute them into the note, and sell the note.`
+               : `The note is the cheaper side: buy the note, strip it, and sell the pieces.`,
         `Profit = ${money(correct)} per note, and it is riskless &mdash; the cash flows on the two sides are identical by construction.`
       ]};
   }},
@@ -1311,6 +1326,7 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
        put the key a hair away from what a student computes. Exact now.               */
     const P0=F/Math.pow(1+y/2,2*n);
     const correct=P0-P1;
+    const fall4=+((+P0.toFixed(4))-(+P1.toFixed(4))).toFixed(4);
     return {
       unit:"money",
       /* The stem used to hand over the starting price, which the answer derives for
@@ -1335,9 +1351,11 @@ const TEMPLATES = [{ id:"z1", topic:"zero", name:"Price a zero from its zero yie
       ],
       steps:[
         `Value of a single cash flow = F / (1 + y/2)<sup>2T</sup>`,
-        `Before: ${money(F)} / (1+${(y/2).toFixed(5)})<sup>${2*n}</sup> = ${money(P0)}`,
-        `After:  ${money(F)} / (1+${((y+0.01)/2).toFixed(5)})<sup>${2*n}</sup> = ${money(P1)}`,
-        `Fall = value before &minus; value after = ${money(correct)}, which is ${((correct/P0)*100).toFixed(2)}\% of its value`,
+        `Before: ${money(F)} / (1 + ${+(y/2).toFixed(6)})<sup>${2*n}</sup> = ${money4(P0)}`,
+        `After: ${money(F)} / (1 + ${+((y+0.01)/2).toFixed(6)})<sup>${2*n}</sup> = ${money4(P1)}`,
+        /* worked from the four-decimal values printed above, so the fall and its share
+           reproduce: at the cent they were a cent out on 29% of draws (29 Sep 2026) */
+        `Fall = value before &minus; value after = ${money4(P0)} &minus; ${money4(P1)} = ${money(fall4)}, which is ${money4(fall4)} / ${money4(P0)} = ${(fall4/(+P0.toFixed(4))*100).toFixed(2)}\% of its value`,
         `The further away the cash flow, the more a given rate move costs it. That is the whole idea behind duration.`
       ]};
   }},
@@ -1405,8 +1423,8 @@ const CHOICE_TEMPLATES = [
       options: s.map((html,q)=>({html, correct:q===at, msg: q===at ? why : fine[q]})),
       steps:[
         `Rate per period = ${pctS(y)} &divide; 2 = ${pctS(y/2,4)}`,
-        `Periods = ${2*n}`,
-        `Price = ${money(F)} / (1+${(y/2).toFixed(5)})<sup>${2*n}</sup> = ${money(F/Math.pow(1+y/2,2*n))}`
+        `Periods = ${n} &times; 2 = ${2*n}`,
+        `Price of a zero = face value / (1 + y/2)<sup>2n</sup> = ${money(F)} / (1 + ${+(y/2).toFixed(6)})<sup>${2*n}</sup> = ${money(F/Math.pow(1+y/2,2*n))}`
       ]};
   }},
 
@@ -1462,7 +1480,11 @@ const CHOICE_TEMPLATES = [
 { id:"e3", topic:"error", also:["boot"], name:"Find the mistake — the bootstrap", gen(){
     const F=100, c=pick(range(.04,.08,.005)), cf1=F*c/2, cf2=F+F*c/2;
     const d05=0.973378;
-    const P=pick(range(97,101,.25));
+    /* The price was drawn on its own (97-101), so some draws implied an 11% one-year zero
+       against 5.5% at six months. Built from a one-year factor just below d05^2 instead,
+       as b2 does, so the curve rises gently (about 5.7%-6.8% at one year) (29 Sep 2026). */
+    const d10=d05*d05 - pick(range(.002,.012,.0005));
+    const P=Math.round((cf1*d05 + cf2*d10)*100)/100;
     const fault = pick(["undiscounted","faceOnly","skipCoupon"]);
     const s = [
       `<b>Step 1.</b> Cash flows: ${money(cf1)} at 6 months, ${money(cf2)} at 12 months`,
@@ -1502,7 +1524,7 @@ const CHOICE_TEMPLATES = [
       steps:[
         `Price = CF<sub>0.5</sub>&times;d<sub>0.5</sub> + CF<sub>1.0</sub>&times;d<sub>1.0</sub>`,
         `${money(P)} = ${money(cf1)}&times;${d05.toFixed(6)} + ${money(cf2)}&times;d<sub>1.0</sub>`,
-        `d<sub>1.0</sub> = (${money(P)} &minus; ${money(cf1*d05)}) / ${money(cf2)}`
+        `d<sub>1.0</sub> = (price &minus; coupon &times; d<sub>0.5</sub>) / (face + coupon) = (${money(P)} &minus; ${money(cf1)}&times;${d05.toFixed(6)}) / ${money(cf2)} = ${((P-cf1*d05)/cf2).toFixed(6)}`
       ]};
   }},
 
@@ -1809,7 +1831,7 @@ const CHOICE_TEMPLATES = [
     const den = fault==="faceOnly" ? F : last;
     /* 22 Sep 2026: worked from the figures as printed, formula first (Anh's rules), so every step
        reproduces from the page (gridall.js flagged the last digit). */
-    const pvr=+pv.toFixed(2), pvok=+(cpn*d05+cpn*d10).toFixed(2);
+    const pvr=+pv.toFixed(2), pvok=+(cpn*d05+cpn*d10).toFixed(2), pvEx=cpn*d05+cpn*d10;
     const s=[
       `<b>Step 1.</b> Cash flows: ${money(cpn)} at 0.5, ${money(cpn)} at 1.0, ${money(last)} at 1.5`,
       fault==="sameRate"
@@ -1844,10 +1866,13 @@ const CHOICE_TEMPLATES = [
             already known. Here is their work:`,
       ask:"Which step introduces the mistake?",
       options: s.map((html,k)=>({html, correct:k===at, msg: k===at ? why : fine[k]})),
+      /* 29 Sep 2026: leads with the pricing equation, as pb3 does, and carries the coupons'
+         present value unrounded: rounded to the cent it moved d(1.5) at the sixth decimal on
+         80% of draws, so a student working the pb3 way got a different answer. */
       steps:[
-        `PV of the coupons = coupon &times; d<sub>0.5</sub> + coupon &times; d<sub>1.0</sub> = ${money(cpn)}&times;${d05.toFixed(6)} + ${money(cpn)}&times;${d10.toFixed(6)} = ${money(pvok)}`,
-        `Price of the final cash flow = price &minus; PV of the coupons = ${money(F)} &minus; ${money(pvok)} = ${money(F-pvok)}`,
-        `d<sub>1.5</sub> = price of the final cash flow / final cash flow = ${money(F-pvok)} &divide; ${money(last)} = ${((F-pvok)/last).toFixed(6)}`
+        `The note trades at par, so its price is ${money(F)}. Price = each cash flow &times; the discount factor for its date: ${money(F)} = ${money(cpn)} &times; d<sub>0.5</sub> + ${money(cpn)} &times; d<sub>1.0</sub> + ${money(last)} &times; d<sub>1.5</sub>`,
+        `PV of the coupons = ${money(cpn)} &times; ${d05.toFixed(6)} + ${money(cpn)} &times; ${d10.toFixed(6)} = $${+pvEx.toFixed(6)}`,
+        `d<sub>1.5</sub> = (price &minus; PV of the coupons) / final cash flow = (${money(F)} &minus; $${+pvEx.toFixed(6)}) / ${money(last)} = ${((F-pvEx)/last).toFixed(6)}`
       ]};
   }},
 
@@ -1965,11 +1990,12 @@ const CHOICE_TEMPLATES = [
     ]);
     return {mode:"choice",
       text:`Two 2-year T-notes, both \$100 face, are priced off the <b>same</b> zero curve, which
-            slopes upward. One pays a <b>2% p.a.</b> coupon, the other <b>10% p.a.</b>`,
+            slopes upward. One pays a <b>2% p.a.</b> coupon, the other <b>8% p.a.</b>`,
       ask:"Must they have the same yield to maturity?",
       options:opts,
       steps:[
-        `Off a curve of 3\%, 4\%, 5\%, 6\% the 2\% note yields 5.9738\% and the 10\% note 5.8811\%.`,
+        /* 8%, not 10%, so these are the figures in Note 03's own table (29 Sep 2026) */
+        `Off a curve of 3\%, 4\%, 5\%, 6\% the 2\% note costs \$92.61 and yields 5.9738\%; the 8\% note costs \$103.90 and yields 5.9026\% (the table in Note 03).`,
         `Both are priced correctly. Neither is cheap or dear.`,
         `This is why a scatter of ytms against maturity is a cloud rather than a curve &mdash; and why you cannot read mispricing off it.`
       ]};
@@ -1998,6 +2024,8 @@ const CHOICE_TEMPLATES = [
       ask:"Is that true of every yield curve?",
       options:opts,
       steps:[
+        /* where the par yields below come from, as a footnote (Anh, 29 Sep 2026) */
+        `To find a par yield: it is the coupon rate of a bond trading at par, so per $1 of face the present values of its cash flows add up to $1. For a 2-year note, (c/2) &times; (d<sub>0.5</sub> + d<sub>1.0</sub> + d<sub>1.5</sub> + d<sub>2.0</sub>) + d<sub>2.0</sub> = 1, which can be solved for c.`,
         `Upward curve (3\%, 4\%, 5\%, 6\%): 2-year zero 6.000\%, par 5.926\%. Par below.`,
         `Inverted curve (6\%, 5\%, 4.5\%, 4\%): 2-year zero 4.000\%, par 4.027\%. Par above.`,
         `Nothing about par yields caused either. Both follow from the shape of the curve.`
@@ -2054,7 +2082,9 @@ const CHOICE_TEMPLATES = [
         `A discount factor is the price today of \$1 later. With positive rates it must fall as the date moves out.`,
         `That is a statement about the <em>factors</em>, not about the <em>yields</em>.`,
         `Yields can rise, fall or hump while the factors fall throughout &mdash; the two monotonicities are different questions.`,
-        bad ? `` : `Convert this set and the yields come out ${zy.map(y=>pctS(y,2)).join(", ")} &mdash; falling, not rising.`
+        /* the bad draw printed an empty step and never named the problem (29 Sep 2026) */
+        bad ? `Here d<sub>2</sub> = ${d[3].toFixed(3)} is <em>above</em> d<sub>1.5</sub> = ${d[2].toFixed(3)}: a dollar at 2 years would be worth more today than a dollar at 1.5 years. That takes a negative rate between 1.5 and 2 years, which a set of Treasury factors in this course should never show.`
+            : `Convert each factor with y<sub>n</sub> = 2 &times; ((1/d<sub>n</sub>)<sup>1/(2n)</sup> &minus; 1), and this set's yields come out ${zy.map(y=>pctS(y,2)).join(", ")} &mdash; falling, not rising.`
       ]};
   }},
 
@@ -2161,10 +2191,18 @@ const CHOICE_TEMPLATES = [
       ask:"Which cash flow loses the largest share of its value?",
       options:opts,
       steps:[
-        ...loss.map(L=>`${L.n}-year: ${money(L.a)} &rarr; ${money(L.b)}, a fall of ${(L.pct*100).toFixed(2)}\%`),
-        `The further off a cash flow is, the more a given rate move costs it &mdash; and not in proportion, but compounding with every extra period.`,
+        `Value of $100 arriving in n years = $100 / (1 + y/2)<sup>2n</sup>. Share of value lost = (value before &minus; value after) / value before`,
+        /* each value printed to four decimals and the share worked from those (29 Sep 2026) */
+        ...loss.map(L=>{ const a4=+L.a.toFixed(4), b4=+L.b.toFixed(4);
+          return `${L.n}-year: $100/(1 + ${+(y/2).toFixed(6)})<sup>${2*L.n}</sup> = ${money4(a4)} before, $100/(1 + ${+((y+0.01)/2).toFixed(6)})<sup>${2*L.n}</sup> = ${money4(b4)} after; share lost = (${money4(a4)} &minus; ${money4(b4)}) / ${money4(a4)} = ${((a4-b4)/a4*100).toFixed(2)}\%`; }),
+        `The further off the cash flow, the larger the share it loses, because the higher rate is applied over more periods.`,
         `Notice what did <em>not</em> matter: the ${pctS(y)} level, the size of the move, and the \$100 amounts are all common to the three. The ranking follows from maturity alone, which is why it needs no arithmetic to see.`,
-        `In dollars the ranking can differ: the ${loss[loss.length-1].n}-year loses ${money(win.a-win.b)} while the ${loss[loss.length-2].n}-year loses ${money(loss[loss.length-2].a-loss[loss.length-2].b)}, because the long one had less value to begin with. As a share of value there is no contest. Both measures matter, and they get names later: duration and dollar duration.`
+        (() => { const mid=loss[loss.length-2], dW=(+win.a.toFixed(4))-(+win.b.toFixed(4)), dM=(+mid.a.toFixed(4))-(+mid.b.toFixed(4));
+          /* the dollar ranking flips only on some draws; say so only when it does (29 Sep 2026) */
+          return (dW < dM
+            ? `In dollars the ranking differs: the ${mid.n}-year loses ${money4(dM)} while the ${win.n}-year loses only ${money4(dW)}, because the long one had less value to begin with.`
+            : `Here the ${win.n}-year loses the most in dollars too: ${money4(dW)}, against ${money4(dM)} for the ${mid.n}-year.`)
+            + ` As a share of value there is no contest. Both measures matter, and they get names later: duration and dollar duration.`; })()
       ]};
   }},
 ];

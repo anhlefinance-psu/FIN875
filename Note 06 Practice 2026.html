@@ -273,9 +273,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:D*dy*2, msg:`You doubled it. The relationship is one times duration, not two.`}
       ],
       steps:[
-        `% change in price = duration &times; change in yields`,
-        `= ${D.toFixed(1)} &times; ${pctS(dy,2)} = <b>${pctS(correct,4)}</b>`,
-        `Yields rose, so this is a <em>fall</em>. The two ends of the see-saw move opposite ways.`
+        `% change in price = &minus;duration &times; change in yields`,
+        `= &minus;${D.toFixed(1)} &times; (+${pctS(dy,2)}) = &minus;${pctS(correct,4)}`,
+        `The price falls by <b>${pctS(correct,4)}</b>: yields up, price down.`
       ]};
   }},
 
@@ -346,9 +346,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:DD*dy/2, msg:`No halving here. The dollar duration already accounts for the compounding convention.`}
       ],
       steps:[
-        `\$\$ change in price = \$\$duration &times; change in yields`,
-        `= ${DD.toFixed(2)} &times; ${pctS(dy,2)} = <b>${money(correct)}</b>`,
-        `Yields rose, so the price falls by that amount.`
+        `\$\$ change in price = &minus;\$\$duration &times; change in yields`,
+        `= &minus;${commas(DD,2)} &times; (+${pctS(dy,2)}) = &minus;${money(correct)}`,
+        `The price falls by <b>${money(correct)}</b>.`
       ]};
   }},
 
@@ -371,9 +371,10 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:DD, msg:`That is the dollar duration &mdash; the move for a 100% change in yields in the formula's units. Scale it by 0.0001.`}
       ],
       steps:[
-        `DVBP = \$\$duration &times; 0.0001`,
+        `One basis point is 0.01% = 0.0001, so DVBP = \$\$duration &times; 0.0001`,
         `= ${commas(DD,2)} &times; 0.0001 = <b>${money(correct)}</b>`,
-        `So a 50 basis point move is worth about ${money(50*correct)} on this position.`
+        /* 50 x the DVBP as printed: it multiplied the unrounded one, a few cents out (29 Sep 2026) */
+        `A 50 basis point move is then about 50 &times; ${money(correct)} = ${money(50*Math.round(correct*100)/100)} on this position.`
       ]};
   }},
 
@@ -446,9 +447,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:dd*dy/2, msg:`No halving. The \$\$duration already carries the convention.`}
       ],
       steps:[
-        `\$\$ change in portfolio value = \$\$duration &times; change in yields`,
-        `= ${commas(dd,2)} &times; ${pctS(dy,2)} = <b>${money(correct)}</b>`,
-        `Yields fell, so the portfolio gains. Note this assumes every maturity moved by the same ${dbp}bp.`
+        `The portfolio's dollar change is the sum of each bond's, so with every yield moving by the same amount: \$\$ change in portfolio value = &minus;\$\$duration &times; change in yields`,
+        `= &minus;${commas(dd,2)} &times; (&minus;${pctS(dy,2)}) = +${money(correct)}`,
+        `The two minus signs cancel: yields fell, so the portfolio gains <b>${money(correct)}</b>. This assumes every maturity moved by the same ${dbp}bp.`
       ]};
   }},
 
@@ -458,13 +459,20 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
     const T=pick([1,1.5,2,2.5,3]);
     const y=pick(range(.03,.08,.005));
     const b=couponBond(F,cpn,T,y);
+    /* 29 Sep 2026: each zero's PV printed to the cent and its duration to four decimals, the price is
+       the sum of the printed PVs, and the key is worked from those printed figures (the printed PVs
+       did not add to the printed price on 107 of 275 draws). */
+    const base=1+y/2, legs=b.legs.map(l=>({t:l.t, cf:(l.t===T ? F*cpn/2+F : F*cpn/2), pv:+l.pv.toFixed(2), dur:+l.dur.toFixed(4)}));
+    const Pp=+legs.reduce((s,l)=>s+l.pv,0).toFixed(2);
+    const num=+legs.reduce((s,l)=>s+l.pv*l.dur,0).toFixed(6);
+    const key=num/Pp;
     return {
       unit:"number",
       text:`A <b>${T}-year</b> Treasury note, face <b>${money(F)}</b>, pays a coupon of
             <b>${pctS(cpn,2)} p.a.</b> semiannually and yields <b>${pctS(y,2)} p.a.</b>
             Treat the zero curve as flat at the bond's own yield, as the note does.`,
       ask:"What is its modified duration, in years?",
-      correct:b.dur,
+      correct:key,
       cands:[
         {val:T, msg:`That is the maturity. A coupon bond's duration is shorter than its maturity, because some of its value arrives before then &mdash; unlike a zero, where nothing does.`},
         {val:zDur(T,y), msg:`That is the duration of a <em>zero</em> of the same maturity, ${zDur(T,y).toFixed(4)}. The coupons pull the average in shorter than that.`},
@@ -472,12 +480,11 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:b.price/100, msg:`That is a price, not a duration.`}
       ],
       steps:[
-        `Break the bond into ${Math.round(2*T)} zeros: a coupon of ${money(F*cpn/2)} every six months, plus the face ${money(F)} at t = ${T}.`,
-        `Each zero maturing at t: PV = cash flow / (1 + ytm/2)<sup>2t</sup> and duration = t / (1 + ytm/2), with 1 + ytm/2 = ${(1+y/2).toFixed(4)}:<br>` +
-          b.legs.map(l=>`t = ${l.t}: PV ${l.pv.toFixed(2)}, duration ${l.dur.toFixed(4)}`).join(' &nbsp;|&nbsp; '),
-        `Price P = sum of the PVs = ${b.price.toFixed(2)}. Duration = &Sigma; (PV / P) &times; duration = (` +
-          b.legs.map(l=>`${l.pv.toFixed(2)} &times; ${l.dur.toFixed(4)}`).join(' + ') + `) / ${b.price.toFixed(2)}`,
-        `= <b>${b.dur.toFixed(4)} years</b>`
+        `A coupon bond is a portfolio of zeros, so its duration is the value-weighted average of their durations. This note pays ${money(F*cpn/2)} every six months and ${money(F*cpn/2+F)} (coupon + face) at t = ${T}.`,
+        `Each zero maturing at t: PV = cash flow / (1 + ytm/2)<sup>2t</sup> and duration = t / (1 + ytm/2), with 1 + ${pctS(y,2)}/2 = ${base.toFixed(4)}`,
+        ...legs.map(l=>`t = ${l.t}: PV = ${commas(l.cf,2)} / ${base.toFixed(4)}${2*l.t===1?"":`<sup>${2*l.t}</sup>`} = ${commas(l.pv,2)}; duration = ${l.t} / ${base.toFixed(4)} = ${l.dur.toFixed(4)}`),
+        `Price = ${legs.map(l=>commas(l.pv,2)).join(" + ")} = ${commas(Pp,2)}`,
+        `Duration = &Sigma; PV &times; duration / price = (${legs.map(l=>`${commas(l.pv,2)} &times; ${l.dur.toFixed(4)}`).join(" + ")}) / ${commas(Pp,2)} = ${num.toLocaleString("en-US",{minimumFractionDigits:4, maximumFractionDigits:6})} / ${commas(Pp,2)} = <b>${key.toFixed(4)} years</b>`
       ]};
   }},
 
@@ -494,7 +501,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
     const b=couponBond(F,cpn,T,y);
     const P=+b.price.toFixed(2), D=+b.dur.toFixed(4);
     const dbp=pick([25,50,100]);
-    const correct=P*D*(dbp/10000);
+    /* the $$duration as printed, to the cent, so the dollar change reproduces (29 Sep 2026) */
+    const PD=+(P*D).toFixed(2);
+    const correct=PD*(dbp/10000);
     return {
       unit:"money",
       text:`A coupon note is worth <b>${money(P)}</b> and has a modified duration of
@@ -507,8 +516,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:P*D*(dbp/100), msg:`${dbp} basis points is ${pctS(dbp/10000,2)}, not ${dbp}%.`}
       ],
       steps:[
-        `\$\$duration = duration &times; price = ${D.toFixed(4)} &times; ${money(P)} = ${(P*D).toFixed(2)}`,
-        `\$\$ change = ${(P*D).toFixed(2)} &times; ${pctS(dbp/10000,2)} = <b>${money(correct)}</b>`
+        `\$\$duration = duration &times; price: duration gives the % change, and multiplying by the price turns it into dollars. ${D.toFixed(4)} &times; ${P.toFixed(2)} = ${commas(PD,2)}`,
+        `\$\$ change = &minus;\$\$duration &times; change in yields = &minus;${commas(PD,2)} &times; (+${pctS(dbp/10000,2)}) = &minus;${money(correct)}`,
+        `The price falls by <b>${money(correct)}</b>.`
       ]};
   }},
 
@@ -533,9 +543,8 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:zDur(T,y), msg:`That is the duration. Duration goes with maturity; convexity goes with maturity <em>squared</em>.`}
       ],
       steps:[
-        `Convexity = (T&sup2; + T/2) / (1 + ytm/2)&sup2;`,
-        `= (${T*T} + ${T/2}) / ${Math.pow(1+y/2,2).toFixed(6)}`,
-        `= <b>${correct.toFixed(2)}</b> &mdash; note how close it is to T&sup2; = ${T*T}.`
+        `Convexity = (T&sup2; + T/2) / (1 + ytm/2)&sup2; = (${T}&sup2; + ${T}/2) / (1 + ${pctS(y,2)}/2)&sup2;`,
+        `= ${T*T+T/2} / ${(1+y/2).toFixed(4)}&sup2; = ${T*T+T/2} / ${Math.pow(1+y/2,2).toFixed(8)} = <b>${correct.toFixed(2)}</b> &mdash; note how close it is to T&sup2; = ${T*T}.`
       ]};
   }},
 
@@ -664,9 +673,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:ddl-dds, msg:`That is the difference in \$\$durations, not the number of bonds that closes it.`}
       ],
       steps:[
-        `Set the portfolio's \$\$duration to zero: ${ddl.toFixed(2)} &minus; ${dds.toFixed(2)}n = 0`,
-        `n = ${ddl.toFixed(2)} / ${dds.toFixed(2)} = <b>${correct.toFixed(4)}</b>`,
-        `The hedge holds for small parallel moves only &mdash; \$\$convexity is still wide open.`
+        `Each ${Ts}-year zero you short takes away ${commas(dds,2)} of \$\$duration, and the ${Tl}-year zero carries ${commas(ddl,2)}. To hedge, the portfolio's \$\$duration must be zero: \$\$dur(long) &minus; n &times; \$\$dur(short) = ${commas(ddl,2)} &minus; n &times; ${commas(dds,2)} = 0`,
+        `n = ${commas(ddl,2)} / ${commas(dds,2)} = <b>${correct.toFixed(4)}</b>`,
+        `This protects against small parallel moves only; the convexity term is not hedged.`
       ]};
   }},
 
@@ -692,10 +701,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:ddl/(dds*n), msg:`That is a ratio, not a residual sensitivity.`}
       ],
       steps:[
-        `Portfolio \$\$duration = ${ddl.toFixed(2)} &minus; ${n} &times; ${dds.toFixed(2)}`,
-        `= <b>${correct.toFixed(2)}</b>`,
-        correct>0 ? `Still positive, so the book loses if yields rise. A full hedge needs ${(ddl/dds).toFixed(4)} of the short bond.`
-                  : `Now negative, so the book is over-hedged and gains if yields rise.`
+        `Shorting n units takes away n times the hedge's \$\$duration: portfolio \$\$duration = \$\$dur(long) &minus; n &times; \$\$dur(hedge) = ${commas(ddl,2)} &minus; ${n} &times; ${commas(dds,2)} = ${commas(ddl,2)} &minus; ${commas(dds*n,2)} = <b>${correct<0?"&minus;":""}${commas(Math.abs(correct),2)}</b>`,
+        correct>0 ? `Still positive, so the book loses if yields rise. A full hedge needs n = ${commas(ddl,2)} / ${commas(dds,2)} = ${(ddl/dds).toFixed(4)} of the short bond.`
+                  : (correct===0 ? `Zero: the hedge is exact.` : `Now negative, so the book is over-hedged and gains if yields rise.`)
       ]};
   }},
 
@@ -719,12 +727,12 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
       cands:[
         {val:(A*DA + L*DL)/(A+L), msg:`You averaged as though the liabilities were a second asset. They are a short position: their \$\$duration is <em>subtracted</em>, and the equity base is ${money(A)} &minus; ${money(L)} = ${money(E)}.`},
         {val:DA-DL, msg:`You subtracted the durations directly. Durations only net that way when the two sides are equal in value; here they are not.`},
-        {val:A*DA - L*DL, msg:`That is the equity's \$\$duration, ${money(A*DA-L*DL)}, not its duration. Divide by the equity value ${money(E)}.`}
+        {val:A*DA - L*DL, msg:`That is the equity's \$\$duration, ${commas(A*DA-L*DL,0)}, not its duration. Divide by the equity value ${money(E)}.`}
       ],
       steps:[
-        `\$\$duration of equity = ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL} = ${money(A*DA-L*DL)}`,
+        `Equity = assets &minus; liabilities, so when yields move, equity changes by the assets' dollar change minus the liabilities'. \$\$duration of equity = A &times; D<sub>A</sub> &minus; L &times; D<sub>L</sub> = ${commas(A,0)} &times; ${DA} &minus; ${commas(L,0)} &times; ${DL} = ${commas(A*DA,0)} &minus; ${commas(L*DL,0)} = ${commas(A*DA-L*DL,0)}`,
         `Equity value = ${money(A)} &minus; ${money(L)} = ${money(E)}`,
-        `Duration of equity = ${money(A*DA-L*DL)} / ${money(E)} = <b>${correct.toFixed(4)}</b>`,
+        `Duration of equity = \$\$duration / equity value = ${commas(A*DA-L*DL,0)} / ${commas(E,0)} = <b>${correct.toFixed(4)}</b>`,
         `Notice it is larger than either side's duration &mdash; leverage magnifies it.`
       ]};
   }},
@@ -750,9 +758,9 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:A*CA - L*CL, msg:`That is the equity's \$\$convexity, not its convexity. Divide by the equity value ${money(E)}.`}
       ],
       steps:[
-        `\$\$convexity of equity = ${money(A)} &times; ${CA} &minus; ${money(L)} &times; ${CL} = ${money(A*CA-L*CL)}`,
-        `Equity value = ${money(E)}`,
-        `Convexity of equity = <b>${correct.toFixed(4)}</b>`
+        `Equity = assets &minus; liabilities, so its \$\$convexity is the assets' minus the liabilities'. \$\$convexity of equity = A &times; C<sub>A</sub> &minus; L &times; C<sub>L</sub> = ${commas(A,0)} &times; ${CA} &minus; ${commas(L,0)} &times; ${CL} = ${commas(A*CA,0)} &minus; ${commas(L*CL,0)} = ${commas(A*CA-L*CL,0)}`,
+        `Equity value = ${money(A)} &minus; ${money(L)} = ${money(E)}`,
+        `Convexity of equity = \$\$convexity / equity value = ${commas(A*CA-L*CL,0)} / ${commas(E,0)} = <b>${correct.toFixed(4)}</b>`
       ]};
   }},
 
@@ -777,8 +785,8 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:ddE*dy, msg:`Right size, wrong sign. Prices move against yields, so the change is &minus;\$\$duration &times; &Delta;y.`}
       ],
       steps:[
-        `\$\$duration of equity = ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL} = ${money(ddE)}`,
-        `Change = &minus;\$\$duration &times; &Delta;y = &minus;${money(ddE)} &times; (${dy<0?"&minus;":""}${pctS(Math.abs(dy),2)})`,
+        `Equity = assets &minus; liabilities, so when yields move, equity changes by the assets' dollar change minus the liabilities'. \$\$duration of equity = A &times; D<sub>A</sub> &minus; L &times; D<sub>L</sub> = ${commas(A,0)} &times; ${DA} &minus; ${commas(L,0)} &times; ${DL} = ${commas(A*DA,0)} &minus; ${commas(L*DL,0)} = ${commas(ddE,0)}`,
+        `Change = &minus;\$\$duration &times; &Delta;y = &minus;${commas(ddE,0)} &times; (${dy<0?"&minus;":"+"}${pctS(Math.abs(dy),2)})`,
         `= <b>${smoney(correct)}</b>`
       ]};
   }},
@@ -805,13 +813,13 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
       correct,
       cands:[
         {val:(A*DA + L*DL)/Dh, msg:`You added the two \$\$durations instead of netting them. The liabilities already hedge part of the assets.`},
-        {val:ddE, msg:`That is the \$\$duration to be removed, ${money(ddE)}, not the market value that removes it. Divide by the hedge's duration, ${Dh}.`},
-        {val:(A-L)/Dh, msg:`You used the equity value rather than its \$\$duration. What has to be cancelled is ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL}.`}
+        {val:ddE, msg:`That is the \$\$duration to be removed, ${commas(ddE,0)}, not the market value that removes it. Divide by the hedge's duration, ${Dh}.`},
+        {val:(A-L)/Dh, msg:`You used the equity value rather than its \$\$duration. What has to be cancelled is ${commas(A,0)} &times; ${DA} &minus; ${commas(L,0)} &times; ${DL}.`}
       ],
       steps:[
-        `\$\$duration to cancel = ${money(A)} &times; ${DA} &minus; ${money(L)} &times; ${DL} = ${money(ddE)}`,
-        `A short position of market value V in the T-note contributes &minus;V &times; ${Dh}`,
-        `Set ${money(ddE)} &minus; V &times; ${Dh} = 0, so V = <b>${money(correct)}</b>`
+        `Equity = assets &minus; liabilities, so when yields move, equity changes by the assets' dollar change minus the liabilities'. \$\$duration to cancel = A &times; D<sub>A</sub> &minus; L &times; D<sub>L</sub> = ${commas(A,0)} &times; ${DA} &minus; ${commas(L,0)} &times; ${DL} = ${commas(A*DA,0)} &minus; ${commas(L*DL,0)} = ${commas(ddE,0)}`,
+        `Each \$1 of T-note shorted takes away ${Dh} of \$\$duration (\$\$duration = value &times; duration), so a short of market value V removes V &times; ${Dh}: V &times; ${Dh} = ${commas(ddE,0)}`,
+        `V = ${commas(ddE,0)} / ${Dh} = <b>${money(correct)}</b>`
       ]};
   }},
 
@@ -829,6 +837,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
     const Dt=+zDur(Tt,yt).toFixed(4), D1=+zDur(T1,y1).toFixed(4), D2=+zDur(T2,y2).toFixed(4);
     const x=+(Pt*(D2-Dt)/(D2-D1)).toFixed(4), y=+(Pt-x).toFixed(4);
     const correct=x/P1;
+    const fx=v=>String(+v.toFixed(6));             // exact products, trailing zeros dropped
     return {
       unit:"number",
       text:`You short one <b>${Tt}-year</b> zero, price <b>${money(Pt)}</b>,
@@ -844,11 +853,14 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:x, msg:`That is the dollar amount going into the ${T1}-year zero, not a number of bonds. Divide it by that zero's price, ${money(P1)}.`}
       ],
       steps:[
-        `Let x and y be the amounts, in market value, invested in the ${T1}-year and the ${T2}-year zero.`,
-        `Zero financing: x + y = ${Pt.toFixed(2)}`,
-        `Same \$\$duration: ${Pt.toFixed(2)} &times; ${Dt.toFixed(4)} = x &times; ${D1.toFixed(4)} + y &times; ${D2.toFixed(4)}`,
-        `Substitute y = ${Pt.toFixed(2)} &minus; x: x = ${Pt.toFixed(2)} &times; (${D2.toFixed(4)} &minus; ${Dt.toFixed(4)}) / (${D2.toFixed(4)} &minus; ${D1.toFixed(4)}) = ${x.toFixed(4)}, and y = ${Pt.toFixed(2)} &minus; ${x.toFixed(4)} = ${y.toFixed(4)}`,
-        `Number of ${T1}-year zeros = x / price = ${x.toFixed(4)} / ${P1.toFixed(2)} = <b>${correct.toFixed(4)}</b>`
+        /* 29 Sep 2026: the substitution is done in the open (it used to drop in the solved formula), and
+           the amounts are a and b, since y means yield in this note. The products print in full, so
+           a is exactly the amount the key uses. */
+        `Let a and b be the dollars put into the ${T1}-year and the ${T2}-year zero.`,
+        `You spend exactly the proceeds: a + b = ${Pt.toFixed(2)}`,
+        `The hedge must carry the shorted zero's \$\$duration (\$\$duration = value &times; duration): a &times; ${D1.toFixed(4)} + b &times; ${D2.toFixed(4)} = ${Pt.toFixed(2)} &times; ${Dt.toFixed(4)} = ${fx(Pt*Dt)}`,
+        `Put b = ${Pt.toFixed(2)} &minus; a into that: ${D1.toFixed(4)}a + ${D2.toFixed(4)} &times; (${Pt.toFixed(2)} &minus; a) = ${fx(Pt*Dt)}, so ${fx(Pt*D2)} &minus; ${fx(D2-D1)}a = ${fx(Pt*Dt)}, and a = (${fx(Pt*D2)} &minus; ${fx(Pt*Dt)}) / ${fx(D2-D1)} = ${fx(Pt*D2-Pt*Dt)} / ${fx(D2-D1)} = ${x.toFixed(4)}. Then b = ${Pt.toFixed(2)} &minus; ${x.toFixed(4)} = ${y.toFixed(4)}`,
+        `Number of ${T1}-year zeros = a / price = ${x.toFixed(4)} / ${P1.toFixed(2)} = <b>${correct.toFixed(4)}</b>`
       ]};
   }},
 
@@ -856,9 +868,11 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
     const F=1000;
     const T1=pick([0.5,1,1.5]), T2=T1+pick([0.5,1,1.5,2]);
     const y1=pick(range(.03,.06,.005)), y2=y1+pick([.001,.002,.003]);
-    const ddLong=zDDur(F,T2,y2);
+    /* both legs as the stem prints them, to the cent, so the difference reproduces (29 Sep 2026:
+       1,776.36 - 1,334.22 printed as 442.13) */
+    const ddLong=+zDDur(F,T2,y2).toFixed(2);
     const K=F*zPrice(1,T2,y2)/zPrice(1,T1,y1);
-    const ddShort=zDDur(K,T1,y1);
+    const ddShort=+zDDur(K,T1,y1).toFixed(2);
     const correct=ddLong-ddShort;
     return {
       unit:"number",
@@ -878,7 +892,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         `A portfolio's \$\$duration is the sum of its parts, with short positions entering negative.`,
         `\$\$duration = ${ddLong.toFixed(2)} &minus; ${ddShort.toFixed(2)}`,
         `= <b>${correct.toFixed(2)}</b>`,
-        `Smaller than the bond itself: the financing leg hedges away the near-dated risk.`
+        `It is smaller than the long leg's ${ddLong.toFixed(2)}: the short leg moves the opposite way and cancels part of it.`
       ]};
   }},
 
@@ -926,6 +940,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
        (blind sitting v11: 68.00 from the page against a key of 67.94).           */
     const V1=Math.round(V0*(1 - D*dy + 0.5*C*dy*dy)*100)/100;
     const correct=2*((V1-V0)/V0 + D*dy)/(dy*dy);
+    const chg7=+((V1-V0)/V0).toFixed(7), rest7=+(chg7 + D*dy).toFixed(7), half=String(+(0.5*dy*dy).toFixed(8));
     return {
       unit:"number",
       text:`A fixed income security is worth <b>${money(V0)}</b> and has a duration of <b>${D}</b>. Yields
@@ -940,15 +955,14 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:2*((V1-V0)/V0)/(dy*dy), msg:`You used the whole price change. Take the duration term out first &mdash; what convexity explains is only the part duration missed.`},
         {val:-2*((V1-V0)/V0 + D*dy)/(dy*dy), msg:`Sign slip. Convexity is positive for these bonds: it lifts the price above the duration line whichever way yields move.`}
       ],
+      /* 29 Sep 2026: the simple logic, in decimals -- duration explains part of the move, convexity
+         the rest. The old step 3 added a percentage to a decimal and step 4 redid everything. */
       steps:[
-        `Start from &Delta;V/V = &minus;D &times; &Delta;y + &frac12; &times; C &times; (&Delta;y)&sup2;`,
-        `Everything but C is known: &Delta;V/V = (${money(V1)} &minus; ${money(V0)}) / ${money(V0)} = ${((V1-V0)/V0*100).toFixed(4)}%, D = ${D}, &Delta;y = &minus;${pctS(-dy,2)}`,
-        `So ${((V1-V0)/V0*100).toFixed(4)}% = &minus;${D} &times; (&minus;${pctS(-dy,2)}) + &frac12; &times; C &times; (${pctS(-dy,2)})&sup2; = ${(-D*dy*100).toFixed(4)}% + ${(0.5*dy*dy).toFixed(7)} &times; C`,
-        /* The last step divides the price change itself, not a rounding of it: from the
-           rounded 0.061935 the printed chain gives 38.70 against a key of 38.71, and a
-           1.50% yield move makes 1/2 (dy)^2 = 0.0001125, which six decimals rounds away
-           (gridall 06, 22 Sep 2026).                                                   */
-        `C = (&Delta;V/V + D &times; &Delta;y) / (&frac12; &times; (&Delta;y)&sup2;) = ((${money(V1)} &minus; ${money(V0)}) / ${money(V0)} + ${D} &times; (&minus;${pctS(-dy,2)})) / ${(0.5*dy*dy).toFixed(7)} = <b>${correct.toFixed(2)}</b>`
+        `&Delta;V/V = &minus;D &times; &Delta;y + &frac12; &times; C &times; (&Delta;y)&sup2;. Duration gives the straight-line part; convexity accounts for what is left over.`,
+        `Actual change: &Delta;V/V = (${money(V1)} &minus; ${money(V0)}) / ${money(V0)} = ${(V1-V0).toFixed(2)} / ${V0.toFixed(2)} = ${chg7.toFixed(7)}`,
+        `Duration part: &minus;${D} &times; (&minus;${String(+(-dy).toFixed(4))}) = ${String(+(-D*dy).toFixed(4))}`,
+        `Left for convexity: ${chg7.toFixed(7)} &minus; ${String(+(-D*dy).toFixed(4))} = ${rest7.toFixed(7)} = &frac12; &times; C &times; ${String(+(-dy).toFixed(4))}&sup2; = ${half} &times; C`,
+        `C = ${rest7.toFixed(7)} / ${half} = <b>${(rest7/(+half)).toFixed(1)}</b>`
       ]};
   }},
 
@@ -1006,10 +1020,8 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:(T*T+T/k)/(1+y/k), msg:`The denominator is <em>squared</em>: ${kDiv(k)}&sup2;. The squares are exponents and stay where they are; only the 2's that divide change.`}
       ],
       steps:[
-        `The yield compounds ${KTIMES[k]}, so every 2 that divides something becomes ${k}`,
-        `Numerator = T&sup2; + ${tk} = ${T*T} + ${(T/k).toFixed(4)} = ${(T*T+T/k).toFixed(4)}`,
-        `Denominator = ${kDiv(k)}&sup2; = ${Math.pow(1+y/k,2).toFixed(8)}`,
-        `Convexity = <b>${correct.toFixed(4)}</b>`
+        `The yield compounds ${KTIMES[k]}, so every 2 that divides something becomes ${k}: convexity = (T&sup2; + ${tk}) / ${kDiv(k)}&sup2;`,
+        `= (${T}&sup2; + ${k===1?T:`${T}/${k}`}) / (1 + ${pctS(y,2)}${k===1?"":`/${k}`})&sup2; = ${String(+(T*T+T/k).toFixed(8))} / ${String(+Math.pow(1+y/k,2).toFixed(10))} = <b>${correct.toFixed(4)}</b>`
       ]};
   }},
 
@@ -1039,7 +1051,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:F*T, msg:`You multiplied the face value by the duration. \$\$duration is duration times <em>price</em>.`}
       ],
       steps:[
-        `Price = ${money(F)} &times; e<sup>&minus;${y.toFixed(4)} &times; ${T}</sup> = ${P.toFixed(4)}`,
+        `Price = face &times; e<sup>&minus;ytm &times; T</sup> = ${commas(F,0)} &times; e<sup>&minus;${String(+y.toFixed(4))} &times; ${T}</sup> = ${commas(F,0)} &times; e<sup>&minus;${String(+(y*T).toFixed(6))}</sup> = ${P.toFixed(4)}`,
         `Compounded continuously, duration is the maturity exactly: ${T}`,
         `\$\$duration = ${P.toFixed(4)} &times; ${T} = <b>${(+P.toFixed(4)*T).toFixed(2)}</b>`
       ]};
@@ -1155,8 +1167,8 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["dur"], name:"Why du
       ask:"What is the relationship?",
       options:opts,
       steps:[
-        `% change in price = duration &times; change in yields.`,
-        `\$\$ change in price = \$\$duration &times; change in yields.`,
+        `% change in price = &minus;duration &times; change in yields.`,
+        `\$\$ change in price = &minus;\$\$duration &times; change in yields.`,
         `\$\$duration = duration &times; price.`
       ]};
   }},
@@ -1380,9 +1392,12 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["dur"], name:"Why du
       ask:"Which step introduces the mistake?",
       options:s.map((html,q)=>({html, correct:q===at, msg:q===at?why:fine[q]})),
       steps:[
-        `Duration = ${T} / (1 + ${pctS(y,2)}/2) = ${zDur(T,y).toFixed(4)}`,
-        `Price = ${money(P)}`,
-        `\$\$duration = ${Dok.toFixed(4)} &times; ${money(P)} = ${(Dok*P).toFixed(2)}`
+        `Duration = maturity / (1 + ytm/2) = ${T} / (1 + ${pctS(y,2)}/2) = ${T} / ${(1+y/2).toFixed(4)} = ${Dok.toFixed(4)}`,
+        `Price = face / (1 + ytm/2)<sup>2T</sup> = ${money(F)} / ${(1+y/2).toFixed(4)}<sup>${2*T}</sup> = ${money(P)}`,
+        `\$\$duration = duration &times; price = ${Dok.toFixed(4)} &times; ${P.toFixed(2)} = ${commas(Dok*P,2)}`,
+        fault==="wholeYield" ? `The mistake is in Step 2: it divided by (1 + ytm) instead of (1 + ytm/2).`
+        : fault==="noDivide" ? `The mistake is in Step 2: it used the maturity, ${T}, as the duration.`
+        :                      `The mistake is in Step 4: it divided the duration by the price instead of multiplying.`
       ]};
   }},
 
@@ -1467,7 +1482,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["dur"], name:"Why du
       options:opts,
       steps:[
         `Duration does not depend on face value; \$\$duration does.`,
-        `A zero \$\$duration hedge leaves convexity and curve-reshaping risk behind.`,
+        `A zero \$\$duration hedge leaves the convexity term, and the risk that yields do not all move by the same amount.`,
         `Duration understates rises and overstates falls.`
       ]};
   }},
@@ -1527,7 +1542,9 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["dur"], name:"Why du
       options:opts,
       steps:[
         `The rule: wherever a 2 divides something, put how many times a year the yield compounds.`,
-        `Columns 3, 4 and 5 are written in terms of y, so each of their 2's becomes the new number of times a year.`,
+        to==="continuously"
+          ? `Columns 3, 4 and 5 are written in terms of y, so each depends on how y compounds. Compounded continuously there is no number of times a year: the price becomes 100 e<sup>&minus;yT</sup>, duration becomes T and convexity T&sup2;.`
+          : `Columns 3, 4 and 5 are written in terms of y, so each depends on how y compounds: the price's discounting changes, and each 2 that divides becomes ${{annually:1, quarterly:4, monthly:12, daily:365}[to]}.`,
         `Columns 6 and 7 refer only to columns 3, 4 and 5, so their formulas stay the same and their values update.`
       ]};
   }},

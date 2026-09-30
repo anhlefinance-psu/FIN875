@@ -203,6 +203,13 @@ function usable(correct, cands, sep){
 const dfOf   = (y,n) => 1/Math.pow(1+y/2, 2*n);
 const yOfDf  = (d,n) => 2*(Math.pow(1/d, 1/(2*n)) - 1);
 /* forward rate implied by the two spot rates r_t (to t) and r_T (to T) */
+/* r2's printed chain carries 1 + f/2 to eight decimals; re-draw where 2 x (it - 1) lands on an exact
+   tie at the fourth decimal of a percent, or where it rounds away from the exact key (29 Sep 2026) */
+const r2tie = (rt,t,rT,T,key) => {
+  const k = 2*(T-t), ratio8 = +(Math.pow(1+rT/2,2*T)/Math.pow(1+rt/2,2*t)).toFixed(8);
+  const g8 = k===1 ? ratio8 : +Math.sqrt(ratio8).toFixed(8), f = 2*(g8-1);
+  return Math.abs((f*1e6) % 1 - 0.5) < 1e-6 || (100*f).toFixed(4) !== (100*key).toFixed(4);
+};
 const fwdRate = (rt,t,rT,T) =>
   2*(Math.pow(Math.pow(1+rT/2,2*T)/Math.pow(1+rt/2,2*t), 1/(2*(T-t))) - 1);
 
@@ -237,7 +244,8 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
     do {
       r  = pick(range(.03,.09,.0025));
       const r1 = r + pick(range(.002,.02,.0005))*pick([1,-1]);
-      d1 = 1/Math.pow(1+r1/2,2);
+      /* the price as the stem prints it, four decimals, so the carry reproduces (29 Sep 2026) */
+      d1 = +(1/Math.pow(1+r1/2,2)).toFixed(4);
       correct = d1*(1+r/2);
     } while (correct >= 0.999 || d1 <= 0.88);
     return {
@@ -254,9 +262,9 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:(1+r/2)/d1, msg:`You inverted it. The forward price of a zero is below $1 face, not above it.`}
       ],
       steps:[
-        `d<sub>0.5</sub> = 1 / (1 + ${(r/2).toFixed(5)}) = ${(1/(1+r/2)).toFixed(6)}`,
-        `F<sub>0.5</sub><sup>1</sup> = d<sub>1</sub> / d<sub>0.5</sub> = d<sub>1</sub> &times; (1 + ${(r/2).toFixed(5)}) = ${d1.toFixed(4)} &times; ${(1+r/2).toFixed(5)}`,
-        `= ${correct.toFixed(4)} &mdash; by then the 1-year zero has become a 0.5-year zero.`
+        `Make the forward yourself. Today, buy the 1-year $1-face zero for ${d1.toFixed(4)} and borrow ${d1.toFixed(4)} for six months at the six-month rate to pay for it. Net cash today: nothing.`,
+        `At time 0.5 you repay the loan, and you hold a zero with six months left: you have paid a price fixed today for a 0.5-year zero at time 0.5. That is a forward contract in all regards, so the repayment is the forward price.`,
+        `F<sub>0.5</sub><sup>1</sup> = price of the 1-year zero &times; (1 + r/2) = ${d1.toFixed(4)} &times; (1 + ${+(r/2).toFixed(6)}) = ${correct.toFixed(4)}`
       ]};
   }},
 
@@ -321,10 +329,10 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
       ],
       sep:0.02,
       steps:[
-        `Borrow ${d1.toFixed(4)}, buy the 1-year zero, and sell it forward at ${mkt.toFixed(4)}`,
-        `Cash today: zero`,
-        `At six months: receive ${mkt.toFixed(4)}, repay the loan of ${fair.toFixed(4)}`,
-        `Riskless profit = ${mkt.toFixed(4)} &minus; ${fair.toFixed(4)} = ${correct.toFixed(4)}`
+        `The theoretical forward price, ${fair.toFixed(4)}, is what it costs to make the forward yourself: buy the 1-year zero and borrow its price for six months. Nothing changes hands today, and at six months you owe ${fair.toFixed(4)} on the loan.`,
+        `The market pays ${mkt.toFixed(4)} for the same thing, which is more, so sell the forward in the market and make it yourself.`,
+        `At six months, deliver the zero (now a 0.5-year zero), receive ${mkt.toFixed(4)} and repay ${fair.toFixed(4)}.`,
+        `Riskless profit = market forward price &minus; theoretical forward price = ${mkt.toFixed(4)} &minus; ${fair.toFixed(4)} = ${correct.toFixed(4)} per $1 of face`
       ]};
   }},
 
@@ -345,9 +353,10 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:4*(1/F-1), msg:`You annualised by 4. A six-month period goes into a year twice, not four times.`}
       ],
       steps:[
-        `That price <em>is</em> the forward price F<sub>0.5</sub><sup>1</sup> = ${F.toFixed(4)}`,
-        `A discount factor and its rate: d = 1/(1+f/2), so f = 2 &times; (1/d &minus; 1)`,
-        `f = 2 &times; (1/${F.toFixed(4)} &minus; 1) = 2 &times; ${(1/F-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually`
+        `Buying the zero forward is a forward loan: at time 0.5 you hand over ${F.toFixed(4)}, and at time 1 you get $1 back.`,
+        `The forward rate f is the rate on that loan: ${F.toFixed(4)} &times; (1 + f/2) = 1`,
+        `1 + f/2 = 1/${F.toFixed(4)} = ${(1/F).toFixed(8)}`,
+        `f = 2 &times; ${(1/F-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually`
       ]};
   }},
 
@@ -365,7 +374,7 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
       rt = pick(range(.03,.07,.0025));
       rT = rt + pick(range(.008,.025,.0005));
       correct = fwdRate(rt,t,rT,T);
-    } while (Math.abs(correct - (rT*T-rt*t)/(T-t)) < 0.001*correct);
+    } while (Math.abs(correct - (rT*T-rt*t)/(T-t)) < 0.001*correct || r2tie(rt,t,rT,T,correct));
     const dt = Math.pow(1+rt/2,-2*t), dT = Math.pow(1+rT/2,-2*T);
     /* 22 Sep 2026: the last step now substitutes the two SPOT RATES, which the stem prints
        exactly, instead of the six-decimal forward factor. "2 x (1.026533 - 1) = 5.3065%"
@@ -377,8 +386,11 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
        so the answer read off the printed figures IS the key on every draw. The factors
        shown along the way are quoted from the figures printed before them.            */
     const dt6 = +dt.toFixed(6), dT6 = +dT.toFixed(6);
-    const powT = `(1+${(rT/2).toFixed(5)})<sup>${2*T}</sup>`;
-    const powt = `(1+${(rt/2).toFixed(5)})${2*t===1?"":`<sup>${2*t}</sup>`}`;
+    const powT = `(1 + ${+(rT/2).toFixed(6)})<sup>${2*T}</sup>`;
+    const powt = `(1 + ${+(rt/2).toFixed(6)})${2*t===1?"":`<sup>${2*t}</sup>`}`;
+    const k = 2*(T-t);
+    const ratio8 = +(Math.pow(1+rT/2,2*T)/Math.pow(1+rt/2,2*t)).toFixed(8);
+    const root8 = +Math.sqrt(ratio8).toFixed(8);
     const root = 2*(T-t)===1 ? "" : `<sup>1/${2*(T-t)}</sup>`;
     return {
       unit:"percent",
@@ -395,11 +407,15 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:rt, msg:`That is the spot rate to time ${t}, which covers the period <em>before</em> the forward loan begins.`}
       ],
       sep:0.0008,
+      /* 29 Sep 2026: the $1 forward loan and "you pay nothing, you get nothing" (Anh), in place of
+         the d -> F -> f recipe; the ratio is written from the rates, eight decimals. */
       steps:[
-        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d<sub>${t}</sub> = 1/(1+${(rt/2).toFixed(5)})<sup>${2*t}</sup> = ${dt6.toFixed(6)} and d<sub>${T}</sub> = 1/(1+${(rT/2).toFixed(5)})<sup>${2*T}</sup> = ${dT6.toFixed(6)}`,
-        `The forward price is F<sub>${t}</sub><sup>${T}</sup> = d<sub>${T}</sub>/d<sub>${t}</sub> = ${(dT6/dt6).toFixed(6)}`,
-        `It spans ${2*(T-t)} six-month period${2*(T-t)===1?"":"s"}, so F<sub>${t}</sub><sup>${T}</sup> = 1/(1+f/2)<sup>${2*(T-t)}</sup> and f = 2 &times; ((d<sub>${t}</sub>/d<sub>${T}</sub>)${root} &minus; 1)`,
-        `f = 2 &times; ((${powT}/${powt})${root} &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually`
+        `Borrow $1 forward at rate f: nothing at time 0, receive $1 at time ${t}, repay (1 + f/2)${k===1?"":`<sup>${k}</sup>`} at time ${T} (${k} six-month period${k===1?"":"s"} later)`,
+        `You pay nothing, you get nothing: nothing changes hands when the contract is agreed, so its value today is zero. d<sub>${t}</sub> &times; 1 &minus; d<sub>${T}</sub> &times; (1 + f/2)${k===1?"":`<sup>${k}</sup>`} = 0, so (1 + f/2)${k===1?"":`<sup>${k}</sup>`} = d<sub>${t}</sub>/d<sub>${T}</sub>`,
+        `With d<sub>n</sub> = 1/(1 + r<sub>n</sub>/2)<sup>2n</sup>: d<sub>${t}</sub>/d<sub>${T}</sub> = ${powT}/${powt} = ${ratio8.toFixed(8)}`,
+        k===1
+          ? `f = 2 &times; ${(ratio8-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually`
+          : `1 + f/2 = &radic;${ratio8.toFixed(8)} = ${root8.toFixed(8)}, so f = 2 &times; ${(root8-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually`
       ]};
   }},
 
@@ -463,7 +479,12 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
 
 { id:"r3", topic:"fwdrate", name:"Forward rate over a longer period", gen(){
     const t = 1, T = 2;
-    const F = pick(range(.90,.965,.0005));
+    let F;
+    /* 1 + f/2 is printed to eight decimals, so 2 x (it - 1) can end on an exact tie at the fourth
+       decimal of a percent and round either way: those prices are re-drawn (29 Sep 2026) */
+    do { F = pick(range(.90,.965,.0005)); }
+    while (Math.abs((2*(+Math.sqrt(+(1/F).toFixed(8)).toFixed(8)-1)*1e6) % 1 - 0.5) < 1e-6 ||
+           (200*(+Math.sqrt(+(1/F).toFixed(8)).toFixed(8)-1)).toFixed(4) !== (200*(Math.sqrt(1/F)-1)).toFixed(4));
     /* 22 Sep 2026: the last step takes the square root of the PRICE the stem prints, not of
        the six-decimal 1/F shown on the way. "2 x (1.108647^(1/2) - 1) = 10.5847%" did not
        reproduce -- those figures give 10.58462% (gridall.js 04, STEPS, 25 of 131 draws) --
@@ -471,6 +492,8 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
        to four decimals of a percent. The price is drawn on a 0.0005 lattice, so it prints
        exactly, the key is untouched, and the printed chain now returns it exactly.      */
     const correct = 2*(Math.pow(1/F, 1/(2*(T-t))) - 1);
+    /* 1 + f/2 from the eight-decimal 1/F the steps print (29 Sep 2026) */
+    const q8 = +Math.sqrt(+(1/F).toFixed(8)).toFixed(8);
     return {
       unit:"percent",
       text:`The forward price to buy, at time <b>1</b>, a $1-face zero maturing at time
@@ -484,9 +507,10 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:1-F, msg:`That is the discount as a fraction of face value, not a rate on the amount lent.`}
       ],
       steps:[
-        `That price <em>is</em> the forward price F<sub>1</sub><sup>2</sup> = ${F.toFixed(4)}`,
-        `It spans ${2*(T-t)} six-month periods, so d = 1/(1+f/2)<sup>2</sup> and (1+f/2)<sup>2</sup> = 1/${F.toFixed(4)} = ${(1/F).toFixed(6)}`,
-        `f = 2 &times; ((1/d)<sup>1/2</sup> &minus; 1) = 2 &times; ((1/${F.toFixed(4)})<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually`
+        `Buying the zero forward is a forward loan: at time 1 you hand over ${F.toFixed(4)}, and at time 2 you get $1 back. The loan runs two six-month periods.`,
+        `The forward rate f is the rate on that loan: ${F.toFixed(4)} &times; (1 + f/2)<sup>2</sup> = 1`,
+        `(1 + f/2)<sup>2</sup> = 1/${F.toFixed(4)} = ${(1/F).toFixed(8)}, so 1 + f/2 = &radic;${(1/F).toFixed(8)} = ${q8.toFixed(8)}`,
+        `f = 2 &times; ${(q8-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually`
       ]};
   }},
 
@@ -510,6 +534,7 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
        approximations"); the printed chain is now that relation written out, so the answer
        read off the printed figures IS the key on every draw.                           */
     const d05P = +(1/(1+rt/2)).toFixed(6), d10P = +Math.pow(1+rT/2,-2).toFixed(6);
+    const ratio8 = +(Math.pow(1+rT/2,2)/(1+rt/2)).toFixed(8);
     return {
       unit:"percent",
       text:`The curve is <b>inverted</b>: the six-month rate is <b>${pctS(rt)}</b> and the one-year
@@ -522,10 +547,15 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:rt, msg:`That is the six-month spot rate, which covers the period <em>before</em> the forward loan starts.`},
         {val:2*rT-rt, msg:`That extrapolates the drop in a straight line &mdash; a shortcut, and the question asks for the exact rate. Rates compound, so the relation is a product: (1+r<sub>1</sub>/2)<sup>2</sup> = (1+r<sub>0.5</sub>/2)(1+f/2).`}
       ],
+      /* 29 Sep 2026: the $1 forward loan and "you pay nothing, you get nothing" (Anh), as on the
+         FIN 875 Quiz 3 deck. The ratio is written from the rates in one go, eight decimals: printed
+         as (1.01875)^2 = 1.037852 and then divided, it gives the wrong last digit. */
       steps:[
-        `Each spot rate gives its own discount factor, d = 1/(1+r/2)<sup>2n</sup>: d<sub>0.5</sub> = 1/(1+${(rt/2).toFixed(5)}) = ${d05P.toFixed(6)} and d<sub>1</sub> = 1/(1+${(rT/2).toFixed(5)})<sup>2</sup> = ${d10P.toFixed(6)}`,
-        `The forward price is F<sub>0.5</sub><sup>1</sup> = d<sub>1</sub>/d<sub>0.5</sub> = ${(d10P/d05P).toFixed(6)}`,
-        `F<sub>0.5</sub><sup>1</sup> = 1/(1+f/2), so f = 2 &times; (1/F<sub>0.5</sub><sup>1</sup> &minus; 1) = 2 &times; ((1+${(rT/2).toFixed(5)})<sup>2</sup>/(1+${(rt/2).toFixed(5)}) &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually — <em>below</em> both spot rates`,
+        `Discount factors: d<sub>0.5</sub> = 1/(1 + ${+(rt/2).toFixed(6)}) = ${d05P.toFixed(6)}, d<sub>1</sub> = 1/(1 + ${+(rT/2).toFixed(6)})<sup>2</sup> = ${d10P.toFixed(6)}`,
+        `Borrow $1 forward at rate f: nothing at time 0, receive $1 at time 0.5, repay 1 + f/2 at time 1`,
+        `You pay nothing, you get nothing: nothing changes hands when the contract is agreed, so its value today is zero. d<sub>0.5</sub> &times; 1 &minus; d<sub>1</sub> &times; (1 + f/2) = 0`,
+        `1 + f/2 = d<sub>0.5</sub>/d<sub>1</sub> = (1 + ${+(rT/2).toFixed(6)})<sup>2</sup>/(1 + ${+(rt/2).toFixed(6)}) = ${ratio8.toFixed(8)}`,
+        `f = 2 &times; ${(ratio8-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually &mdash; <em>below</em> both spot rates`,
         `On an upward-sloping curve the forward rate sits above both. Invert the curve and it sits below both. Neither is a rule about forward rates; both follow from the shape.`
       ]};
   }},
@@ -560,7 +590,8 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
       ],
       sep:0.02,
       steps:[
-        `Fair forward rate = ${pctS(fair,4)} p.a. compounded semiannually; the dealer quotes ${pctS(q,2)} p.a. &mdash; too ${q<fair?"low":"high"}.`,
+        /* the bare "Fair forward rate = x%" line was dropped (Anh, 29 Sep 2026): the two legs below
+           show the direction in dollars, which is the same two-ways-to-lend logic */
         `<b>Roll.</b> Lend ${money(N)} for six months at ${pctS(rt)} p.a. compounded semiannually, which grows to ${money(half)}; then lend that on from month 6 to month 12 at the dealer's ${pctS(q,2)}: ${money(half)} &times; (1 + ${(q/2).toFixed(5)}) = <b>${money(roll)}</b>`,
         `<b>Straight.</b> Lend the same ${money(N)} for the full year at ${pctS(rT)} p.a. compounded semiannually: ${money(N)} &times; (1 + ${(rT/2).toFixed(5)})<sup>2</sup> = <b>${money(straight)}</b>`,
         `The ${lendStraight?"straight":"roll"} leg pays more, so <b>lend ${lendStraight?"straight and borrow through the roll":"through the roll and borrow straight"}</b>. At time 0 you borrow ${money(N)} and lend ${money(N)} &mdash; nothing changes hands. At six months the ${money(half)} falling due on one leg is exactly matched by the other. Time 1 is the first date with a net flow.`,
@@ -621,6 +652,8 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
        gives it; the printed chain is now that relation written out, so the answer read off
        the printed figures IS the key on every draw.                                     */
     const correct=2*(Math.sqrt((1+rt/2)*(1+f/2))-1);
+    /* the product and its root as the steps print them, eight decimals (29 Sep 2026) */
+    const prod8=+((1+rt/2)*(1+f/2)).toFixed(8), root8=+Math.sqrt(prod8).toFixed(8);
     return {
       unit:"percent",
       /* Tightened 14 Sep 2026 (Anh: count the average as wrong). The arithmetic average is
@@ -639,9 +672,9 @@ const TEMPLATES = [{ id:"w1", topic:"forward", name:"One-year forward price of a
         {val:f-rt, msg:`That is the gap between them, not a level.`}
       ],
       steps:[
-        `Discount factors chain along the timeline: d<sub>1</sub> = d<sub>0.5</sub> &times; F<sub>0.5</sub><sup>1</sup>`,
-        `= 1/(1+${(rt/2).toFixed(5)}) &times; 1/(1+${(f/2).toFixed(5)}) = ${(1/((1+rt/2)*(1+f/2))).toFixed(6)}`,
-        `r<sub>1</sub> = 2 &times; ((1/d<sub>1</sub>)<sup>1/2</sup> &minus; 1) = 2 &times; (((1+${(rt/2).toFixed(5)})&times;(1+${(f/2).toFixed(5)}))<sup>1/2</sup> &minus; 1) = ${pctS(correct,4)} p.a. compounded semiannually, which sits between ${pctS(rt)} and ${pctS(f)} as it must.`
+        `There are two riskless ways to lend $1 for a year: lend straight at the one-year rate r<sub>1</sub>, or lend six months at ${pctS(rt)} and roll into the forward loan at ${pctS(f)}. Both must end with the same amount: (1 + r<sub>1</sub>/2)<sup>2</sup> = (1 + r<sub>0.5</sub>/2)(1 + f/2)`,
+        `(1 + r<sub>1</sub>/2)<sup>2</sup> = (1 + ${+(rt/2).toFixed(6)})(1 + ${+(f/2).toFixed(6)}) = ${(1+rt/2).toFixed(6)} &times; ${(1+f/2).toFixed(6)} = ${prod8.toFixed(8)}`,
+        `1 + r<sub>1</sub>/2 = &radic;${prod8.toFixed(8)} = ${root8.toFixed(8)}, so r<sub>1</sub> = 2 &times; ${(root8-1).toFixed(8)} = ${pctS(correct,4)} p.a. compounded semiannually, which sits between ${pctS(rt)} and ${pctS(f)} as it must.`
       ]};
   }},
 
@@ -918,7 +951,9 @@ const CHOICE_TEMPLATES = [
       ask:"What is the trade?",
       options:opts,
       steps:[
-        `Borrow 0.9477 and buy the 1-year zero &mdash; net cash today is zero`,
+        /* worded from the stem's own numbers (Anh, 29 Sep 2026): it printed "Borrow 0.9477", a
+           figure from Note 04's worked example that the question never gives */
+        `Make the forward yourself: buy the 1-year zero and borrow its price for six months. Nothing changes hands today, and at six months you owe the theoretical forward price, 0.9736.`,
         `Sell the 0.5-year zero forward at the market's 0.9800`,
         `At six months, deliver the bond, collect 0.9800, repay 0.9736, keep 0.0064 riskless.`
       ]};

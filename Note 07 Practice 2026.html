@@ -267,10 +267,10 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         {val:d/N/(1-p)*2, msg:`Too large by a factor of about two. Charging the pool ${pctS(p,2)} already raises ${fmt(d)} dollars across ${fmt(N-d)} paying borrowers.`}
       ],
       steps:[
-        `Credit spread s &asymp; p &times; L. Nothing is recovered here, so L = 1 and s &asymp; p.`,
+        `The spread the paying borrowers hand over must cover what the bank loses on those who default. Per dollar lent that loss is p &times; L, so s &asymp; p &times; L. Nothing is recovered here, so L = 1 and s &asymp; p.`,
         `p = defaults / loans = ${fmt(d)} / ${fmt(N)} = ${pctS(p,2)}`,
         `s &asymp; p = <b>${pctS(correct,2)}</b>`,
-        `Exactly, only the survivors pay, so s = p/(1 &minus; p) = ${pctS(exact,4)} &mdash; larger than the rule of thumb by about p, which is why the approximation is good enough`
+        `Exactly, only the ${fmt(N-d)} survivors pay: ${fmt(N-d)} &times; s = ${fmt(d)}, so s = ${fmt(d)} / ${fmt(N-d)} = ${pctS(exact,4)}. That is p/(1 &minus; p), just ${(+(100*exact).toFixed(4) - +(100*correct).toFixed(4)).toFixed(4)} percentage points above the rule of thumb, which is why the approximation is good enough.`
       ]};
   }},
 
@@ -296,9 +296,9 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         {val:p/L, msg:`You divided by the loss given default where you should have multiplied. Recovering something makes the spread smaller than p, not larger.`}
       ],
       steps:[
-        `The lender must charge about what it expects to lose on each dollar lent`,
-        `Expected loss = p &times; L = ${pctS(p,2)} &times; ${L} = <b>${pctS(correct,4)}</b>`,
-        `Exactly, only the (1 &minus; p) who survive pay the spread, so s = p &times; L / (1 &minus; p) = ${pctS(exact,4)} &mdash; about p larger, and p is small`
+        `The spread must cover the expected loss on each dollar lent: s &asymp; p &times; L`,
+        `s &asymp; ${pctS(p,2)} &times; ${L} = <b>${pctS(correct,4)}</b>`,
+        `Exactly, only the (1 &minus; p) who survive pay the spread: s = p &times; L / (1 &minus; p) = ${pctS(correct,4)} / ${+(1-p).toFixed(4)} = ${pctS(exact,4)}, just ${(+(100*exact).toFixed(4) - +(100*correct).toFixed(4)).toFixed(4)} percentage points more.`
       ]};
   }},
 
@@ -325,9 +325,9 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         {val:s*2/L, msg:`Twice the implied probability. The rule of thumb inverts to p &asymp; s/L, once.`}
       ],
       steps:[
-        `The rule of thumb says s &asymp; p &times; L`,
-        `Inverting it: p &asymp; s / L = ${pctS(s,2)} / ${L} = <b>${pctS(correct,4)}</b>`,
-        `Exactly, s = p &times; L / (1 &minus; p) rearranges to p = s / (L + s) = ${pctS(exact,4)} &mdash; smaller by about p, and p is small`
+        `The spread covers the expected loss per dollar lent: s &asymp; p &times; L, so p &asymp; s / L`,
+        `p &asymp; ${pctS(s,2)} / ${L} = <b>${pctS(correct,4)}</b>`,
+        `Exactly, s = p &times; L / (1 &minus; p) rearranges to p = s / (L + s) = ${pctS(s,2)} / (${L} + ${+s.toFixed(4)}) = ${pctS(exact,4)}, ${(+(100*correct).toFixed(4) - +(100*exact).toFixed(4)).toFixed(4)} percentage points lower.`
       ]};
   }},
 
@@ -1454,7 +1454,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         `Halving the recovery <em>raises</em> the loss given default: LGD after = 1 &minus; ${pctS(R/2,0)} = ${L2.toFixed(2)}`,
         `New spread s &asymp; P* &times; LGD = ${pctS(Qshown,4)} &times; ${L2.toFixed(2)} = ${pctS(s2,4)}`,
         `Rate = risk-free rate + credit spread = ${pctS(rf,2)} + ${pctS(s2,4)} = <b>${pctS(correct,4)}</b>, compounded continuously.`,
-        `P* itself never moved: the firm is exactly as likely to default as it was, and ${pctS(Pold,4)} and the ${pctS(muO,0)} asset return play no part in the answer. What moved is how much of a defaulted dollar is lost, and that is the other half of P* &times; LGD.`,
+        `P* never moved, because nothing in its formula (assets, debt, volatility, r) changed. The firm's actual default probability, ${pctS(Pold,4)}, did not move either, and it and the ${pctS(muO,0)} asset return play no part in the answer. What moved is how much of a defaulted dollar is lost: the LGD in P* &times; LGD.`,
         `Set this beside the firm whose growth forecast is cut. There the news moves P and leaves the quoted rate alone, because &mu; is not in P*. Here the news leaves P alone and moves the rate, because the recovery is in the spread. Read which of the two is being revised before reaching for either.`
       ]};
   }}
@@ -1603,7 +1603,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       ask:"Why does that assumption fail?",
       options:opts,
       steps:[
-        `If all credit risk were diversifiable, every credit beta would be zero and every bond would yield the risk-free rate.`,
+        `If defaults were independent, a large pool would lose almost exactly P &times; LGD a year. The spread would be just P &times; LGD, and lenders would earn the risk-free rate on average.`,
         `Default counts peak in recessions rather than staying flat.`,
         `So lenders bear a systematic component and must be paid for it &mdash; the &Pi; term.`
       ]};
@@ -1683,7 +1683,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       steps:[
         `P depends on &mu;; P* does not.`,
         `In this simple formula the spread is P* &times; LGD, so two firms differing only in &mu; pay the same spread.`,
-        `The resolution is the same as in CAPM: what is priced is covariation with the market, not the expected return on its own.`
+        `The note's resolution: a higher &mu; lowers P. Under CAPM, though, a higher &mu; also means a higher asset beta, so the firm tends to default in downturns and must pay more for that. In Merton's set-up the two effects cancel exactly.`
       ]};
   }},
 
@@ -2187,7 +2187,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
   }},
 
 { id:"rate1", topic:"concept", also:["rn"], name:"The risk-free rate goes up", gen(){
-    let V,lev,D,sig,r1,r2,q1,q2,s1,s2,y1,y2;
+    let V,lev,D,sig,r1,r2,d1,d2,q1,q2,s1,s2,y1,y2;
     /* The cleanest vehicle in the bank for the spread-against-rate distinction, with the
        counter-intuitive direction as the content rather than as a trap: r sits in Merton's drift
        with a minus sign, so a higher r LOWERS P* and NARROWS the spread &mdash; while the rate the
@@ -2200,12 +2200,16 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       V=pick([10,20,50,100]); lev=pick([.55,.60,.65,.75]); sig=pick([.30,.40]);
       r1=pick([.02,.03]); r2=+(r1+pick([.02,.03])).toFixed(4);
       D=+(V*lev).toFixed(2);
-      q1=+normcdf(mertonD(V,D,r1,sig,1)).toFixed(6); q2=+normcdf(mertonD(V,D,r2,sig,1)).toFixed(6);
-      s1=+(q1*LGD).toFixed(6); s2=+(q2*LGD).toFixed(6);
+      /* d* to three decimals, as printed, and P* read from it, so a student with the 3-dp normal
+         table and one with a calculator get the same figures: P* came from the unrounded d* and
+         missed N(printed d*) in the fourth decimal (29 Sep 2026). */
+      d1=+mertonD(V,D,r1,sig,1).toFixed(3); d2=+mertonD(V,D,r2,sig,1).toFixed(3);
+      q1=+normcdf(d1).toFixed(6); q2=+normcdf(d2).toFixed(6);
+      /* P* x 0.5 ends on a 5 whenever P*'s last digit is odd: round half up, as a calculator does */
+      s1=Math.round(q1*LGD*1e6 + 1e-7)/1e6; s2=Math.round(q2*LGD*1e6 + 1e-7)/1e6;
       y1=+(r1+s1).toFixed(6);  y2=+(r2+s2).toFixed(6);
     } while (s1-s2 < .002 || y2-y1 < .005);
-    const d1=mertonD(V,D,r1,sig,1), d2=mertonD(V,D,r2,sig,1);
-    const sgnN = x => (x < 0 ? "&minus;" : "") + Math.abs(x).toFixed(4);
+    const sgnN = x => (x < 0 ? "&minus;" : "") + Math.abs(x).toFixed(3);
     const opts=shuffle([
       {html:`The spread narrows, but the firm's rate rises`, correct:true,
        msg:`Right, and both halves are worth having. The spread narrows because r sits in Merton's drift with a minus sign, so a bigger r pulls the input to N(&middot;) down and P* with it: ${pctS(q1,4)} becomes ${pctS(q2,4)}, and the spread ${pctS(s1,4)} becomes ${pctS(s2,4)}. The rate still rises because the firm pays r + s, and r went up ${pctS(r2-r1,2)} while the spread came down only ${pctS(s1-s2,4)}: ${pctS(y1,4)} becomes ${pctS(y2,4)}. A narrower spread is not a cheaper loan.`},
@@ -2229,8 +2233,8 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       options:opts,
       steps:[
         `s &asymp; P* &times; LGD, where P* = N&#40;[ln(D/V<sub>0</sub>) &minus; (r &minus; &sigma;&sup2;/2)T] / (&sigma;&radic;T)&#41;. The risk-free rate is in there, and it enters with a minus sign.`,
-        `At r = ${pctS(r1,2)}: d* = [ln(${D}/${V}) &minus; (${pctS(r1,2)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnN(d1)}, so P* = ${pctS(q1,4)} and s = ${pctS(q1,4)} &times; 0.5 = ${pctS(s1,4)}`,
-        `At r = ${pctS(r2,2)}: d* = [ln(${D}/${V}) &minus; (${pctS(r2,2)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnN(d2)}, so P* = ${pctS(q2,4)} and s = ${pctS(q2,4)} &times; 0.5 = ${pctS(s2,4)}`,
+        `At r = ${pctS(r1,2)}: d* = [ln(${D}/${V}) &minus; (${pctS(r1,2)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnN(d1)}, so P* = N(${sgnN(d1)}) = ${pctS(q1,4)} and s = ${pctS(q1,4)} &times; 0.5 = ${pctS(s1,4)}`,
+        `At r = ${pctS(r2,2)}: d* = [ln(${D}/${V}) &minus; (${pctS(r2,2)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnN(d2)}, so P* = N(${sgnN(d2)}) = ${pctS(q2,4)} and s = ${pctS(q2,4)} &times; 0.5 = ${pctS(s2,4)}`,
         `The spread <b>narrows</b>, by ${pctS(s1,4)} &minus; ${pctS(s2,4)} = ${pctS(s1-s2,4)}.`,
         `The rate the firm pays is r + s: ${pctS(r1,2)} + ${pctS(s1,4)} = ${pctS(y1,4)} before, ${pctS(r2,2)} + ${pctS(s2,4)} = ${pctS(y2,4)} after. It <b>rises</b>, by ${pctS(r2-r1,2)} &minus; ${pctS(s1-s2,4)} = ${pctS(y2-y1,4)}.`,
         `The two move in opposite directions, and neither is a trick. To price the debt the firm's assets are taken to grow at the risk-free rate, so lifting that rate makes them less likely to end below the debt and the credit risk genuinely cheaper to insure. The loan is still dearer, because the whole curve the lender lends off has moved up.`,
