@@ -379,7 +379,13 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
       mu=pick(range(.06,.16,.01));
       sig=pick(range(.20,.50,.05));
       correct=mertonD(V,D,mu,sig,T);
-    } while (correct < -3.5 || correct > -0.3);
+    } while (correct < -3.5 || correct > -0.3 ||
+             /* the printed numerator / sigma on an exact tie at the fourth decimal rounds either way (29 Sep 2026) */
+             Math.abs(((+Math.log(D/V).toFixed(6) - +(mu-sig*sig/2).toFixed(6))/sig*1e4) % 1 + 0.5) < 1e-6 ||
+             Math.abs(Math.abs(((+Math.log(D/V).toFixed(6) - +(mu-sig*sig/2).toFixed(6))/sig*1e4) % 1) - 0.5) < 1e-6);
+    /* the pieces as printed (29 Sep 2026: it printed "[-0.223144 - -0.025000] / 0.5") */
+    const mn=(x,k)=>(x<0?"&minus;":"")+Math.abs(x).toFixed(k);   // a true minus sign
+    const drift=+(mu-sig*sig/2).toFixed(6), lnR=+Math.log(D/V).toFixed(6), num=+(lnR-drift).toFixed(6);
     return {
       unit:"number",
       text:`A firm has assets worth <b>\$${V} million</b>, an average asset return of
@@ -395,10 +401,9 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         {val:normcdf(correct), msg:`That is N of the input &mdash; the default probability itself. The question asks for what goes <em>inside</em> N.`}
       ],
       steps:[
-        `d = [ln(D/V<sub>0</sub>) &minus; (&mu; &minus; &sigma;&sup2;/2)T] / (&sigma;&radic;T)`,
-        `= [ln(${D}/${V}) &minus; (${pctS(mu,0)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)}`,
-        `= [${Math.log(D/V).toFixed(6)} &minus; ${(mu-sig*sig/2).toFixed(6)}] / ${sig}`,
-        `= <b>${correct.toFixed(4)}</b>`
+        `d = [ln(D/V<sub>0</sub>) &minus; (&mu; &minus; &sigma;&sup2;/2)T] / (&sigma;&radic;T), with T = 1`,
+        `The drift: &mu; &minus; &sigma;&sup2;/2 = ${pctS(mu,0)} &minus; ${pctS(sig,0)}&sup2;/2 = ${pctS(mu,0)} &minus; ${String(+((sig*sig/2)*100).toFixed(4))+'%'} = ${drift<0?"&minus;":""}${String(+((Math.abs(drift))*100).toFixed(4))+'%'}`,
+        `d = [ln(${D}/${V}) &minus; (${drift<0?"&minus;":""}${+Math.abs(drift).toFixed(6)})] / ${+sig.toFixed(2)} = (${mn(lnR,6)} ${drift<0?"+":"&minus;"} ${+Math.abs(drift).toFixed(6)}) / ${+sig.toFixed(2)} = ${mn(num,6)} / ${+sig.toFixed(2)} = <b>${mn(correct,4)}</b>`
       ]};
   }},
 
@@ -417,6 +422,9 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
       D=debtFor(V,d,mu,sig,T);
       correct=normcdf(d);
     } while (Math.abs(mu - sig*sig/2) < 1e-9 || D/V < .35 || D/V > .70 || !onGrid(V,D,mu,sig,T,d));
+    /* each piece printed to six decimals (29 Sep 2026: it jumped from the substitution to d) */
+    const mn=(x,k)=>(x<0?"&minus;":"")+Math.abs(x).toFixed(k);
+    const lnR=+Math.log(D/V).toFixed(6), drT=+((mu-sig*sig/2)*T).toFixed(6), den=+(sig*Math.sqrt(T)).toFixed(6);
     return {
       unit:"percent",
       text:`A firm has assets of <b>\$${V} million</b>, average asset return <b>${pctS(mu,0)} p.a.</b>,
@@ -432,8 +440,10 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
       steps:[
         `P = N(d), where d = [ln(D/V<sub>0</sub>) &minus; (&mu; &minus; &sigma;&sup2;/2)T] / (&sigma;&radic;T)`,
         `Here T = ${T} years, so the drift term is multiplied by ${T} and the volatility by &radic;${T}:`,
-        `d = [ln(${D}/${V}) &minus; (${pctS(mu,0)} &minus; ${pctS(sig,0)}&sup2;/2) &times; ${T}] / (${pctS(sig,0)} &times; &radic;${T})`,
-        `= ${d3(d)}`,
+        `ln(D/V<sub>0</sub>) = ln(${D}/${V}) = ${mn(lnR,6)}`,
+        `(&mu; &minus; &sigma;&sup2;/2)T = (${pctS(mu,0)} &minus; ${pctS(sig,0)}&sup2;/2) &times; ${T} = ${mn(drT,6)}`,
+        `&sigma;&radic;T = ${pctS(sig,0)} &times; &radic;${T} = ${pctS(sig,0)} &times; ${Math.sqrt(T).toFixed(8)} = ${den.toFixed(6)}`,
+        `d = (${mn(lnR,6)} &minus; ${drT<0?`(&minus;${Math.abs(drT).toFixed(6)})`:drT.toFixed(6)}) / ${den.toFixed(6)} = ${mn(lnR-drT,6)} / ${den.toFixed(6)} = ${d3(d)}`,
         `P = N(${d3(d)}) = <b>${pctS(correct,4)}</b>`
       ]};
   }},
@@ -577,7 +587,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         `Firm ${J.n}: d = [ln(${J.D}/${J.V}) &minus; (${pctS(J.mu,0)} &minus; ${pctS(J.sig,0)}&sup2;/2)] / ${pctS(J.sig,0)} = ${d3(dJ)}, so P<sub>${J.n}</sub> = N(${d3(dJ)}) = ${pctS(J.P,4)}`,
         `Firm ${K.n}: d = [ln(${K.D}/${K.V}) &minus; (${pctS(K.mu,0)} &minus; ${pctS(K.sig,0)}&sup2;/2)] / ${pctS(K.sig,0)} = ${d3(dK)}, so P<sub>${K.n}</sub> = N(${d3(dK)}) = ${pctS(K.P,4)}`,
         `Firm ${worse.n} is the more likely to default: <b>${pctS(correct,4)}</b>`,
-        `Taken one at a time the three factors point different ways: Firm ${safer.n} has ${wins.join(" and ")}, Firm ${worse.n} has the rest. That is the "but ... but ... but" the model exists to settle.`,
+        `Taken one at a time the three factors point different ways: Firm ${safer.n} has ${wins.join(" and ")}, Firm ${worse.n} has the rest. Merton's formula weighs all three at once, which is how it settles which firm is more likely to default.`,
         worse.n===wider.n
           ? `No risk-free rate was needed here: r belongs to P*, not to P. Rank the same two firms by the credit spread they must pay and the order happens to come out the same, with Firm ${wider.n} paying the wider spread &mdash; but it need not, because the spread replaces &mu; with r and &mu; is doing a lot of the work above.`
           : `No risk-free rate was needed here: r belongs to P*, not to P. Rank the same two firms by the credit spread they must pay and the order <b>reverses</b>: Firm ${wider.n} pays the wider spread even though Firm ${worse.n} is the more likely to default. The spread is built from P*, which puts r in place of &mu;, so the growth that makes Firm ${wider.n} the safer bet buys it nothing in the pricing.`
@@ -887,7 +897,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         `Credit spread s &asymp; p &times; L, where L is the loss given default`,
         `Rearranged: L &asymp; s / p = ${pctS(s,2)} / ${pctS(p,2)} = ${L.toFixed(6)}`,
         `Recovery rate = 1 &minus; L = 1 &minus; ${L.toFixed(6)} = <b>${pctS(correct,4)}</b>`,
-        `A spread and a default probability together pin down nothing but the product p &times; L. Fix either one of p and L and the other follows, which is why a desk that disagrees with a price has to say which of the two it is disagreeing about.`
+        `The spread pins down only the product p &times; L. Fix either one of p and L and the other follows.`
       ]};
   }},
 
@@ -979,7 +989,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
       steps:[
         `Credit spread s &asymp; P* &times; LGD, and LGD = 1 &minus; recovery`,
         `LGD = 1 &minus; ${pctS(Rec,0)} = ${pctS(1-Rec,0)}, so s = ${pctS(Pstar,2)} &times; ${(1-Rec).toFixed(2)} = ${pctS(s,4)}`,
-        `Yield on the debt = r + s = ${pctS(rf,2)} + ${pctS(s,4)} = ${pctS(y,4)}, continuously compounded`,
+        `Lenders need the Treasury rate plus a spread that covers the expected default loss, so the debt is discounted at r + s: ${pctS(rf,2)} + ${pctS(s,4)} = ${pctS(y,4)}, continuously compounded`,
         `Price = face value &times; e<sup>&minus;(r + s)T</sup> = ${money(F)} &times; e<sup>&minus;${y.toFixed(6)}</sup> = <b>${money(correct)}</b>`,
         `Nothing in that calculation used the firm's actual default probability. Pricing is P*'s job; forecasting is P's.`
       ]};
@@ -1113,7 +1123,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         `Now Merton applies: P = N(d), where d = [ln(D/V<sub>0</sub>) &minus; (&mu; &minus; &sigma;&sup2;/2)T] / (&sigma;&radic;T), with T = 1 year`,
         `d = [ln(${D}/${V}) &minus; (${pctS(mu,0)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${d3(d)}`,
         `P = N(${d3(d)}) = <b>${pctS(correct,4)}</b>`,
-        `Taking the debt at face value is the working approximation everyone uses; the equity is the part you can read straight off a screen. Feed the model the equity value alone and you are telling it the firm owes \$${D} million against \$${cap.toFixed(2)} million of assets, which is a different firm.`
+        `Assets are market capitalisation plus the face value of debt, as the note sets them up. Feed the model the equity value alone and you are telling it the firm owes \$${D} million against \$${cap.toFixed(2)} million of assets, which is a different firm.`
       ]};
   }},
 { id:"two1", topic:"spread", also:["compare"], name:"Two pools pulling opposite ways", gen(){
@@ -1249,8 +1259,8 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
       correct,
       cands:[
         {val:V*Math.exp(mu*T), msg:`You used &mu; as the drift of log assets. It is &mu; &minus; &sigma;&sup2;/2. The gap is the whole of the variance term: at ${pctS(sig,0)} volatility that is ${pctS(sig*sig/2,2)} a year, and over ${T} year${T>1?"s":""} it is enough to move the answer from \$${correct.toFixed(2)} million to \$${(V*Math.exp(mu*T)).toFixed(2)} million.`},
-        {val:V, msg:`A 50-50 chance does not mean the assets end where they started. It means the face value sits at the <em>median</em> of V<sub>1</sub>, and log assets drift upward at ${pctS(drift,2)} a year, so that median is above \$${V}.00 million.`},
-        {val:V*Math.exp((mu+sig*sig/2)*T), msg:`Sign error on the variance term. The drift of log assets is &mu; &minus; &sigma;&sup2;/2, not &mu; + &sigma;&sup2;/2 &mdash; volatility drags the median of V<sub>1</sub> down, it does not lift it.`},
+        {val:V, msg:`A 50-50 chance does not mean the assets end where they started. It means the input to N is zero: ln(D/V<sub>0</sub>) equals the drift of log assets, (&mu; &minus; &sigma;&sup2;/2)T. That drift is ${pctS(drift,2)} a year, upward, so the face value that makes it a coin flip is above \$${V}.00 million.`},
+        {val:V*Math.exp((mu+sig*sig/2)*T), msg:`Sign error on the variance term. The drift of log assets is &mu; &minus; &sigma;&sup2;/2, not &mu; + &sigma;&sup2;/2 &mdash; the &minus;&sigma;&sup2;/2 term lowers the drift of log assets, it does not raise it.`},
         {val:V*Math.exp(-driftT), msg:`The ratio is upside down. The input is ln(D/V<sub>0</sub>), debt over assets, so setting it to zero gives ln(D/V<sub>0</sub>) = (&mu; &minus; &sigma;&sup2;/2)T and a face value <em>above</em> \$${V}.00 million, not below it.`}
       ],
       steps:[
@@ -1260,7 +1270,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         `Drift of log assets = &mu; &minus; &sigma;&sup2;/2 = ${pctS(mu,0)} &minus; ${pctS(sig,0)}&sup2;/2 = ${pctS(drift,2)} a year`,
         `Over the ${T} year${T>1?"s":""} to maturity: (&mu; &minus; &sigma;&sup2;/2)T = ${pctS(drift,2)} &times; ${T} = ${driftT.toFixed(4)}`,
         `D = V<sub>0</sub> &times; e<sup>(&mu; &minus; &sigma;&sup2;/2)T</sup> = \$${V}.00 &times; e<sup>${driftT.toFixed(4)}</sup> = \$${V}.00 &times; ${fac.toFixed(6)} = <b>\$${correct.toFixed(2)} million</b>`,
-        `The answer sits above \$${V}.00 million, and that is the point of it. The assets are expected to grow, so it takes more than their present value to make failure a coin flip. Volatility pulls the other way: a more volatile firm reaches the coin flip at a <em>lower</em> face value, because &minus;&sigma;&sup2;/2 drags the median of V<sub>1</sub> down.`
+        `The answer sits above \$${V}.00 million, and that is the point of it. The assets are expected to grow, so it takes more than their present value to make failure a coin flip. Volatility pulls the other way: a more volatile firm reaches the coin flip at a <em>lower</em> face value, because the &minus;&sigma;&sup2;/2 term lowers the drift of log assets.`
       ]};
   }},
 
@@ -1326,7 +1336,8 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         `Firm ${hiName} &minus; Firm ${loName} = ${pctS(Phi,4)} &minus; ${pctS(Plo,4)} = <b>${spctS(correct,4)}</b>`,
         `Before reading the sign, notice that neither probability is 100%, even though both firms already owe more than they own. Default here is judged at <em>maturity</em>, not today: the assets have a year in which to recover, and both firms may yet be worth more than \$${D} million when the debt falls due.`,
         `Now the sign. The numerator ln(${D}/${V}) &minus; (${pctS(mu,0)} &minus; &sigma;&sup2;/2) is positive for both firms, so dividing by a larger &sigma; pulls the input towards zero <em>from above</em> and the probability falls. That is the note's qualifier as a number: for a firm this far gone, more volatility is the only thing that can carry it back over its debt.`,
-        `It is not a licence to read volatility as good news. Push &sigma; past &radic;(2[ln(D/V<sub>0</sub>) &minus; &mu;T]/T), about ${pctS(sStar,0)} a year here, and the &sigma;&sup2;/2 term takes over and the probability climbs again. Both ${pctS(sLo,0)} and ${pctS(sHi,0)} sit below that turning point.`
+        /* the turning-point formula is not in the note; said in words instead (Anh, 29 Sep 2026) */
+        `This holds only for moderate volatility: at a much higher &sigma; the &sigma;&sup2;/2 term takes over and the probability rises again. Both ${pctS(sLo,0)} and ${pctS(sHi,0)} are in the range where more volatility lowers it.`
       ]};
   }},
 
@@ -1385,7 +1396,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         `P* uses Merton's formula with the risk-free rate in place of &mu;. The average asset return is nowhere in it.`,
         `So nothing that P* depends on has changed: the same debt, the same assets, the same asset volatility, the same risk-free rate ${pctS(rf,2)}. P* has not moved, and the spread stays at ${pctS(s,4)}.`,
         `Rate = risk-free rate + credit spread = ${pctS(rf,2)} + ${pctS(s,4)} = <b>${pctS(correct,4)}</b>, compounded continuously.`,
-        `Say plainly what just happened. The default probability moved, from ${pctS(Pold,4)} to ${pctS(Pnew,4)}, and the rate the lender quotes did not move at all. That is not a slip in the working: P forecasts how often the firm defaults and uses &mu;; the spread prices that default risk and uses r. The firm really is more likely to fail than it was this morning, and it is still quoted ${pctS(correct,4)}.`,
+        `The default probability moved, from ${pctS(Pold,4)} to ${pctS(Pnew,4)}, but the rate the lender quotes did not move at all. That is not a slip in the working: P forecasts how often the firm defaults and uses &mu;; the spread prices that default risk and uses r. The firm really is more likely to fail than it was before its growth forecast was cut, and it is still quoted ${pctS(correct,4)}.`,
         `What <em>would</em> move the spread is anything P* depends on: more debt, a more volatile business, or a change in the risk-free rate itself.`
       ]};
   }},
@@ -1497,8 +1508,8 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       ask:"Why are those two numbers so close?",
       options:opts,
       steps:[
-        `N &times; (1 &minus; p) &times; s = N &times; p.`,
-        `s = p/(1 &minus; p).`,
+        `The spread paid by the survivors must cover the loss on the defaulters: N &times; (1 &minus; p) &times; s = N &times; p.`,
+        `s = p/(1 &minus; p) = 1.00% / 0.99 = 1.01%.`,
         `For small p, 1 &minus; p &asymp; 1, so s &asymp; p.`
       ]};
   }},
@@ -1554,9 +1565,10 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       ask:"What explains the gap?",
       options:opts,
       steps:[
-        `Credit spread &asymp; p &times; LGD, so two things can drive it.`,
-        `Recovery on a repossessed house is high; on a repossessed car it is not.`,
-        `Recovery rate = 1 &minus; loss given default.`
+        `Credit spread &asymp; p &times; LGD, so the car loan's extra spread must come from p, from LGD, or from both.`,
+        `It is the same borrower, so look at LGD.`,
+        `A repossessed house sells for close to the loan; a car loses value and can be driven away. So the house has the higher recovery and the lower LGD (LGD = 1 &minus; recovery).`,
+        `Lower LGD, lower spread: the mortgage is cheaper.`
       ]};
   }},
 
@@ -1928,13 +1940,15 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
     const fault=pick(["assetsFlat","oldAssets"]);
     const drift=rf-sig*sig/2;
     const lShown=+(D1/V0).toFixed(4), lRight=+(D1/V1).toFixed(4), lBefore=+(D0/V0).toFixed(4);
-    const dShown=(Math.log(lShown)-drift)/sig, dRight=(Math.log(lRight)-drift)/sig,
-          dBefore=(Math.log(lBefore)-drift)/sig;
+    /* d* to three decimals, as the 3-dp normal table reads it, and P* from that (29 Sep 2026) */
+    const dShown=+((Math.log(lShown)-drift)/sig).toFixed(3), dRight=+((Math.log(lRight)-drift)/sig).toFixed(3),
+          dBefore=+((Math.log(lBefore)-drift)/sig).toFixed(3);
     /* P* is rounded to four decimals before the spread is taken from it, so the spread printed
        is exactly half the probability printed and the two figures reproduce from one another. */
     const qShown=+normcdf(dShown).toFixed(4), qRight=+normcdf(dRight).toFixed(4),
           qBefore=+normcdf(dBefore).toFixed(4);
     const sShown=qShown*LGD, sRight=qRight*LGD, sBefore=qBefore*LGD;
+    const sgnD = x => (x < 0 ? "&minus;" : "") + Math.abs(x).toFixed(3);
     const st=[
       `<b>Step 1.</b> Before the issue, V<sub>0</sub> = market capitalisation + face value of debt = \$${cap}.00 + \$${D0}.00 = \$${V0}.00 million, against debt of \$${D0}.00 million.`,
       `<b>Step 2.</b> The firm sells \$${raise}.00 million of new debt at par, so the face value it owes becomes \$${D0}.00 + \$${raise}.00 = \$${D1}.00 million.`,
@@ -1942,7 +1956,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
         ? `<b>Step 3.</b> The asset value is unchanged at \$${V0}.00 million.`
         : `<b>Step 3.</b> The firm now holds the \$${raise}.00 million it raised, so V<sub>0</sub> = \$${V0}.00 + \$${raise}.00 = \$${V1}.00 million.`,
       `<b>Step 4.</b> Leverage after the issue is D/V<sub>0</sub> = \$${D1}.00 / \$${V0}.00 = ${lShown.toFixed(4)}.`,
-      `<b>Step 5.</b> d* = [ln(${lShown.toFixed(4)}) &minus; (${pctS(rf,0)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${dShown.toFixed(4)}, so P* = N(${dShown.toFixed(4)}) = ${pctS(qShown,2)} and the spread is P* &times; LGD = ${pctS(qShown,2)} &times; 0.5 = ${pctS(sShown,4)}.`
+      `<b>Step 5.</b> d* = [ln(${lShown.toFixed(4)}) &minus; (${pctS(rf,0)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnD(dShown)}, so P* = N(${sgnD(dShown)}) = ${pctS(qShown,2)} and the spread is P* &times; LGD = ${pctS(qShown,2)} &times; 0.5 = ${pctS(sShown,4)}.`
     ];
     const fine=[
       `Step 1 is fine &mdash; equity and debt are the two claims on the firm's assets, so their values add to V<sub>0</sub>.`,
@@ -1969,8 +1983,9 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       steps:[
         `V<sub>0</sub> = market capitalisation + face value of debt, before the issue and after it.`,
         `Before: V<sub>0</sub> = \$${cap}.00 + \$${D0}.00 = \$${V0}.00 million, so D/V<sub>0</sub> = \$${D0}.00 / \$${V0}.00 = ${lBefore.toFixed(4)}.`,
+        `d* = [ln(${lBefore.toFixed(4)}) &minus; (${pctS(rf,0)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnD(dBefore)}, so P* = N(${sgnD(dBefore)}) = ${pctS(qBefore,2)} and the spread before the issue is ${pctS(qBefore,2)} &times; 0.5 = ${pctS(sBefore,4)}.`,
         `A par issue moves both sides at once: the firm owes \$${D0}.00 + \$${raise}.00 = \$${D1}.00 million and holds \$${V0}.00 + \$${raise}.00 = \$${V1}.00 million of assets, so D/V<sub>0</sub> = \$${D1}.00 / \$${V1}.00 = ${lRight.toFixed(4)}.`,
-        `d* = [ln(${lRight.toFixed(4)}) &minus; (${pctS(rf,0)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${dRight.toFixed(4)}, so P* = N(${dRight.toFixed(4)}) = ${pctS(qRight,2)} and the spread is ${pctS(qRight,2)} &times; 0.5 = ${pctS(sRight,4)}.`,
+        `d* = [ln(${lRight.toFixed(4)}) &minus; (${pctS(rf,0)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnD(dRight)}, so P* = N(${sgnD(dRight)}) = ${pctS(qRight,2)} and the spread is ${pctS(qRight,2)} &times; 0.5 = ${pctS(sRight,4)}.`,
         `Leverage does rise, from ${lBefore.toFixed(4)} to ${lRight.toFixed(4)}, and the spread with it, from ${pctS(sBefore,4)} to ${pctS(sRight,4)}. Dropping the cash off the asset side takes it to ${pctS(sShown,4)} instead &mdash; a far bigger move, computed off a balance sheet the firm never had.`
       ]};
   }},
@@ -2044,12 +2059,12 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
 { id:"kcol1", topic:"concept", also:["spread"], name:"The firm pledges collateral", gen(){
     const p=pick([.02,.03,.04]);
     const rec1=pick([.65,.70,.75]);
-    const s0=+(p*LGD).toFixed(6), s1=+(p*(1-rec1)).toFixed(6);   // the rule of thumb s ~ p x L (28 Sep 2026)
+    const s0=+(p*LGD).toFixed(6), s1=+(p*(1-rec1)).toFixed(6);   // the rule of thumb s ~ P x LGD (28 Sep 2026; one notation throughout, 29 Sep)
     const opts=shuffle([
       {html:`The default probability is unchanged, and the spread narrows`, correct:true,
        msg:`Right, and this is the one place where P and LGD move one at a time. Security does not make the firm any better at paying: the same business, the same leverage, the same ${pctS(p,2)} chance of failing. What it changes is what the lender is left holding afterwards &mdash; ${pctS(rec1,0)} on the dollar instead of ${pctS(LGD,0)} &mdash; so the loss given default falls from ${pctS(LGD,0)} to ${pctS(1-rec1,0)} and the spread from ${pctS(s0,4)} to ${pctS(s1,4)}.`},
       {html:`Both are unchanged &mdash; security bites only when default happens`, correct:false,
-       msg:`The premise is true and the conclusion does not follow. Security does bite only in default &mdash; but the spread is priced for exactly that event. s &asymp; p &times; L carries L, and L has just fallen from ${pctS(LGD,0)} to ${pctS(1-rec1,0)}. A spread is a price for the expected loss, not for the default itself.`},
+       msg:`The premise is true and the conclusion does not follow. Security does bite only in default &mdash; but the spread is priced for exactly that event. s &asymp; P &times; LGD carries LGD, and LGD has just fallen from ${pctS(LGD,0)} to ${pctS(1-rec1,0)}. A spread is a price for the expected loss, not for the default itself.`},
       {html:`The default probability falls, and the spread narrows with it`, correct:false,
        msg:`The spread does narrow, but not for that reason. Pledging assets does not change how often the firm fails to pay &mdash; it is the same firm with the same earnings and the same debt. Collateral changes the size of the loss, not its likelihood.`},
       {html:`The default probability is unchanged, and the spread widens`, correct:false,
@@ -2066,9 +2081,9 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       options:opts,
       steps:[
         `Collateral changes what a lender gets back, not how often the borrower fails. P stays at ${pctS(p,2)}.`,
-        `Credit spread s &asymp; p &times; L, with L = 1 &minus; recovery.`,
-        `Unsecured: L = 1 &minus; ${pctS(LGD,0)} = ${pctS(LGD,0)}, so s &asymp; ${pctS(p,2)} &times; ${LGD.toFixed(2)} = ${pctS(s0,4)}`,
-        `Secured: L = 1 &minus; ${pctS(rec1,0)} = ${pctS(1-rec1,0)}, so s &asymp; ${pctS(p,2)} &times; ${(1-rec1).toFixed(2)} = ${pctS(s1,4)}`,
+        `Credit spread s &asymp; P &times; LGD, with LGD = 1 &minus; recovery.`,
+        `Unsecured: LGD = 1 &minus; ${pctS(LGD,0)} = ${pctS(LGD,0)}, so s &asymp; ${pctS(p,2)} &times; ${LGD.toFixed(2)} = ${pctS(s0,4)}`,
+        `Secured: LGD = 1 &minus; ${pctS(rec1,0)} = ${pctS(1-rec1,0)}, so s &asymp; ${pctS(p,2)} &times; ${(1-rec1).toFixed(2)} = ${pctS(s1,4)}`,
         `Same P, lower LGD, narrower spread. P and LGD are two separate factors and they can move one at a time &mdash; which is why an issuer rating and a recovery rating say different things, and why Fitch introduced RR1 to RR6 alongside the letters.`
       ]};
   }},
@@ -2176,12 +2191,13 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       ask:"Which step introduces the mistake?",
       options:st.map((html,q)=>({html, correct:q===at, msg:q===at?why:fine[q]})),
       steps:[
+        `P = N(d), where d = [ln(D/V<sub>0</sub>) &minus; (&mu; &minus; &sigma;&sup2;/2)T] / (&sigma;&radic;T)`,
         `ln(D/V<sub>0</sub>) = ln(${D}/${V}) = ${sgn(ok.lnR)}`,
         `(&mu; &minus; &sigma;&sup2;/2)T = (${pctS(mu,0)} &minus; ${pctS(sig,0)}&sup2;/2) &times; ${T} = ${pctS(ok.dr,2)} &times; ${T} = ${ok.drT.toFixed(4)}`,
         `&sigma;&radic;T = ${pctS(sig,0)} &times; &radic;${T} = ${pctS(sig,0)} &times; ${rt.toFixed(4)} = ${ok.den.toFixed(4)}`,
         `d = (${sgn(ok.lnR)} &minus; ${ok.drT.toFixed(4)}) / ${ok.den.toFixed(4)} = ${sgn(ok.num)} / ${ok.den.toFixed(4)} = ${sgn(ok.d)}`,
         `P = N(${sgn(ok.d)}) = <b>${pctS(ok.P,2)}</b>`,
-        `The four places this working can go wrong are the four pieces of the formula: which way up the log goes, whether the drift is &mu; or &mu; &minus; &sigma;&sup2;/2, whether the denominator is &sigma;&radic;T or &sigma;T, and whether the answer is N(d) or 1 &minus; N(d). Check them in that order and the audit takes half a minute.`
+        `The four places this working can go wrong are the four pieces of the formula: which way up the log goes, whether the drift is &mu; or &mu; &minus; &sigma;&sup2;/2, whether the denominator is &sigma;&radic;T or &sigma;T, and whether the answer is N(d) or 1 &minus; N(d). Check them in that order.`
       ]};
   }},
 
@@ -2236,8 +2252,9 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
         `At r = ${pctS(r2,2)}: d* = [ln(${D}/${V}) &minus; (${pctS(r2,2)} &minus; ${pctS(sig,0)}&sup2;/2)] / ${pctS(sig,0)} = ${sgnN(d2)}, so P* = N(${sgnN(d2)}) = ${pctS(q2,4)} and s = ${pctS(q2,4)} &times; 0.5 = ${pctS(s2,4)}`,
         `The spread <b>narrows</b>, by ${pctS(s1,4)} &minus; ${pctS(s2,4)} = ${pctS(s1-s2,4)}.`,
         `The rate the firm pays is r + s: ${pctS(r1,2)} + ${pctS(s1,4)} = ${pctS(y1,4)} before, ${pctS(r2,2)} + ${pctS(s2,4)} = ${pctS(y2,4)} after. It <b>rises</b>, by ${pctS(r2-r1,2)} &minus; ${pctS(s1-s2,4)} = ${pctS(y2-y1,4)}.`,
-        `The two move in opposite directions, and neither is a trick. To price the debt the firm's assets are taken to grow at the risk-free rate, so lifting that rate makes them less likely to end below the debt and the credit risk genuinely cheaper to insure. The loan is still dearer, because the whole curve the lender lends off has moved up.`,
-        `This is why a desk quotes both numbers. "Spreads tightened" and "borrowing got cheaper" are different statements, and in a tightening cycle they routinely point opposite ways.`
+        /* plain words (Anh, 29 Sep 2026): no "curve the lender lends off", "desk", "tightening cycle" */
+        `The two move in opposite directions, and neither is a trick. To price the debt, the firm's assets are taken to grow at the risk-free rate, so a higher rate makes them less likely to end below the debt: P* falls and the spread narrows. The loan is still dearer, because the firm pays r + s, and r went up by more than s came down.`,
+        `So a narrower spread does not mean a cheaper loan. The spread and the rate the firm pays are different numbers, and here they move in opposite directions.`
       ]};
   }},
 
