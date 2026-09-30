@@ -342,7 +342,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
       correct,
       cands:[
         {val:DD*dbp/100, msg:`You read ${dbp} basis points as ${dbp} percent. ${dbp}bp = ${pctS(dy,2)}.`},
-        {val:DD, msg:`That is the dollar duration itself &mdash; the change for a full 100 basis point move, not for ${dbp}.`},
+        {val:DD, msg:`That is the dollar duration itself &mdash; the price change per unit change in yields (&Delta;y = 1, i.e. 100%). For ${dbp} basis points, multiply it by ${pctS(dy,2)}.`},
         {val:DD*dy/2, msg:`No halving here. The dollar duration already accounts for the compounding convention.`}
       ],
       steps:[
@@ -477,7 +477,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
         {val:T, msg:`That is the maturity. A coupon bond's duration is shorter than its maturity, because some of its value arrives before then &mdash; unlike a zero, where nothing does.`},
         {val:zDur(T,y), msg:`That is the duration of a <em>zero</em> of the same maturity, ${zDur(T,y).toFixed(4)}. The coupons pull the average in shorter than that.`},
         {val:b.dur*(1+y/2), msg:`That is the Macaulay-style figure before dividing by (1 + ytm/2).`},
-        {val:b.price/100, msg:`That is a price, not a duration.`}
+        {val:b.price/100, msg:`That is the price divided by 100, not a duration.`}
       ],
       steps:[
         `A coupon bond is a portfolio of zeros, so its duration is the value-weighted average of their durations. This note pays ${money(F*cpn/2)} every six months and ${money(F*cpn/2+F)} (coupon + face) at t = ${T}.`,
@@ -726,7 +726,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
       correct,
       cands:[
         {val:(A*DA + L*DL)/(A+L), msg:`You averaged as though the liabilities were a second asset. They are a short position: their \$\$duration is <em>subtracted</em>, and the equity base is ${money(A)} &minus; ${money(L)} = ${money(E)}.`},
-        {val:DA-DL, msg:`You subtracted the durations directly. Durations only net that way when the two sides are equal in value; here they are not.`},
+        {val:DA-DL, msg:`You subtracted the durations directly. That ignores how big each side is: net the \$\$durations first (value &times; duration on each side), then divide by the equity value.`},
         {val:A*DA - L*DL, msg:`That is the equity's \$\$duration, ${commas(A*DA-L*DL,0)}, not its duration. Divide by the equity value ${money(E)}.`}
       ],
       steps:[
@@ -754,7 +754,7 @@ const TEMPLATES = [{ id:"d1", topic:"dur", name:"Duration of a zero", gen(){
       correct,
       cands:[
         {val:(A*CA + L*CL)/(A+L), msg:`The liabilities are a short position: their \$\$convexity is subtracted, and the base is the equity ${money(E)}, not ${money(A+L)}.`},
-        {val:CA-CL, msg:`Convexities only net that way if the two sides are equal in value. Weight each by its value first.`},
+        {val:CA-CL, msg:`That ignores how big each side is: net the \$\$convexities first (value &times; convexity on each side), then divide by the equity value.`},
         {val:A*CA - L*CL, msg:`That is the equity's \$\$convexity, not its convexity. Divide by the equity value ${money(E)}.`}
       ],
       steps:[
@@ -1178,7 +1178,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["dur"], name:"Why du
       {html:`\$\$durations add; durations are averaged`, correct:true,
        msg:`Right. A dollar change in your wealth is the sum of the dollar changes in each holding. A <em>percentage</em> change, like a return, has to be weighted by how much each holding is worth.`},
       {html:`Both simply add across the portfolio`, correct:false,
-       msg:`If durations added, a portfolio of two 10-year zeros would have a duration of 20 &mdash; and a 10 basis point move would shift it 0.2%, which is twice the truth.`},
+       msg:`If durations added, a portfolio of two 10-year zeros would have a duration of 20 &mdash; and a 10 basis point move would shift it 2%, about twice the true 1%.`},
       {html:`Both are value-weighted averages`, correct:false,
        msg:`Averaging \$\$durations would understate the portfolio: owning two bonds makes you more exposed in dollars, not equally exposed.`},
       {html:`\$\$durations are averaged; durations add`, correct:false,

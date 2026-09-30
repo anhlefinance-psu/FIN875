@@ -264,7 +264,7 @@ const TEMPLATES = [{ id:"s1", topic:"spread", name:"Spread when nothing is recov
         {val:p/2, msg:`That would be right if the bank recovered half of each defaulted loan. Here it recovers nothing, so the whole ${pctS(p,2)} is lost.`},
         {val:2*p, msg:`Twice the default probability. The bank has to recover ${fmt(d)} dollars, not ${fmt(2*d)}.`},
         {val:1-p, msg:`That is the share of borrowers who <em>survive</em>, ${fmt(N-d)} of ${fmt(N)}. The spread covers the ones who do not.`},
-        {val:d/N/(1-p)*2, msg:`Too large by a factor of about two. Charging the pool ${pctS(p,2)} already raises ${fmt(d)} dollars across ${fmt(N-d)} paying borrowers.`}
+        {val:d/N/(1-p)*2, msg:`Too large by a factor of about two. The spread only has to raise ${fmt(d)} dollars, and ${pctS(p,2)} charged to the ${fmt(N-d)} paying borrowers already raises almost exactly that.`}
       ],
       steps:[
         `The spread the paying borrowers hand over must cover what the bank loses on those who default. Per dollar lent that loss is p &times; L, so s &asymp; p &times; L. Nothing is recovered here, so L = 1 and s &asymp; p.`,
@@ -1513,7 +1513,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
     const L=pick([.4,.6,.7]);
     const approx=p*L, exact=p*L/(1-p);
     const opts=shuffle([
-      {html:`Slightly lower: it leaves out the 1/(1 &minus; p), so it falls short by about ${pctS(p,0)} of the exact spread`, correct:true,
+      {html:`Slightly lower: it leaves out the 1/(1 &minus; p), so it is the exact spread times (1 &minus; p), a little below it`, correct:true,
        msg:`Right. The exact spread is paid only by the ${pctS(1-p,0)} of borrowers who survive, so it is the rule of thumb divided by ${(1-p).toFixed(2)}. The rule of thumb is ${pctS(approx,4)} against ${pctS(exact,4)}: short by ${((exact-approx)*1e4).toFixed(2)} basis points, which is why we can use it.`},
       {html:`Slightly higher: dividing by 1 &minus; p makes the exact spread the smaller of the two`, correct:false,
        msg:`1 &minus; p is less than 1, and dividing by a number less than 1 makes the result <em>larger</em>. The exact spread is ${pctS(exact,4)}, above the rule of thumb's ${pctS(approx,4)}.`},
@@ -1532,7 +1532,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       steps:[
         `Rule of thumb: s &asymp; p &times; LGD = ${pctS(p,0)} &times; ${L} = ${pctS(approx,4)}`,
         `Exact: s = p &times; LGD / (1 &minus; p) = ${pctS(approx,4)} / ${(1-p).toFixed(2)} = ${pctS(exact,4)}`,
-        `The rule of thumb is the exact spread times (1 &minus; p), so it falls short by p = ${pctS(p,0)} of the exact spread: here ${((exact-approx)*1e4).toFixed(2)} basis points.`,
+        `The rule of thumb is the exact spread times (1 &minus; p), so it falls short of the exact spread by p times the exact spread (${pctS(p,0)} of it): here ${((exact-approx)*1e4).toFixed(2)} basis points.`,
         `The survivors pay for the defaulters, and with p small almost everyone survives. The lesson is in p &times; LGD, the expected loss the spread has to cover; the 1/(1 &minus; p) is a small correction.`
       ]};
   }},
@@ -1589,7 +1589,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
     const opts=shuffle([
       /* Key shortened from 95 characters to 48 (22 Sep 2026): see k1. */
       {html:`Defaults cluster in downturns, not independently`, correct:true,
-       msg:`Right, and the consequence is the whole of the rest of the note: part of default risk is systematic and cannot be diversified away, so lenders must be paid for bearing it. Defaults spike together &mdash; the 2002 dotcom bust is visible as a peak in the data. If defaults were independent the count would be roughly flat with noise.`},
+       msg:`Right, and the consequence is the whole of the rest of the note: part of default risk is systematic and cannot be diversified away, so lenders must be paid for bearing it. Defaults spike together &mdash; the dotcom bust is visible as a peak in 2001 in the data. If defaults were independent the count would be roughly flat with noise.`},
       {html:`Banks do not have enough borrowers to diversify`, correct:false,
        msg:`With 100,000 loans the law of large numbers is doing its job. The problem is not the count, it is that the outcomes are correlated.`},
       {html:`Default probabilities are not known precisely enough`, correct:false,
@@ -1738,8 +1738,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
        msg:`Half right: P* is indeed the smaller here. But the spread is P* &times; LGD, so a smaller P* with the same LGD is a smaller spread.`}
     ]);
     return {mode:"choice",
-      text:`A firm's assets have a <em>negative</em> beta &mdash; the gold-mining case is the usual
-            example &mdash; so its expected asset return sits below the risk-free rate:
+      text:`A firm's assets have a <em>negative</em> beta, so its expected asset return sits below the risk-free rate:
             &mu; = <b>${mu}% p.a.</b> against r = <b>${r}% p.a.</b>, both compounded continuously.
             Everything else in Merton's model is as usual.`,
       ask:"How do this firm's P and P* compare, and what does that do to its credit spread?",
@@ -1786,7 +1785,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       {html:`The average asset return, &mu;`, correct:true,
        msg:`Right, and it is the most interesting fact in the model. The spread is P* &times; LGD, and P* uses r in place of &mu;, so ${f.mu}% never enters. &mu; moves the <em>actual</em> default probability P and nothing else. Turn the question round &mdash; which input does P not need? &mdash; and the answer is r.`},
       {html:`The volatility of the firm's assets, &sigma;`, correct:false,
-       msg:`&sigma; appears three times over: in the drift correction &minus;&sigma;&sup2;/2, as the denominator &sigma;&radic;T, and nowhere cancelling. It matters for the spread and for P alike.`},
+       msg:`&sigma; appears twice: in the drift correction &minus;&sigma;&sup2;/2 and in the denominator &sigma;&radic;T, and the two do not cancel. It matters for the spread and for P alike.`},
       {html:`The risk-free interest rate, r`, correct:false,
        msg:`r is precisely what replaces &mu; in P*. It is the one rate the spread cannot do without &mdash; and the one the actual default probability has no use for.`},
       {html:`The face value of the debt, D`, correct:false,
@@ -1815,7 +1814,7 @@ const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", also:["spread"], name:"Why
       {html:`The average asset return, &mu;`, correct:false,
        msg:`&mu; is the drift in P's input: a firm whose assets are expected to grow at ${f.mu}% is that much less likely to fall below its debt. It is the <em>spread</em> that has no use for &mu;.`},
       {html:`The volatility of the firm's assets, &sigma;`, correct:false,
-       msg:`&sigma; appears three times over: in the drift correction &minus;&sigma;&sup2;/2, as the denominator &sigma;&radic;T, and nowhere cancelling. It matters for P and for the spread alike.`},
+       msg:`&sigma; appears twice: in the drift correction &minus;&sigma;&sup2;/2 and in the denominator &sigma;&radic;T, and the two do not cancel. It matters for P and for the spread alike.`},
       {html:`The face value of the debt, D`, correct:false,
        msg:`Leverage enters through ln(D/V<sub>0</sub>), which is common to P and P*. Both need it, and it is the first thing the model asks for.`}
     ]);
