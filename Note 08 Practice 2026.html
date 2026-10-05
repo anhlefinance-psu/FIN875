@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Note 08 — Bond Liquidity: practice</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#5f6672; --line:#e2e5ea;
+    --card:#f7f8fa; --accent:#00205b; --accent-fg:#ffffff;
+    --ok-bg:#e8f5ec; --ok-line:#2e7d47; --ok-fg:#17532c;
+    --no-bg:#fdeceb; --no-line:#c0392b; --no-fg:#8e2b20;
+    --hint-bg:#fff8e6; --hint-line:#b8860b; --hint-fg:#6b4e00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161a; --fg:#e8eaed; --muted:#9aa3af; --line:#2b2f36;
+      --card:#1b1e24; --accent:#7f9cd4; --accent-fg:#0d1015;
+      --ok-bg:#132a1c; --ok-line:#4caf70; --ok-fg:#9fdcb4;
+      --no-bg:#2c1614; --no-line:#e06c5d; --no-fg:#f0a99f;
+      --hint-bg:#2a2313; --hint-line:#d4a017; --hint-fg:#e5c976;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 18px 64px}
+  header{border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:20px}
+  h1{font-size:1.35rem; margin:0 0 4px}
+  .sub{color:var(--muted); font-size:.9rem}
+  .topics{display:flex; flex-wrap:wrap; gap:7px; margin:18px 0}
+  .chip{
+    border:1px solid var(--line); background:var(--card); color:var(--fg);
+    padding:6px 12px; border-radius:999px; cursor:pointer; font-size:.85rem;
+    font-family:inherit;
+  }
+  .chip[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:var(--accent)}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:20px; margin-bottom:16px;
+  }
+  .qmeta{font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+  .qtext{font-size:1.05rem; margin-bottom:6px}
+  .qtext b{font-variant-numeric:tabular-nums}
+  .ask{margin-top:14px; font-weight:600}
+  .row{display:flex; gap:9px; margin-top:14px; flex-wrap:wrap}
+  input[type=text]{
+    flex:1 1 190px; min-width:0; padding:11px 13px; font-size:1rem; font-family:inherit;
+    border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg);
+  }
+  input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px}
+  button{
+    padding:11px 17px; font-size:.95rem; font-family:inherit; border-radius:8px;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-fg);
+    cursor:pointer; font-weight:600;
+  }
+  button.ghost{background:transparent; color:var(--fg); border-color:var(--line); font-weight:500}
+  button:disabled{opacity:.45; cursor:default}
+  .fb{border-radius:8px; padding:13px 15px; margin-top:15px; border-left:4px solid; font-size:.95rem}
+  .fb.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-fg)}
+  .fb.no{background:var(--no-bg); border-color:var(--no-line); color:var(--no-fg)}
+  .fb.hint{background:var(--hint-bg); border-color:var(--hint-line); color:var(--hint-fg)}
+  .fb strong{display:block; margin-bottom:3px}
+  details{margin-top:15px; border-top:1px solid var(--line); padding-top:13px}
+  summary{cursor:pointer; font-size:.9rem; color:var(--muted); font-weight:600}
+  .steps{margin-top:11px; font-size:.92rem}
+  .steps div{padding:5px 0; border-bottom:1px dashed var(--line)}
+  .steps div:last-child{border-bottom:none; font-weight:600}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em;
+    background:var(--bg); padding:1px 5px; border-radius:4px; border:1px solid var(--line);
+  }
+  .opts{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+  .opt{
+    text-align:left; padding:11px 14px; border:1px solid var(--line); background:var(--bg);
+    color:var(--fg); border-radius:8px; cursor:pointer; font-family:inherit;
+    font-size:.95rem; font-weight:400; line-height:1.55;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt.right{background:var(--ok-bg); border-color:var(--ok-line); border-width:2px}
+  .opt.wrong{background:var(--no-bg); border-color:var(--no-line)}
+  .opt:disabled{cursor:default}
+  .opt sup{font-size:.75em}
+  .stats{display:flex; gap:22px; font-size:.86rem; color:var(--muted); margin-top:22px;
+         border-top:1px solid var(--line); padding-top:14px; flex-wrap:wrap}
+  .stats b{color:var(--fg); font-variant-numeric:tabular-nums}
+  footer{margin-top:26px; font-size:.78rem; color:var(--muted); text-align:center}
+  /* The hidden attribute's UA rule is only [hidden]{display:none}, which loses
+     to author rules like .opts{display:flex} and .row{display:flex}. Without
+     this, hiding those panels silently does nothing. */
+  .modes{display:flex; gap:8px; align-items:center; margin-top:10px;
+         font-size:.84rem; color:var(--muted); flex-wrap:wrap}
+  .modes .chip{font-size:.84rem; padding:5px 12px}
+  .prog{margin-top:18px}
+  .progtop{display:flex; justify-content:space-between; align-items:baseline;
+           font-size:.86rem; color:var(--muted); margin-bottom:6px}
+  .progtop b{color:var(--fg); font-variant-numeric:tabular-nums}
+  .progbar{height:9px; border-radius:999px; background:var(--line); overflow:hidden}
+  .progfill{height:100%; width:0%; border-radius:999px; background:var(--accent);
+            transition:width .35s ease}
+  .progreset{background:none; border:none; color:var(--muted); font-size:.8rem;
+             padding:0; cursor:pointer; text-decoration:underline; font-weight:400}
+  .progreset:hover{color:var(--fg)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Note 08 — Bond Liquidity: practice</h1>
+  <div class="sub">Answers are matched within 0.25%.</div>
+</header>
+
+<div class="topics" id="topics" role="group" aria-label="Choose topics"></div>
+
+<div class="modes" id="modes" role="group" aria-label="Question order">
+  <span>Order</span>
+  <button class="chip" id="mShuffle" type="button" aria-pressed="true">Shuffle</button>
+  <button class="chip" id="mSeq" type="button" aria-pressed="false">In order</button>
+  <span id="seqPos"></span>
+</div>
+
+<div class="card" id="card">
+  <div class="qmeta" id="qmeta">—</div>
+  <div class="qtext" id="qtext">Loading…</div>
+  <div class="ask" id="qask"></div>
+  <div class="opts" id="opts" hidden></div>
+  <div class="row" id="inputrow">
+    <input type="text" id="ans" autocomplete="off" inputmode="decimal"
+           placeholder="Your answer" aria-label="Your answer">
+    <button id="check">Check</button>
+    <button id="next" class="ghost">New question</button>
+  </div>
+  <div id="fb"></div>
+  <details id="soldetails" hidden>
+    <summary>Show the worked solution</summary>
+    <div class="steps" id="steps"></div>
+  </details>
+</div>
+
+<div class="prog">
+  <div class="progtop">
+    <span>Templates solved unaided <b id="pDone">0</b> of <b id="pTotal">0</b></span>
+    <button class="progreset" id="pReset" type="button">reset</button>
+  </div>
+  <div class="progbar"><div class="progfill" id="progfill"></div></div>
+</div>
+
+<div class="stats">
+  <span>Attempted <b id="sAtt">0</b></span>
+  <span>Correct first try <b id="sFirst">0</b></span>
+  <span>Accuracy <b id="sAcc">—</b></span>
+  <span>Streak <b id="sStreak">0</b></span>
+  <span>Solutions opened <b id="sPeek">0</b></span>
+</div>
+
+<footer>Numbers are randomised, so every attempt is different. Nothing you type leaves this page.<br>Use the &rarr; and &larr; arrow keys to move between questions.</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ utils */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+/* stepped range, e.g. range(0.04,0.24,0.0025) -> 81 rates instead of a list of 6 */
+const range = (lo,hi,step) => {
+  const out=[]; for(let v=lo; v<=hi+1e-9; v+=step) out.push(Number(v.toFixed(8)));
+  return out;
+};
+const ORD = n => n + (["th","st","nd","rd"][(n%100-n%10!=10)*(n%10<4)*(n%10)]||"th");
+const money = v => "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+const pct   = (v,d=4) => (v*100).toFixed(d).replace(/\.?0+$/,"") + "%";
+const pctS  = (v,d=2) => (v*100).toFixed(d) + "%";
+const REL_SEP  = 0.01;    // distractors must sit >1% from everything else
+const REL_MATCH= 0.0025;  // student answer counts as a match within 0.25%
+
+const near = (a,b,tol) =>
+  Number.isFinite(a) && Number.isFinite(b) &&
+  Math.abs(a-b) / Math.max(Math.abs(a), Math.abs(b), 1e-12) < tol;
+
+/* Drop distractors too close to the answer (or to each other) to diagnose.
+   Templates about small effects (perpetuity timing) pass a tighter `sep`. */
+function usable(correct, cands, sep){
+  const s = sep || REL_SEP;
+  const kept = [];
+  for (const c of cands){
+    if (!Number.isFinite(c.val)) continue;
+    if (near(c.val, correct, s)) continue;
+    if (kept.some(k => near(k.val, c.val, s))) continue;
+    kept.push(c);
+  }
+  return kept;
+}
+
+/* ------------------------------------------------------------- templates */
+/* ---------------------------------------------------------------- Note 08 ---
+   Bond liquidity: the Amihud and latent measures, the on/off-the-run trade,
+   its size in yield terms, and leverage. Section 6 (liquidity-adjusted CAPM)
+   has no numeric template, at Anh's request (4 Oct 2026).                    */
+const amihud = (rets,vols) => rets.reduce((s,r,i)=>s+Math.abs(r)/vols[i],0)/rets.length;
+
+const TEMPLATES = [{ id:"a1", topic:"amihud", name:"The Amihud illiquidity measure", gen(){
+    const n=4;
+    let rets, vols, correct, cands;
+    /* Re-drawn when a slip lands within 1% of the key (full walk of every ordering, 22 Sep
+       2026: "summed returns over summed volume" scored on 48 of 4.6 million draws). */
+    do {
+      rets=Array.from({length:n},()=>pick(range(.004,.030,.002)));
+      // Volumes must differ: with equal volumes the average of the daily ratios and the
+      // ratio of the averages coincide, and the key collides with its own distractor.
+      vols=shuffle([2,5,10,20,50]).slice(0,n);                // $m traded
+      correct=amihud(rets,vols);
+      cands=[
+        {val:100*rets.reduce((s,r)=>s+r,0)/vols.reduce((s,v)=>s+v,0), msg:`You summed the returns and divided by the summed volume. Amihud is the <em>average of the daily ratios</em>, not the ratio of the averages &mdash; a big-volume day would otherwise swamp the rest.`},
+        {val:100*rets.reduce((s,r)=>s+r,0)/rets.length, msg:`That is the average absolute return, with no volume in it at all. The whole point of the measure is price impact <em>per dollar traded</em>.`},
+        {val:1/(100*correct), msg:`That is exactly the reciprocal of the right answer &mdash; a liquidity measure rather than an illiquidity one. Amihud rises as the asset gets harder to trade.`}
+      ];
+    } while (cands.some(c=>near(c.val,correct*100,REL_SEP)));
+    const rows=rets.map((r,i)=>`Day ${i+1}: |return| ${pctS(r,1)}, volume \$${vols[i]}m`).join(" &nbsp;|&nbsp; ");
+    return {
+      unit:"number",
+      text:`A bond traded on four days as follows. ${rows}`,
+      ask:"What is its Amihud illiquidity measure, in percent per \$ million?",
+      correct:correct*100,
+      cands,
+      /* The daily ratios divide the return as a plain number, the way a2 states the
+         measure: the step used to print "0.4%/20 = 0.0200", which only holds if the 0.4%
+         is read as 0.4 (gridall 08, 22 Sep 2026). Every ratio and their average are exact
+         to four decimals on these returns and volumes.                                  */
+      steps:[
+        `Amihud = |return| / dollar volume, with the return in percent and the volume in \$ millions`,
+        rets.map((r,i)=>`Day ${i+1}: ${(100*r).toFixed(1)} / ${vols[i]} = ${(100*r/vols[i]).toFixed(4)}`).join(" &nbsp;|&nbsp; "),
+        `Average them: Amihud = (${rets.map((r,i)=>(100*r/vols[i]).toFixed(4)).join(" + ")}) / ${n} = <b>${(correct*100).toFixed(4)}</b> percent per \$ million`,
+        `It answers: for every \$1 traded, how far does the quote move?`
+      ]};
+  }},
+
+{ id:"a2", topic:"amihud", name:"Comparing two bonds' Amihud measures", gen(){
+    let rA, vA, rB, vB, iA, iB, correct, cands;
+    /* B's volume is drawn as a round figure and the key is worked from the figures printed
+       (gridall 08, 22 Sep 2026). B's volume used to be backed out of a chosen multiple and
+       printed rounded ("$1.88m" for $1.875m), so a student working from the page was
+       marked wrong on 8 draws, and on 147 a step failed on its own printed figures. With
+       these volumes every Amihud figure is exact to four decimals. Re-drawn when a slip
+       lands within 1% of the key: equal returns made "compared volumes alone" the key
+       (144 draws), equal volumes "compared returns alone" (48). The two bonds stay within
+       5x of each other, as the old multiples (2x, 2.5x, 4x) kept them. Asked as a plain ratio since 4 Oct 2026 (Anh: the
+       "percentage of" wording was strange). "On a typical day" wording (Anh, 4 Oct 2026).
+       */
+    do {
+      rA=pick(range(.006,.020,.002)); vA=pick([10,20,40]);
+      rB=pick(range(.006,.020,.002)); vB=pick([5,10,20,25,40,50,80]);
+      iA=+(100*rA/vA).toFixed(4); iB=+(100*rB/vB).toFixed(4);   // percent per $m, exact
+      correct=Math.max(iA,iB)/Math.min(iA,iB);
+      cands=[
+        {val:Math.min(iA,iB)/Math.max(iA,iB), msg:`Upside down. The <em>larger</em> Amihud number is the less liquid bond, so put it on top.`},
+        {val:Math.max(rA,rB)/Math.min(rA,rB), msg:`You compared the returns and ignored the volumes. A large move on huge volume is not illiquidity.`},
+        {val:Math.max(vA,vB)/Math.min(vA,vB), msg:`You compared volumes alone. Volume without price impact says nothing about how far quotes move.`}
+      ];
+    } while (correct > 5 || cands.some(c=>near(c.val,correct,REL_SEP)));
+    const hi=Math.max(iA,iB), lo=Math.min(iA,iB);
+    return {
+      unit:"number",
+      text:`On a typical day, Bond A moves <b>${pctS(rA,1)}</b> (up or down) on a volume of
+            <b>\$${vA}m</b>. Bond B moves <b>${pctS(rB,1)}</b> on a volume of <b>\$${vB}m</b>.`,
+      ask:"Divide the less liquid bond's Amihud measure by the more liquid bond's. What do you get?",
+      correct,
+      cands,
+      steps:[
+        `Amihud = |return| / dollar volume, averaged over days, with the return in percent and the volume in \$ millions. Use each bond's typical day.`,
+        `Bond A: ${(100*rA).toFixed(1)} / ${vA} = ${iA.toFixed(4)}`,
+        `Bond B: ${(100*rB).toFixed(1)} / ${vB} = ${iB.toFixed(4)}`,
+        `The larger Amihud number is the less liquid bond, here ${iA>iB?"A":"B"}: ${hi.toFixed(4)} / ${lo.toFixed(4)} = <b>${correct.toFixed(4)}</b>`
+      ]};
+  }},
+
+{ id:"o1", topic:"onoff", name:"From a yield spread to dollars, net of the cost of shorting", gen(){
+    /* Rewritten 4 Oct 2026 (Anh): yields in, dollars out, which y1 does not cover, then the cost
+       of shorting. A realistic spread of a few basis points is about a dollar per $1,000 face,
+       so a shorting cost of the same size can eat the whole profit; the answer is negative on
+       some draws. Matched within 1%: the gap needs the prices to about four decimals.         */
+    const F=1000, Y=5, K=1000;                    // 1,000 pairs: $1 million of face on each leg
+    let y, s, c, pOn, pOff, gap, correct, cands;
+    do {
+      y=pick(range(.035,.050,.0025));
+      s=pick([2,3,4,5,6,8]);                      // basis points
+      c=pick([.25,.5,.75,1]);                     // $ per $1,000 face to short the on-the-run
+      pOn=+(F/Math.pow(1+y,Y)).toFixed(4);
+      pOff=+(F/Math.pow(1+y+s/1e4,Y)).toFixed(4);
+      gap=+(pOn-pOff).toFixed(4);
+      correct=(gap-c)*K;
+      const gap1=F/(1+y)-F/(1+y+s/1e4);           // discounted one year instead of five
+      cands=[
+        {val:gap*K, msg:`That is the price gap you pocket, before paying to short the on-the-run bonds. Take off the \$${c.toFixed(2)} a bond.`},
+        {val:(gap+c)*K, msg:`The cost of shorting comes out of your profit; it does not add to it.`},
+        {val:(-gap-c)*K, msg:`You have the gap upside down. The off-the-run bond has the higher yield, so it is the <em>cheaper</em> one: you buy it low and short the on-the-run high.`},
+        {val:(gap1-c)*K, msg:`You discounted for one year. The bonds mature in five, so both prices are F / (1 + y)<sup>5</sup>.`}
+      ];
+    } while (Math.abs(correct)<100 ||
+             cands.some((x,i)=>near(x.val,correct,0.03) || cands.slice(0,i).some(z=>near(z.val,x.val,0.03))));
+    return {
+      unit:"money", tol:0.01,
+      text:`An on-the-run 5-year zero-coupon Treasury, face <b>${money(F)}</b>, yields
+            <b>${pctS(y,2)}</b> (annual compounding). An otherwise identical off-the-run zero yields
+            <b>${s}</b> basis points more. You buy the off-the-run and short the on-the-run, and
+            hold both to maturity, on <b>\$1 million</b> of face value on each side (1,000 bonds of
+            each). Buying costs nothing extra, but shorting the on-the-run has a one-time cost of
+            <b>${money(c)}</b> per ${money(F)} of face value.`,
+      ask:"What is your total profit after the shorting cost? (Enter a negative number if you lose money.)",
+      correct,
+      cands,
+      steps:[
+        `On-the-run price = 1000 / (1 + ${(100*y).toFixed(2)}%)<sup>5</sup> = ${pOn.toFixed(4)}`,
+        `Off-the-run price = 1000 / (1 + ${(100*(y+s/1e4)).toFixed(2)}%)<sup>5</sup> = ${pOff.toFixed(4)}`,
+        `Price gap you pocket today = ${pOn.toFixed(4)} &minus; ${pOff.toFixed(4)} = ${gap.toFixed(4)}; at maturity both legs pay \$1,000 and cancel`,
+        `Profit per pair after the cost of shorting = ${gap.toFixed(4)} &minus; ${c.toFixed(2)} = ${(gap-c).toFixed(4)}`,
+        `On 1,000 pairs: ${(gap-c).toFixed(4)} &times; 1,000 = <b>${money(correct)}</b>`,
+        `A spread of a few basis points is worth only a dollar or two per \$1,000 face, so the cost of shorting matters.`
+      ]};
+  }},
+
+{ id:"o3", topic:"onoff", also:["stress"], name:"Forced to unwind", gen(){
+    /* Rewritten 4 Oct 2026 (Anh): the stem no longer prints the gaps, and the on-the-run price
+       moves too, so the student has to work out both legs. The net result is still the
+       widening of the gap; the long leg alone overstates the loss by the on-the-run's rise.  */
+    let on0, gap0, off0, on1, gap1, off1, n, correct, cands;
+    do {
+      on0=pick([950,955]);
+      gap0=pick([40,50]);
+      off0=on0-gap0;
+      on1=on0+pick([3,5,8,10]);
+      gap1=gap0+pick([80,100,120]);
+      off1=on1-gap1;
+      n=pick([1000,5000,10000]);
+      correct=(gap1-gap0)*n;
+      cands=[
+        {val:gap1*n, msg:`That is what you are out at the point of unwinding: you pay ${money(on1)} for each on-the-run but get only ${money(off1)} for each off-the-run. Over the whole trade, the ${money(gap0)} a pair you collected at the start offsets part of it.`},
+        {val:(off0-off1)*n, msg:`That is the loss on the off-the-run leg alone. The on-the-run you are short also rose, from ${money(on0)} to ${money(on1)}, which costs you more when you buy it back.`},
+        {val:gap0*n, msg:`That is what you originally pocketed, not what you lost.`},
+        {val:(gap1-gap0), msg:`That is the loss on a single pair.`}
+      ];
+    } while (cands.some((c,i)=>near(c.val,correct,REL_SEP) || cands.slice(0,i).some(d=>near(d.val,c.val,REL_SEP))));
+    return {
+      unit:"money",
+      text:`You buy <b>${n.toLocaleString("en-US")}</b> off-the-run zeros at <b>${money(off0)}</b> and
+            short the same number of otherwise identical on-the-run zeros at <b>${money(on0)}</b>.
+            Two years later you are forced to unwind: the on-the-run has risen to
+            <b>${money(on1)}</b>, and the off-the-run has fallen to <b>${money(off1)}</b>.`,
+      ask:"Counting the cash you collected when you put the trade on, what is your net loss over the whole trade, in dollars?",
+      correct,
+      cands,
+      steps:[
+        `Long off-the-run: bought at ${money(off0)}, sold at ${money(off1)}, a loss of ${money(off0-off1)} a bond`,
+        `Short on-the-run: sold at ${money(on0)}, bought back at ${money(on1)}, a loss of ${money(on1-on0)} a bond`,
+        `Per pair: ${money(off0-off1)} + ${money(on1-on0)} = ${money(gap1-gap0)} lost (the gap went from ${money(gap0)} to ${money(gap1)})`,
+        `Net loss = ${money(gap1-gap0)} &times; ${n.toLocaleString("en-US")} = <b>${money(correct)}</b>`,
+        `That is what happened to LTCM: the trade would have paid off at maturity, but they were forced to unwind well before then.`
+      ]};
+  }},
+
+{ id:"d1", topic:"discount", name:"Auction or private transfer?", gen(){
+    /* Rewritten 4 Oct 2026 (Anh: the one-multiplication version was "kind of silly"). Uses the
+       note's figure (Chen and Xiong 2001): prices of non-tradable shares by province and selling
+       channel, as a percent of the exchange-traded price, exactly as the chart prints them.    */
+    const PROV=[["Shanghai",26.69,10.47],["Guangdong",17.93,16.93],["Hubei",18.66,12.00],
+                ["Sichuan",21.74,13.89],["Hainan",17.32,14.71]];
+    let pr, n, P, a, q, V, correct, cands;
+    do {
+      [pr,a,q]=pick(PROV);
+      n=pick([1,2,5]);                         // million shares
+      P=pick([8,10,12,15,20]);                 // $ exchange-traded price
+      V=n*1e6*P;                               // the block at the exchange price
+      correct=V*(a-q)/100;
+      cands=[
+        {val:V*a/100, msg:`That is what the auction raises. The question is how much <em>more</em> it raises than a private transfer.`},
+        {val:V*q/100, msg:`That is what the private transfer raises, not the difference between the two channels.`},
+        {val:V*(1-a/100), msg:`That is how far below the exchange price the auction lands. Compare the two channels with each other, not with the exchange.`}
+      ];
+    } while (cands.some((c,i)=>near(c.val,correct,REL_SEP) || cands.slice(0,i).some(d=>near(d.val,c.val,REL_SEP))));
+    return {
+      unit:"money",
+      text:`A state-linked institution in ${pr} must sell a block of <b>${n} million</b> non-tradable
+            shares of a company whose exchange-traded shares are worth <b>${money(P)}</b>. From the
+            note's figure for ${pr}, non-tradable shares sold at auction fetched <b>${a.toFixed(2)}%</b>
+            of the exchange-traded price, and those sold by private transfer <b>${q.toFixed(2)}%</b>.`,
+      ask:"How much more does the institution raise by selling at auction rather than by private transfer?",
+      correct,
+      cands,
+      steps:[
+        `At the exchange price the block would be worth ${n} million &times; ${money(P)} = ${money(V)}`,
+        `Auction: ${a.toFixed(2)}% &times; ${money(V)} = ${money(V*a/100)}. Private transfer: ${q.toFixed(2)}% &times; ${money(V)} = ${money(V*q/100)}`,
+        `Difference = ${money(V*a/100)} &minus; ${money(V*q/100)} = <b>${money(correct)}</b>`,
+        `Either way the shares go for a fraction of the exchange price, but how you are made to sell matters too.`
+      ]};
+  }},
+
+{ id:"l1", topic:"amihud", name:"The latent liquidity measure", gen(){
+    /* Added 4 Oct 2026 (coverage review): Section 7 had no template. Turnover is the share
+       of the portfolio replaced in a year; the weights are each holder's share of the bond. */
+    const NAMES=["An insurance company","A pension fund","A hedge fund"];
+    let h, T, W, correct, cands;
+    do {
+      h=shuffle([10,20,30,40,60]).slice(0,3);                    // $m of the bond held
+      T=[pick([.1,.2,.3]), pick([.2,.5,1]), pick([1,2,3])];      // portfolio turnover a year
+      W=h.reduce((s,x)=>s+x,0);
+      correct=h.reduce((s,x,i)=>s+x/W*T[i],0);
+      cands=[
+        {val:T.reduce((s,x)=>s+x,0)/3, msg:`That is the plain average of the three turnovers. Each holder counts in proportion to how much of the bond it holds.`},
+        {val:h.reduce((s,x,i)=>s+x*T[i],0), msg:`You multiplied by the dollar holdings but never divided by the total of \$${W}m. The weights have to add up to one.`},
+        {val:T.reduce((s,x)=>s+x,0), msg:`That is the three turnovers added up, with no weights at all.`}
+      ];
+    } while (cands.some((c,i)=>near(c.val,correct,REL_SEP) || cands.slice(0,i).some(d=>near(d.val,c.val,REL_SEP))));
+    const rows=NAMES.map((n,i)=>`${n} holds <b>\$${h[i]}m</b> and turns over <b>${pctS(T[i],0)}</b> of its portfolio a year.`).join(" ");
+    return {
+      unit:"percent",
+      text:`A corporate bond is held by three investors. ${rows}`,
+      ask:"What is the bond's latent liquidity measure, in percent a year?",
+      correct,
+      cands,
+      steps:[
+        `Weights: each holder's share of the bond, out of \$${W}m: ${h.map(x=>`${x}/${W}`).join(", ")}`,
+        `Latent liquidity = ${h.map((x,i)=>`${x}/${W} &times; ${pctS(T[i],0)}`).join(" + ")}`,
+        `= <b>${pctS(correct,2)}</b> a year`,
+        `A higher number means the bond sits with investors who trade a lot, so it is more liquid &mdash; the opposite direction to Amihud.`
+      ]};
+  }},
+
+{ id:"y1", topic:"onoff", name:"The on/off gap in yield terms", gen(){
+    /* Added 4 Oct 2026 (coverage review): no template ever asked for a yield. Gaps of
+       $0.25-$2 on a $1,000 five-year zero give 0.5-4.5 bp, the size of the note's chart.
+       Matched within 3% (4 Oct 2026; was 1%) so an honest rounding slip in the fifth roots is not
+       marked wrong; the (F/P - 1)/5 distractor, about 4% from the key, was dropped to allow it. */
+    const F=1000, Y=5;
+    let on, gap, off, yOn, yOff, correct, cands;
+    do {
+      on=pick([940,945,950,955,960]);
+      gap=pick([.25,.5,.75,1,1.5,2]);
+      off=on-gap;
+      yOn=Math.pow(F/on,1/Y)-1; yOff=Math.pow(F/off,1/Y)-1;
+      correct=(yOff-yOn)*1e4;
+      cands=[
+        {val:-correct, msg:`Right size, wrong sign. The off-the-run bond is the cheaper one, so it has the <em>higher</em> yield: better liquidity, higher price, lower yield.`},
+        {val:(F/off-F/on)*1e4, msg:`That is the gap in the total five-year return, not in the yield. Take the fifth root of each price ratio to turn it into an annual yield.`},
+      ];
+    } while (cands.some((c,i)=>near(c.val,correct,0.10) || cands.slice(0,i).some(d=>near(d.val,c.val,0.10))));
+    const pOn=(100*yOn).toFixed(7), pOff=(100*yOff).toFixed(7);   // the yields as printed, in percent
+    return {
+      unit:"number", tol:0.03,
+      text:`An on-the-run 5-year zero-coupon Treasury, face <b>${money(F)}</b>, trades at
+            <b>${money(on)}</b>. An otherwise identical off-the-run zero trades at
+            <b>${money(off)}</b>. Use annually compounded yields.`,
+      ask:"By how many basis points does the off-the-run yield exceed the on-the-run yield?",
+      correct,
+      cands,
+      steps:[
+        `On-the-run yield = (1000 / ${on.toFixed(2)})<sup>1/5</sup> &minus; 1 = ${pOn}%`,
+        `Off-the-run yield = (1000 / ${off.toFixed(2)})<sup>1/5</sup> &minus; 1 = ${pOff}%`,
+        `Difference = ${pOff}% &minus; ${pOn}% = ${(+pOff - +pOn).toFixed(7)}%, which is <b>${correct.toFixed(2)} basis points</b> (1 basis point = 0.01%)`,
+        `Keep at least six decimals in the fifth roots: the two yields differ only in the fourth decimal place.`
+      ]};
+  }},
+
+{ id:"z1", topic:"onoff", name:"The on-the-run premium after an auction", gen(){
+    /* 4 Oct 2026, after the final blind sitting: the coupon is now STATED. Both notes carry it, so a
+       wrong coupon shifts both prices alike and the gap barely moves (3.375% vs 3.40%: $2.8893 vs
+       $2.8900, found by all three readers): the round-down rule could not be tested here.
+       Added 4 Oct 2026 (Anh). The new 2-year note's coupon is the stop-out yield rounded DOWN to the
+       nearest 1/8% (31 CFR 356 App. B: the 1/8% rate giving a price closest to, but not above, par),
+       so it is issued a little below par at the stop-out yield. An off-the-run note with the same
+       coupon and dates is priced off the discount function (given to three decimals, 4 Oct 2026; was a
+       zero curve, changed at Anh's request to spare the students the discounting). The stop-out yield is drawn 4-8 bp below the
+       curve's yield for those cash flows, so the on-the-run is always the dearer note (about
+       $0.75-$1.50 per $1,000). Matched within 2% so rounding each price to the cent is safe.      */
+    const r2=v=>Math.round(v*100)/100, r3=v=>Math.round(v*1000)/1000, r4=v=>Math.round(v*1e4)/1e4;
+    const flo8=y=>Math.floor(y*8+1e-9)/8;                       // y and the result in percent
+    const price=(c,y)=>{ let P=0; for(let k=1;k<=4;k++) P+=(10*c/2+(k===4?1000:0))/Math.pow(1+y/200,k); return P; };
+    // discount factors rounded to three decimals, as the stem prints them (Anh, 4 Oct 2026: less
+    // calculator work); the gap band below is checked on these rounded factors
+    const curvePrice=(c,z,semi)=>{ let P=0; for(let k=1;k<=4;k++){ const d=+(semi?Math.pow(1+z[k-1]/200,-k):Math.pow(1+z[k-1]/100,-k/2)).toFixed(3); P+=(10*c/2+(k===4?1000:0))*d; } return P; };
+    const ytm=(c,P)=>{ let lo=0, hi=20; for(let i=0;i<80;i++){ const m=(lo+hi)/2; if(price(c,m)>P) lo=m; else hi=m; } return (lo+hi)/2; };
+    let z, y, c, pOn, pOff, correct, cands;
+    do {
+      const b=pick(range(3.5,5.0,0.05)), sl=pick([-0.08,-0.04,0.03,0.06,0.10]);
+      z=[0,1,2,3].map(k=>r2(b+sl*k));
+      const c0=flo8(z[3]);
+      // two decimals, even last digit, so y/2 is easy (Anh, 4 Oct 2026): a 0.02% grid
+      y=Math.round((ytm(c0,curvePrice(c0,z,true))-pick([4,5,6,7,8])/100)*50)/50;
+      c=flo8(y);
+      pOn=price(c,y); pOff=curvePrice(c,z,true);
+      correct=pOn-pOff;
+      cands=[
+        {val:1000-pOff, msg:`You took the on-the-run note to be at par. Its coupon, ${c.toFixed(3)}%, is below the stop-out yield of ${y.toFixed(2)}%, so it is issued a little below par.`},
+        {val:-correct, msg:`Right size, wrong sign. The on-the-run note is the more liquid one, so it is the more expensive one.`},
+        {val:price(2*c,y)-curvePrice(2*c,z,true), msg:`You paid the whole annual coupon, ${c.toFixed(3)}% of \$1,000, every six months. A semi-annual note pays half of it each time.`}
+      ];
+    } while (c<0.125 || Math.abs(y*8-Math.round(y*8))<1e-6 || correct<0.70 || correct>1.60 ||
+             cands.some((x,i)=>near(x.val,correct,0.06) || cands.slice(0,i).some(w=>near(w.val,x.val,0.06))));
+    const d=[1,2,3,4].map(k=>+Math.pow(1+z[k-1]/200,-k).toFixed(3));
+    const cf=10*c/2;
+    const PonS=r4(pOn).toFixed(4), PoffS=r4(pOff).toFixed(4);
+    return {
+      unit:"money", tol:0.02,
+      text:`At today's 2-year Treasury note auction, the stop-out (high) yield is <b>${y.toFixed(2)}% p.a.</b>
+            (semi-annual compounding). The new note has a coupon rate of <b>${c.toFixed(3)}%</b>, paid
+            semi-annually, and is issued today at the stop-out yield. Off-the-run notes are priced off today's discount function, the price today
+            of \$1 paid at each horizon: d(0.5) = <b>${d[0].toFixed(3)}</b>, d(1) = <b>${d[1].toFixed(3)}</b>,
+            d(1.5) = <b>${d[2].toFixed(3)}</b>, d(2) = <b>${d[3].toFixed(3)}</b>. Consider an off-the-run note
+            with the same coupon rate and the same payment dates as the new 2-year note.`,
+      ask:"By how much does the on-the-run note's price exceed the off-the-run note's, per $1,000 of par?",
+      correct,
+      cands,
+      steps:[
+        `Each coupon is ${c.toFixed(3)}% / 2 &times; \$1,000 = \$${cf.toFixed(4)}`,
+        `The stop-out yield per six months is ${y.toFixed(2)}% / 2 = ${(y/2).toFixed(2)}%, so a cash flow k half-years away is divided by ${(1+y/200).toFixed(4)}<sup>k</sup>`,
+        `On-the-run price, at the stop-out yield: ${[1,2,3].map(k=>`${cf.toFixed(4)} / ${(1+y/200).toFixed(4)}<sup>${k}</sup>`).join(" + ")} + ${(cf+1000).toFixed(4)} / ${(1+y/200).toFixed(4)}<sup>4</sup> = ${PonS}`,
+        `Off-the-run price = ${cf.toFixed(4)} &times; (${d.slice(0,3).map(x=>x.toFixed(3)).join(" + ")}) + ${(cf+1000).toFixed(4)} &times; ${d[3].toFixed(3)} = ${PoffS}`,
+        `Difference = ${PonS} &minus; ${PoffS} = <b>\$${(+PonS - +PoffS).toFixed(4)}</b> per \$1,000 of par`,
+        `The two notes have the same cash flows, so the whole difference is the price of the new note's liquidity.`
+      ]};
+  }}
+
+];
+
+/* ======================= CHOICE-MODE ITEMS ==============================
+   Auto-graded by which option is clicked, not by a typed number.
+     topic "error"   — a worked solution with one planted mistake
+     topic "concept" — reason about the direction of an effect, no arithmetic
+   Directional items shuffle their own options so position carries no
+   information; spot-the-error items must stay in step order.            */
+
+function shuffle(a){
+  const out = a.slice();
+  for (let i=out.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [out[i],out[j]] = [out[j],out[i]];
+  }
+  return out;
+}
+
+const CHOICE_TEMPLATES = [{ id:"k1", topic:"concept", name:"Why a frictionless market cannot exist", gen(){
+    const opts=shuffle([
+      {html:`Market makers would earn nothing and would stop quoting`, correct:true,
+       msg:`Right. The spread is the market maker's wage: they buy from sellers, hold until a buyer appears, and bear the price risk in between. Drive the spread to zero and you drive out the people who stand ready to trade, so the market you were perfecting stops working.`},
+      {html:`Free trading would make prices jump around with every order`, correct:false,
+       msg:`Cheaper trading does not by itself make prices less stable, and nothing in the argument depends on volatility. The problem is who would still stand ready to take the other side.`},
+      {html:`Prices would stop reflecting information if trading were free`, correct:false,
+       msg:`That mixes this argument up with the information paradox. Here the problem is the market makers: with no spread, nobody is paid to stand in the middle and quote.`},
+      {html:`Taxes and commissions keep the true cost of trading above zero`, correct:false,
+       msg:`Those costs are real, and they do sit on top of the spread &mdash; but they are paid to the taxman and the broker, not to the market maker, so they say nothing about who would stand in the middle.`}
+    ]);
+    return {mode:"choice",
+      text:`Bid-ask spreads have narrowed steadily for decades. Suppose they reached zero.`,
+      ask:"Why is that self-defeating?",
+      options:opts,
+      steps:[
+        `Market makers buy from sellers and hold until a buyer appears, bearing price risk meanwhile.`,
+        `The bid-ask spread is what pays them for it.`,
+        `At a zero spread they desert the market, and the market breaks down.`
+      ]};
+  }},
+
+{ id:"k2", topic:"concept", name:"The information paradox", gen(){
+    const opts=shuffle([
+      {html:`Nobody would pay for research, and prices would go stale`, correct:true,
+       msg:`Right. If prices are already exact, research adds nothing and no one pays for it &mdash; and then there is no channel by which information reaches prices at all. Perfect efficiency destroys the incentive that produces it, which is why Bloomberg and Morningstar have customers.`},
+      {html:`Information providers would withhold data to stay in business`, correct:false,
+       msg:`The paradox does not need anyone to behave badly, and it would bite even if every provider published everything it had. It follows from the incentive to collect in the first place.`},
+      {html:`Prices would reflect the news only after a long delay`, correct:false,
+       msg:`A delay is what you observe in a real market, not what goes wrong in this thought experiment: the premise here is that prices are exact at every instant.`},
+      {html:`Only illegal insider trading could still earn a profit`, correct:false,
+       msg:`Legitimate research earns a return too, and that return is exactly what a perfectly efficient market would compete away. Insiders are a separate matter.`}
+    ]);
+    return {mode:"choice",
+      text:`Suppose asset prices always reflected fundamental value exactly.`,
+      ask:"What goes wrong?",
+      options:opts,
+      steps:[
+        `If prices are already right, research adds nothing and no one pays for it.`,
+        `If no one does research, there is no channel by which information reaches prices.`,
+        `So some inefficiency has to survive for prices to be informative at all.`
+      ]};
+  }},
+
+{ id:"k3", topic:"concept", name:"Why the bid-ask spread is a poor measure", gen(){
+    const opts=shuffle([
+      {html:`It says nothing about depth, only about the best quote`, correct:true,
+       msg:`Right. The quote may be good for a small size and vanish for a large one: a one-cent spread good for a million shares tells you little if you need to sell ten million. Amihud gets at this by measuring price impact per dollar traded.`},
+      {html:`It is hard to compare across stocks with different prices`, correct:false,
+       msg:`You can always use the relative spread, the spread divided by the price: one cent on \$4.50 is about 22 basis points, and that compares fine with a stock at any price. The real problem is that the quote says nothing about how many shares you can sell at it.`},
+      {html:`It widens and narrows through the trading day`, correct:false,
+       msg:`So does almost everything, and an average over the day would handle it. Intraday variation is not the objection.`},
+      {html:`It includes the commission your broker charges on the trade`, correct:false,
+       msg:`It does not: commission is charged separately, on top of the spread. Neither is it what makes the quoted spread a misleading measure of liquidity.`}
+    ]);
+    return {mode:"choice",
+      text:`A stock is quoted \$4.50 bid, \$4.51 ask &mdash; a spread of one cent, about 22 basis
+            points of the price. You need to sell ten million shares.`,
+      ask:"What is the flaw in using the quoted spread as a liquidity measure?",
+      options:opts,
+      steps:[
+        `Say the bid is good for one million shares: you sell a million at \$4.50 and then need a new quote.`,
+        `Seeing size come, the market maker suspects private information and lowers the bid.`,
+        `The effective spread on the full trade is nowhere near one cent.`
+      ]};
+  }},
+
+{ id:"k4", topic:"concept", also:["amihud"], name:"What Amihud is measuring", gen(){
+    const opts=shuffle([
+      {html:`Its price moves further for each dollar traded`, correct:true,
+       msg:`Right &mdash; price impact. Amihud averages |daily return| divided by dollar volume, so a high number means the price swings a long way for each dollar traded, which is what it feels like to trade something illiquid in size.`},
+      {html:`Its trading volume is smaller`, correct:false,
+       msg:`Low volume on its own does not make a bond illiquid. The Amihud measure divides each day's price move by the dollar volume that went with it, so a bond that trades little but whose price barely moves can still score low.`},
+      {html:`Its quoted bid-ask spread is wider`, correct:false,
+       msg:`The quoted spread is the measure Amihud is designed to improve on, precisely because it hides depth. Amihud is built from returns and volume, not from quotes.`},
+      {html:`Its daily returns are larger, whatever the volume`, correct:false,
+       msg:`Large moves on their own could just mean more news. Amihud divides each move by the dollar volume that went with it, so a big move on huge volume does not count as illiquidity.`}
+    ]);
+    return {mode:"choice",
+      text:`Bond X is less liquid than bond Y, based on the Amihud measure.`,
+      ask:"What does that tell you about bond X?",
+      options:opts,
+      steps:[
+        `Amihud = average of |daily return| / dollar trading volume.`,
+        `Numerator: how far the price moved. Denominator: how much trading it took to move it.`,
+        `The ratio is price impact per dollar &mdash; small for liquid assets, large for illiquid ones.`
+      ]};
+  }},
+
+{ id:"k5", topic:"concept", also:["onoff"], name:"Why on-the-run Treasuries are more liquid", gen(){
+    /* Rewritten 4 Oct 2026 (Anh). Three traders give reasons; 1 and 2 are Note 02's own ("the
+       when-issued market ... feeds the liquidity of the on-the-run issue"; off-the-run issues
+       "get bought by people who intend to hold them, and gradually go quiet"). 3 is wrong (Anh):
+       new issues are not news, since 2-, 3-, 5- and 7-year notes are auctioned every month
+       (TreasuryDirect). Only the order of the four options is shuffled.                      */
+    const opts=shuffle([
+      {html:`Traders 1 and 2`, correct:true,
+       msg:`Right. The when-issued market lets the new note trade, and builds up interest in it, before it is even auctioned; and as notes get older they end up with investors who hold them and rarely trade. Trader 3 is wrong: new notes are not news. The Treasury auctions 2-, 3-, 5- and 7-year notes every month.`},
+      {html:`Traders 2 and 3`, correct:false,
+       msg:`Trader 3 is wrong: new notes are not news, since the Treasury auctions 2-, 3-, 5- and 7-year notes every month. And Trader 1 is right: the when-issued market lets the new note trade before it is even auctioned, which feeds its liquidity.`},
+      {html:`Traders 3 and 1`, correct:false,
+       msg:`Trader 3 is wrong: new notes are not news, since the Treasury auctions 2-, 3-, 5- and 7-year notes every month. And Trader 2 is right: older notes end up with buy-and-hold investors and gradually go quiet.`},
+      {html:`Trader 1 only`, correct:false,
+       msg:`Trader 1 is right, but so is Trader 2: as notes get older they end up with buy-and-hold investors, who rarely trade them.`}
+    ]);
+    return {mode:"choice",
+      text:`Three traders explain why on-the-run Treasuries are more liquid than off-the-run ones.
+            <b>Trader 1:</b> "There is a when-issued market, where the new security trades before it is
+            even auctioned." <b>Trader 2:</b> "Off-the-run securities tend to make their way into the
+            portfolios of buy-and-hold investors." <b>Trader 3:</b> "New securities generate a new
+            following."`,
+      ask:"Which traders are correct?",
+      options:opts,
+      steps:[
+        `Trader 1: the when-issued market lets the new note trade before the auction, and that feeds its liquidity. Correct.`,
+        `Trader 2: as notes age they are absorbed by investors who hold them, and they trade less and less. Correct.`,
+        `Trader 3: new notes are not news; 2-, 3-, 5- and 7-year notes are auctioned every month. Wrong. So: Traders 1 and 2.`
+      ]};
+  }},
+
+{ id:"k6", topic:"concept", also:["onoff"], name:"Why LTCM's trade was not an arbitrage", gen(){
+    const opts=shuffle([
+      {html:`It can lose money if you are forced to unwind early`, correct:true,
+       msg:`Right, and that is why it is compensation for supplying liquidity rather than a free lunch. Held to maturity the legs cancel and the gap is yours. The risk is not the bonds &mdash; it is being made to close before then, and that is a real risk you are paid to bear.`},
+      {html:`The gap may narrow before maturity and cut your profit`, correct:false,
+       msg:`A narrowing gap is good for you: you are long the cheap bond and short the dear one. The danger is the gap <em>widening</em> while you are forced to close.`},
+      {html:`The Treasury might default on the off-the-run issue`, correct:false,
+       msg:`Neither issue carries meaningful default risk, and both are claims on the same borrower, so a default would take out the short leg as well.`},
+      {html:`Interest rates may rise and push both bond prices down`, correct:false,
+       msg:`You are long one bond and short an identical one, so a move in rates hits both legs alike and largely cancels. Rate risk is not what makes the trade risky.`}
+    ]);
+    return {mode:"choice",
+      text:`Buy the off-the-run, short the on-the-run, hold to maturity, pocket the gap.`,
+      ask:"Why is this not an arbitrage in the strict sense?",
+      options:opts,
+      steps:[
+        `At maturity both legs pay the same face value and cancel.`,
+        `In between, the gap can widen &mdash; and in 1998 it did, after Russia defaulted and the market fled to the most liquid paper.`,
+        `Leverage turned a temporary mark against LTCM into a forced unwind.`
+      ]};
+  }},
+
+{ id:"k8", topic:"concept", also:["capm"], name:"Reading the liquidity betas", gen(){
+    const opts=shuffle([
+      {html:`It raises beta, and with it the return investors require`, correct:true,
+       msg:`Right. &beta;<sub>illiq,1</sub> enters with a plus sign, because the asset dries up exactly when the whole market dries up, which is when you most need to sell. Being illiquid on a calm day is a nuisance; being illiquid in the panic is a risk you must be paid for.`},
+      {html:`It lowers beta: the asset is moving with the market`, correct:false,
+       msg:`Moving with the market is what makes an asset risky, not safe. The terms that <em>lower</em> beta are &beta;<sub>illiq,2</sub> and &beta;<sub>illiq,3</sub>, which pick up an asset that pays well exactly when the market turns illiquid.`},
+      {html:`It has no effect, since illiquidity is diversifiable`, correct:false,
+       msg:`An asset's own idiosyncratic illiquidity can be diversified away, but this term is the part that moves with the market's, and market-wide illiquidity hits everything at once.`},
+      {html:`It matters for equities but not for bonds`, correct:false,
+       msg:`The beta terms are written for any asset i against the market portfolio, so they apply to bonds and equities alike.`}
+    ]);
+    return {mode:"choice",
+      text:`&beta;<sub>illiq,1</sub> is cov(c<sub>i</sub>, c<sub>m</sub>) scaled &mdash; it is
+            large when an asset's own illiquidity moves with the market's illiquidity.`,
+      ask:"How does it affect the required return?",
+      options:opts,
+      steps:[
+        `&beta; = &beta;<sub>m</sub> + &beta;<sub>illiq,1</sub> &minus; &beta;<sub>illiq,2</sub> &minus; &beta;<sub>illiq,3</sub>.`,
+        `&beta;<sub>illiq,1</sub> enters positively.`,
+        `An asset that is hardest to sell precisely when everyone is selling deserves a discount, i.e. a higher expected return.`
+      ]};
+  }},
+
+{ id:"k9", topic:"concept", name:"The light bulb and the car", gen(){
+    /* Rewritten 4 Oct 2026 (Anh: the stem asked about asset prices and no option answered it).
+       Every option now answers the question asked. Section 3 of the note: the bulb is used until
+       its "maturity"; the car may be sold on; "the potential need to re-trade makes liquidity an
+       important concern", so better liquidity = higher price = lower yield.                    */
+    const opts=shuffle([
+      {html:`Liquidity matters for an asset you may need to sell before maturity`, correct:true,
+       msg:`Right. You keep a light bulb until it burns out, so you never care how easy it would be to sell. You may want to sell a car one day, so you care, and you will pay more for one that is easy to resell. Financial assets are like the car: investors may need to sell before maturity, so they pay more (accept a lower yield) for an asset that is easier to sell.`},
+      {html:`Liquidity matters only for expensive assets, like cars, not bulbs`, correct:false,
+       msg:`How much the asset costs is not the point. What matters is whether you might want to sell it before you are done with it: you never resell a light bulb, but you may well resell a car.`},
+      {html:`Assets you plan to hold to maturity carry no liquidity concern`, correct:false,
+       msg:`Plans change. You may plan to keep a car for years and still end up wanting a newer one. It is the <em>possibility</em> that you will need to sell before maturity that makes investors care about liquidity, and that possibility is there for almost every financial asset.`},
+      {html:`Only assets whose issuer might fail carry a liquidity discount`, correct:false,
+       msg:`On-the-run and off-the-run Treasuries have the same issuer and essentially no default risk, yet the off-the-run trades at a discount. A liquidity discount is about how easily you can sell, not about whether the issuer survives.`}
+    ]);
+    return {mode:"choice",
+      text:`When you buy a light bulb, you never think about whether you could sell it again later.
+            When you buy a car, you do.`,
+      ask:"What does this tell you about the price of a financial asset?",
+      options:opts,
+      steps:[
+        `A light bulb is used until it burns out (its "maturity"), so how easily it could be resold does not matter.`,
+        `A car may be sold before you are done with it, so how easily it can be resold matters, and you pay more for one that is easy to resell.`,
+        `Financial assets are like the car: investors may need to sell before maturity, so better liquidity = higher price = lower yield.`
+      ]};
+  }},
+
+{ id:"e1", topic:"error", also:["amihud"], name:"Find the mistake — measuring illiquidity", gen(){
+    /* Rewritten 22 Sep 2026 (blind sitting). The data were hard-coded, so every draw was the same
+       question and the answer was always Step 2 or Step 4; the inverted branch divided 1 by the
+       decimal measure while printing the percent one, so its own work was out by a factor of 100;
+       and the branch that averaged first was served the feedback written for the other branch.
+       Now one fault is planted in each of the four steps, the data are drawn, and everything is
+       in the note's units, the ones a1 and a2 use: the return in percent and the volume in
+       \$ millions, so every figure printed here is in percent per \$ million.                   */
+    const VOLS=[2,5,10,20,50];                                  // $m traded
+    const r4=v=>+v.toFixed(4);
+    const p1=v=>(v<0?"&minus;":"")+Math.abs(v).toFixed(1);
+    const p4=v=>(v<0?"&minus;":"")+Math.abs(v).toFixed(4);
+    // a printed sum reads "0.4000 &minus; 0.1200 + 0.0200", never "+ &minus;0.1200"
+    const sum4=a=>a.map((v,i)=>i?(v<0?` &minus; ${Math.abs(v).toFixed(4)}`:` + ${v.toFixed(4)}`):p4(v)).join("");
+    /* 4 Oct 2026 (Anh): Step 4 is now an interpretation against an industry average, not "turn it
+       over". Its fault reads the direction backwards; when the fault is earlier, Step 4 draws the
+       right conclusion from the figure it is handed. The industry average is drawn below that
+       figure, so "greater than" is always true as printed. Also added (Anh, same day): a fifth fault,
+       Step 3 weighting the daily ratios by volume, which collapses to total |return| / total volume. */
+    // one fault per step, each step the answer a quarter of the time. The volume-weighted average
+    // (a second Step 3 fault) has its own template, e2 (Anh, 4 Oct 2026).
+    const fault=pick(["signed","ratioOfAverages","sum","direction"]);
+    const at={signed:0, ratioOfAverages:1, sum:2, weighted:2, direction:3}[fault];
+    let rets, vols, daily, sgnd, total, right, avgR, avgV, shown, ind;
+    /* Re-drawn (22 Sep 2026) so that the planted fault changes the figure the student arrives at:
+       it has to stay positive and at least 5% away from the right one. The branch that averages
+       first also needs both of its averages to come out exact, so that every figure it prints is
+       one the reader can key in and check.                                                     */
+    do {
+      const m1=pick(range(0.4,2.0,0.4));                         // the size of each move, percent
+      const m2=pick(range(0.4,2.0,0.4));
+      const m3=pick(range(0.4,2.0,0.4));
+      const v1=pick(VOLS);                                       // the three days differ in size
+      const v2=pick(VOLS.filter(v=>v!==v1));
+      const v3=pick(VOLS.filter(v=>v!==v1&&v!==v2));
+      const down=pick([0,1,2]);                                  // the one day the price fell
+      vols=[v1,v2,v3];
+      rets=[m1,m2,m3].map((r,i)=>i===down?-r:r);
+      daily=rets.map((r,i)=>r4(Math.abs(r)/vols[i]));
+      sgnd =rets.map((r,i)=>r4(r/vols[i]));
+      total=r4(daily.reduce((s,x)=>s+x,0));
+      right=r4(total/3);
+      avgR =r4(rets.reduce((s,r)=>s+Math.abs(r),0)/3);
+      avgV =r4(vols.reduce((s,v)=>s+v,0)/3);
+      shown= fault==="signed"          ? r4(sgnd.reduce((s,x)=>s+x,0)/3)
+           : fault==="ratioOfAverages" ? r4(avgR/avgV)
+           : fault==="sum"             ? total
+           : fault==="weighted"        ? r4(daily.reduce((s,x,i)=>s+vols[i]*x,0)/vols.reduce((s,v)=>s+v,0))
+           :                             right;
+      ind=r4(shown*pick([0.5,0.6,0.7,0.8]));
+    } while (shown<=0 || ind<=0 || (fault!=="direction" && Math.abs(shown-right)<0.05*right) ||
+             Math.abs(right-ind)<0.05*ind ||
+             (fault==="ratioOfAverages" &&
+              (Math.abs(10*avgR-Math.round(10*avgR))>1e-9 || avgV!==Math.round(avgV))));
+    const st=[
+      /* Each step states the rule it is working to before it works to it, so that the step the
+         rule is wrong in is the step that carries the fault, and the ones after it are only
+         doing what they were handed (blind sitting, 22 Sep 2026).                             */
+      fault==="signed"
+        ? `<b>Step 1.</b> Amihud needs each day's return, sign and all: ${rets.map(r=>p1(r)+"%").join(", ")}, on volumes of \$${vols.join("m, \$")}m`
+        : `<b>Step 1.</b> Amihud is built on the size of each move, so drop the sign: |return| ${rets.map(r=>Math.abs(r).toFixed(1)+"%").join(", ")}, on volumes of \$${vols.join("m, \$")}m`,
+      fault==="ratioOfAverages"
+        ? `<b>Step 2.</b> Amihud is the average return over the average volume, so average each column: average |return| = (${rets.map(r=>Math.abs(r).toFixed(1)).join(" + ")}) / 3 = ${avgR.toFixed(1)}, average volume = (${vols.join(" + ")}) / 3 = ${avgV.toFixed(0)}`
+        : `<b>Step 2.</b> One ratio per day, ${fault==="signed"?"return":"|return|"} / volume: ${(fault==="signed"?sgnd:daily).map((x,i)=>`day ${i+1}: ${fault==="signed"?p1(rets[i]):Math.abs(rets[i]).toFixed(1)} / ${vols[i]} = ${p4(x)}`).join(" &nbsp;|&nbsp; ")}`,
+      fault==="ratioOfAverages"
+        ? `<b>Step 3.</b> Amihud = average |return| / average volume = ${avgR.toFixed(1)} / ${avgV.toFixed(0)} = ${shown.toFixed(4)}`
+        : fault==="sum"
+          ? `<b>Step 3.</b> Add the three up: Amihud = ${sum4(daily)} = ${total.toFixed(4)}`
+        : fault==="weighted"
+          ? `<b>Step 3.</b> Average the three, weighting each day by its volume: Amihud = (${daily.map((x,i)=>`${vols[i]} &times; ${x.toFixed(4)}`).join(" + ")}) / ${vols.reduce((s,v)=>s+v,0)} = ${shown.toFixed(4)}`
+          : `<b>Step 3.</b> Average the three: Amihud = (${sum4(fault==="signed"?sgnd:daily)}) / 3 = ${(fault==="signed"?shown:right).toFixed(4)}`,
+      fault==="direction"
+        ? `<b>Step 4.</b> Because ${shown.toFixed(4)} is greater than the industry average of ${ind.toFixed(4)}, the bond is liquid compared with the industry standard`
+        : `<b>Step 4.</b> Because ${shown.toFixed(4)} is greater than the industry average of ${ind.toFixed(4)}, the bond is less liquid than the industry standard`
+    ];
+    /* Each of these has to be true of the step as THIS branch prints it: a step downstream of the
+       fault is right on the figures handed to it, and that is what the reader is told.          */
+    const fine=[
+      `Step 1 is fine &mdash; Amihud is built on the size of each move, so the sign of the down day goes.`,
+      fault==="signed"
+        ? `Step 2 is fine on its own terms &mdash; one ratio per day, on the figures Step 1 handed it. The mistake is earlier.`
+        : `Step 2 is fine &mdash; Amihud works day by day: one ratio for each day.`,
+      fault==="signed"
+        ? `Step 3 is fine on its own terms &mdash; the measure is the average of the daily ratios, and that is what it averages. The mistake is earlier.`
+        : fault==="ratioOfAverages"
+          ? `Step 3 is fine on its own terms &mdash; it divides the two figures Step 2 produced, which is what Step 2 set up. The mistake is earlier.`
+          : `Step 3 is fine &mdash; the measure is the average of the daily ratios.`,
+      `Step 4 is fine on its own terms &mdash; a higher Amihud number means a less liquid bond, and that is the conclusion it draws from the figure it was handed. The mistake is earlier.`
+    ];
+    const why={
+      signed:`Amihud is built on the <em>size</em> of each move, |return|, not the return. A ${Math.abs(rets[rets.findIndex(r=>r<0)]).toFixed(1)}% fall is as much price impact as a rise of the same size, and keeping the minus sign lets the down day cancel part of the others, so the measure comes out too small.`,
+      ratioOfAverages:`Amihud is the <em>average of the daily ratios</em>, not the ratio of the averages. Averaging first lets the \$${Math.max(...vols)}m day swamp the \$${Math.min(...vols)}m day, which is exactly the day that reveals the illiquidity.`,
+      weighted:`Amihud is the <em>simple</em> average of the daily ratios. Weighting each day by its volume lets the \$${Math.max(...vols)}m day swamp the \$${Math.min(...vols)}m day, which is exactly the day that reveals the illiquidity. In fact the volume weights cancel the volumes in the ratios, and what is left is total |return| over total volume.`,
+      sum:`That is the sum of the daily ratios, not their average: the measure divides by the number of days. As it stands it would grow simply because you looked at more days.`,
+      direction:`The direction is backwards. A higher Amihud number means the price moves further per dollar traded, which is <em>less</em> liquid. Being above the industry average makes this bond less liquid than the industry standard, not more.`
+    }[fault];
+    const rows=rets.map((r,i)=>`Day ${i+1}: return ${p1(r)}%, volume \$${vols[i]}m`).join(" &nbsp;|&nbsp; ");
+    return {mode:"choice",
+      text:`A bond's last three trading days. ${rows}. The industry average Amihud measure for
+            similar bonds is ${ind.toFixed(4)} percent per \$ million. A student works out this bond's
+            Amihud illiquidity measure and compares it with the industry average, like this:`,
+      ask:"Which step introduces the mistake?",
+      options:st.map((html,q)=>({html, correct:q===at, msg:q===at?why:fine[q]})),
+      steps:[
+        `Amihud = |return| / dollar volume, with the return in percent and the volume in \$ millions`,
+        daily.map((x,i)=>`Day ${i+1}: ${Math.abs(rets[i]).toFixed(1)} / ${vols[i]} = ${x.toFixed(4)}`).join(" &nbsp;|&nbsp; "),
+        `Average them: Amihud = (${sum4(daily)}) / 3 = <b>${right.toFixed(4)}</b> percent per \$ million`,
+        `${right.toFixed(4)} is ${right>ind?"above":"below"} the industry average of ${ind.toFixed(4)}, so the bond is ${right>ind?"less":"more"} liquid than the industry standard: a higher Amihud number means the price moves further per dollar traded.`
+      ]};
+  }},
+
+{ id:"e2", topic:"error", also:["amihud"], name:"Find the mistake — measuring illiquidity", gen(){
+    /* Rewritten 22 Sep 2026 (blind sitting). The data were hard-coded, so every draw was the same
+       question and the answer was always Step 2 or Step 4; the inverted branch divided 1 by the
+       decimal measure while printing the percent one, so its own work was out by a factor of 100;
+       and the branch that averaged first was served the feedback written for the other branch.
+       Now one fault is planted in each of the four steps, the data are drawn, and everything is
+       in the note's units, the ones a1 and a2 use: the return in percent and the volume in
+       \$ millions, so every figure printed here is in percent per \$ million.                   */
+    const VOLS=[2,5,10,20,50];                                  // $m traded
+    const r4=v=>+v.toFixed(4);
+    const p1=v=>(v<0?"&minus;":"")+Math.abs(v).toFixed(1);
+    const p4=v=>(v<0?"&minus;":"")+Math.abs(v).toFixed(4);
+    // a printed sum reads "0.4000 &minus; 0.1200 + 0.0200", never "+ &minus;0.1200"
+    const sum4=a=>a.map((v,i)=>i?(v<0?` &minus; ${Math.abs(v).toFixed(4)}`:` + ${v.toFixed(4)}`):p4(v)).join("");
+    /* 4 Oct 2026 (Anh): Step 4 is now an interpretation against an industry average, not "turn it
+       over". Its fault reads the direction backwards; when the fault is earlier, Step 4 draws the
+       right conclusion from the figure it is handed. The industry average is drawn below that
+       figure, so "greater than" is always true as printed. Also added (Anh, same day): a fifth fault,
+       Step 3 weighting the daily ratios by volume, which collapses to total |return| / total volume. */
+    /* e2 (Anh, 4 Oct 2026): always the volume-weighted average in Step 3; Step 4 then reads the
+       figure it is handed correctly. Same title as e1 on purpose, so the template name does not
+       tell the student which step is wrong.                                                    */
+    const fault="weighted";
+    const at={signed:0, ratioOfAverages:1, sum:2, weighted:2, direction:3}[fault];
+    let rets, vols, daily, sgnd, total, right, avgR, avgV, shown, ind;
+    /* Re-drawn (22 Sep 2026) so that the planted fault changes the figure the student arrives at:
+       it has to stay positive and at least 5% away from the right one. The branch that averages
+       first also needs both of its averages to come out exact, so that every figure it prints is
+       one the reader can key in and check.                                                     */
+    do {
+      const m1=pick(range(0.4,2.0,0.4));                         // the size of each move, percent
+      const m2=pick(range(0.4,2.0,0.4));
+      const m3=pick(range(0.4,2.0,0.4));
+      const v1=pick(VOLS);                                       // the three days differ in size
+      const v2=pick(VOLS.filter(v=>v!==v1));
+      const v3=pick(VOLS.filter(v=>v!==v1&&v!==v2));
+      const down=pick([0,1,2]);                                  // the one day the price fell
+      vols=[v1,v2,v3];
+      rets=[m1,m2,m3].map((r,i)=>i===down?-r:r);
+      daily=rets.map((r,i)=>r4(Math.abs(r)/vols[i]));
+      sgnd =rets.map((r,i)=>r4(r/vols[i]));
+      total=r4(daily.reduce((s,x)=>s+x,0));
+      right=r4(total/3);
+      avgR =r4(rets.reduce((s,r)=>s+Math.abs(r),0)/3);
+      avgV =r4(vols.reduce((s,v)=>s+v,0)/3);
+      shown= fault==="signed"          ? r4(sgnd.reduce((s,x)=>s+x,0)/3)
+           : fault==="ratioOfAverages" ? r4(avgR/avgV)
+           : fault==="sum"             ? total
+           : fault==="weighted"        ? r4(daily.reduce((s,x,i)=>s+vols[i]*x,0)/vols.reduce((s,v)=>s+v,0))
+           :                             right;
+      ind=r4(shown*pick([0.5,0.6,0.7,0.8]));
+    } while (shown<=0 || ind<=0 || (fault!=="direction" && Math.abs(shown-right)<0.05*right) ||
+             Math.abs(right-ind)<0.05*ind ||
+             (fault==="ratioOfAverages" &&
+              (Math.abs(10*avgR-Math.round(10*avgR))>1e-9 || avgV!==Math.round(avgV))));
+    const st=[
+      /* Each step states the rule it is working to before it works to it, so that the step the
+         rule is wrong in is the step that carries the fault, and the ones after it are only
+         doing what they were handed (blind sitting, 22 Sep 2026).                             */
+      fault==="signed"
+        ? `<b>Step 1.</b> Amihud needs each day's return, sign and all: ${rets.map(r=>p1(r)+"%").join(", ")}, on volumes of \$${vols.join("m, \$")}m`
+        : `<b>Step 1.</b> Amihud is built on the size of each move, so drop the sign: |return| ${rets.map(r=>Math.abs(r).toFixed(1)+"%").join(", ")}, on volumes of \$${vols.join("m, \$")}m`,
+      fault==="ratioOfAverages"
+        ? `<b>Step 2.</b> Amihud is the average return over the average volume, so average each column: average |return| = (${rets.map(r=>Math.abs(r).toFixed(1)).join(" + ")}) / 3 = ${avgR.toFixed(1)}, average volume = (${vols.join(" + ")}) / 3 = ${avgV.toFixed(0)}`
+        : `<b>Step 2.</b> One ratio per day, ${fault==="signed"?"return":"|return|"} / volume: ${(fault==="signed"?sgnd:daily).map((x,i)=>`day ${i+1}: ${fault==="signed"?p1(rets[i]):Math.abs(rets[i]).toFixed(1)} / ${vols[i]} = ${p4(x)}`).join(" &nbsp;|&nbsp; ")}`,
+      fault==="ratioOfAverages"
+        ? `<b>Step 3.</b> Amihud = average |return| / average volume = ${avgR.toFixed(1)} / ${avgV.toFixed(0)} = ${shown.toFixed(4)}`
+        : fault==="sum"
+          ? `<b>Step 3.</b> Add the three up: Amihud = ${sum4(daily)} = ${total.toFixed(4)}`
+        : fault==="weighted"
+          ? `<b>Step 3.</b> Average the three, weighting each day by its volume: Amihud = (${daily.map((x,i)=>`${vols[i]} &times; ${x.toFixed(4)}`).join(" + ")}) / ${vols.reduce((s,v)=>s+v,0)} = ${shown.toFixed(4)}`
+          : `<b>Step 3.</b> Average the three: Amihud = (${sum4(fault==="signed"?sgnd:daily)}) / 3 = ${(fault==="signed"?shown:right).toFixed(4)}`,
+      fault==="direction"
+        ? `<b>Step 4.</b> Because ${shown.toFixed(4)} is greater than the industry average of ${ind.toFixed(4)}, the bond is liquid compared with the industry standard`
+        : `<b>Step 4.</b> Because ${shown.toFixed(4)} is greater than the industry average of ${ind.toFixed(4)}, the bond is less liquid than the industry standard`
+    ];
+    /* Each of these has to be true of the step as THIS branch prints it: a step downstream of the
+       fault is right on the figures handed to it, and that is what the reader is told.          */
+    const fine=[
+      `Step 1 is fine &mdash; Amihud is built on the size of each move, so the sign of the down day goes.`,
+      fault==="signed"
+        ? `Step 2 is fine on its own terms &mdash; one ratio per day, on the figures Step 1 handed it. The mistake is earlier.`
+        : `Step 2 is fine &mdash; Amihud works day by day: one ratio for each day.`,
+      fault==="signed"
+        ? `Step 3 is fine on its own terms &mdash; the measure is the average of the daily ratios, and that is what it averages. The mistake is earlier.`
+        : fault==="ratioOfAverages"
+          ? `Step 3 is fine on its own terms &mdash; it divides the two figures Step 2 produced, which is what Step 2 set up. The mistake is earlier.`
+          : `Step 3 is fine &mdash; the measure is the average of the daily ratios.`,
+      `Step 4 is fine on its own terms &mdash; a higher Amihud number means a less liquid bond, and that is the conclusion it draws from the figure it was handed. The mistake is earlier.`
+    ];
+    const why={
+      signed:`Amihud is built on the <em>size</em> of each move, |return|, not the return. A ${Math.abs(rets[rets.findIndex(r=>r<0)]).toFixed(1)}% fall is as much price impact as a rise of the same size, and keeping the minus sign lets the down day cancel part of the others, so the measure comes out too small.`,
+      ratioOfAverages:`Amihud is the <em>average of the daily ratios</em>, not the ratio of the averages. Averaging first lets the \$${Math.max(...vols)}m day swamp the \$${Math.min(...vols)}m day, which is exactly the day that reveals the illiquidity.`,
+      weighted:`Amihud is the <em>simple</em> average of the daily ratios. Weighting each day by its volume lets the \$${Math.max(...vols)}m day swamp the \$${Math.min(...vols)}m day, which is exactly the day that reveals the illiquidity. In fact the volume weights cancel the volumes in the ratios, and what is left is total |return| over total volume.`,
+      sum:`That is the sum of the daily ratios, not their average: the measure divides by the number of days. As it stands it would grow simply because you looked at more days.`,
+      direction:`The direction is backwards. A higher Amihud number means the price moves further per dollar traded, which is <em>less</em> liquid. Being above the industry average makes this bond less liquid than the industry standard, not more.`
+    }[fault];
+    const rows=rets.map((r,i)=>`Day ${i+1}: return ${p1(r)}%, volume \$${vols[i]}m`).join(" &nbsp;|&nbsp; ");
+    return {mode:"choice",
+      text:`A bond's last three trading days. ${rows}. The industry average Amihud measure for
+            similar bonds is ${ind.toFixed(4)} percent per \$ million. A student works out this bond's
+            Amihud illiquidity measure and compares it with the industry average, like this:`,
+      ask:"Which step introduces the mistake?",
+      options:st.map((html,q)=>({html, correct:q===at, msg:q===at?why:fine[q]})),
+      steps:[
+        `Amihud = |return| / dollar volume, with the return in percent and the volume in \$ millions`,
+        daily.map((x,i)=>`Day ${i+1}: ${Math.abs(rets[i]).toFixed(1)} / ${vols[i]} = ${x.toFixed(4)}`).join(" &nbsp;|&nbsp; "),
+        `Average them: Amihud = (${sum4(daily)}) / 3 = <b>${right.toFixed(4)}</b> percent per \$ million`,
+        `${right.toFixed(4)} is ${right>ind?"above":"below"} the industry average of ${ind.toFixed(4)}, so the bond is ${right>ind?"less":"more"} liquid than the industry standard: a higher Amihud number means the price moves further per dollar traded.`
+      ]};
+  }},
+
+{ id:"k10a", topic:"concept", name:"Where the illiquidity comes from", gen(){
+    /* Added 4 Oct 2026 (coverage review): Section 2's four sources of illiquidity had no
+       template. One situation is drawn; the four options are the note's four sources.   */
+    /* 4 Oct 2026 (Anh: make them less obvious): two scenarios per source, none naming its cue. */
+    const S=[
+      {key:"cost", text:`A homeowner sells her house for \$500,000. After everyone involved in the sale has been paid, she keeps about \$470,000.`,
+       right:`Right. About 6% of the price goes to the people who handle the sale. When every sale costs that much, people trade houses far less often than stocks.`},
+      {key:"cost", text:`A small business owner wants to sell a 10% stake in his company. Lawyers, accountants and an adviser will take a large share of whatever he receives.`,
+       right:`Right. Every sale of a stake like this costs a lot in fees, so such stakes change hands rarely.`},
+      {key:"search", text:`A pension fund wants to sell a \$3 million piece of a small, obscure municipal bond. Its dealer offers well below the last trade, explaining that it may be weeks before another client wants that bond.`,
+       right:`Right. Buyers for this bond are hard to find, so the dealer has to hold it, and bear the risk that its price moves, until one turns up. The low bid pays for that.`},
+      {key:"search", text:`A collector who needs cash this week has to sell a rare stamp for far less than its appraised value.`,
+       right:`Right. Few people want that particular stamp at any given moment, so selling quickly means accepting whoever happens to be there, at their price.`},
+      {key:"short", text:`A hedge fund thinks a small company's bonds are badly overpriced, but it owns none of them, and every dealer it calls says they have none available to lend.`,
+       right:`Right. With nothing to borrow, the fund cannot short the bonds, so its pessimistic view never reaches the price, which is set mostly by the optimists.`},
+      {key:"short", text:`During a market panic, regulators temporarily forbid investors to sell shares they do not own. Many analysts think some of those shares are overpriced but cannot act on it.`,
+       right:`Right. A ban on short-selling shuts the pessimists out of the market, so prices are set mostly by the optimists and bad news takes longer to show up in them.`},
+      {key:"info", text:`A week before a company reports its results, a board member's family trust offers to sell a large block of the company's bonds to a dealer. The dealer agrees only at a noticeably lower price.`,
+       right:`Right. The dealer has to wonder what the seller knows that he does not, so he will only buy at a discount. That fear of trading with someone better informed is what widens the spread.`},
+      {key:"info", text:`A buyer will only pay well below the book value for a used car, because he cannot tell whether this particular car has hidden problems.`,
+       right:`Right. The seller knows the car's history and the buyer does not, so the buyer protects himself with a lower price, and good cars become hard to sell at a fair price.`}
+    ];
+    /* k10a (Anh, 4 Oct 2026): k10 split by source so a student who tries each once meets all four.
+       Always transaction costs; same title for all four, options shuffled, so the title gives nothing away. */
+    const s=pick(S.filter(x=>x.key==="cost"));
+    const O={
+      cost:  {html:`High transaction costs`, wrong:`Nothing here takes a cut of the trade: no fee or commission eats into the price.`},
+      search:{html:`It is hard for buyers and sellers to find each other`, wrong:`There is someone on the other side here; finding a counterparty is not the problem.`},
+      short: {html:`It is hard to short-sell`, wrong:`Nobody here wants to bet against the asset, so the ability to short does not come into it.`},
+      info:  {html:`Some traders know more than others`, wrong:`Neither side here has reason to think the other knows more about the asset.`}
+    };
+    const opts=shuffle(Object.keys(O).map(k=>({html:O[k].html, correct:k===s.key, msg:k===s.key?s.right:O[k].wrong})));
+    return {mode:"choice",
+      text:s.text,
+      ask:"Which source of illiquidity is at work?",
+      options:opts,
+      steps:[
+        `An asset can be illiquid if transaction costs are high, if buyers and sellers are hard to match, if it is hard to short, or if some traders know more than others.`,
+        `Ask what stands in the way of trading in this particular situation.`,
+        `Here it is: <b>${O[s.key].html.toLowerCase()}</b>.`
+      ]};
+  }},
+
+{ id:"k10b", topic:"concept", name:"Where the illiquidity comes from", gen(){
+    /* Added 4 Oct 2026 (coverage review): Section 2's four sources of illiquidity had no
+       template. One situation is drawn; the four options are the note's four sources.   */
+    /* 4 Oct 2026 (Anh: make them less obvious): two scenarios per source, none naming its cue. */
+    const S=[
+      {key:"cost", text:`A homeowner sells her house for \$500,000. After everyone involved in the sale has been paid, she keeps about \$470,000.`,
+       right:`Right. About 6% of the price goes to the people who handle the sale. When every sale costs that much, people trade houses far less often than stocks.`},
+      {key:"cost", text:`A small business owner wants to sell a 10% stake in his company. Lawyers, accountants and an adviser will take a large share of whatever he receives.`,
+       right:`Right. Every sale of a stake like this costs a lot in fees, so such stakes change hands rarely.`},
+      {key:"search", text:`A pension fund wants to sell a \$3 million piece of a small, obscure municipal bond. Its dealer offers well below the last trade, explaining that it may be weeks before another client wants that bond.`,
+       right:`Right. Buyers for this bond are hard to find, so the dealer has to hold it, and bear the risk that its price moves, until one turns up. The low bid pays for that.`},
+      {key:"search", text:`A collector who needs cash this week has to sell a rare stamp for far less than its appraised value.`,
+       right:`Right. Few people want that particular stamp at any given moment, so selling quickly means accepting whoever happens to be there, at their price.`},
+      {key:"short", text:`A hedge fund thinks a small company's bonds are badly overpriced, but it owns none of them, and every dealer it calls says they have none available to lend.`,
+       right:`Right. With nothing to borrow, the fund cannot short the bonds, so its pessimistic view never reaches the price, which is set mostly by the optimists.`},
+      {key:"short", text:`During a market panic, regulators temporarily forbid investors to sell shares they do not own. Many analysts think some of those shares are overpriced but cannot act on it.`,
+       right:`Right. A ban on short-selling shuts the pessimists out of the market, so prices are set mostly by the optimists and bad news takes longer to show up in them.`},
+      {key:"info", text:`A week before a company reports its results, a board member's family trust offers to sell a large block of the company's bonds to a dealer. The dealer agrees only at a noticeably lower price.`,
+       right:`Right. The dealer has to wonder what the seller knows that he does not, so he will only buy at a discount. That fear of trading with someone better informed is what widens the spread.`},
+      {key:"info", text:`A buyer will only pay well below the book value for a used car, because he cannot tell whether this particular car has hidden problems.`,
+       right:`Right. The seller knows the car's history and the buyer does not, so the buyer protects himself with a lower price, and good cars become hard to sell at a fair price.`}
+    ];
+    /* k10b (Anh, 4 Oct 2026): k10 split by source so a student who tries each once meets all four.
+       Always finding a buyer; same title for all four, options shuffled, so the title gives nothing away. */
+    const s=pick(S.filter(x=>x.key==="search"));
+    const O={
+      cost:  {html:`High transaction costs`, wrong:`Nothing here takes a cut of the trade: no fee or commission eats into the price.`},
+      search:{html:`It is hard for buyers and sellers to find each other`, wrong:`There is someone on the other side here; finding a counterparty is not the problem.`},
+      short: {html:`It is hard to short-sell`, wrong:`Nobody here wants to bet against the asset, so the ability to short does not come into it.`},
+      info:  {html:`Some traders know more than others`, wrong:`Neither side here has reason to think the other knows more about the asset.`}
+    };
+    const opts=shuffle(Object.keys(O).map(k=>({html:O[k].html, correct:k===s.key, msg:k===s.key?s.right:O[k].wrong})));
+    return {mode:"choice",
+      text:s.text,
+      ask:"Which source of illiquidity is at work?",
+      options:opts,
+      steps:[
+        `An asset can be illiquid if transaction costs are high, if buyers and sellers are hard to match, if it is hard to short, or if some traders know more than others.`,
+        `Ask what stands in the way of trading in this particular situation.`,
+        `Here it is: <b>${O[s.key].html.toLowerCase()}</b>.`
+      ]};
+  }},
+
+{ id:"k10c", topic:"concept", name:"Where the illiquidity comes from", gen(){
+    /* Added 4 Oct 2026 (coverage review): Section 2's four sources of illiquidity had no
+       template. One situation is drawn; the four options are the note's four sources.   */
+    /* 4 Oct 2026 (Anh: make them less obvious): two scenarios per source, none naming its cue. */
+    const S=[
+      {key:"cost", text:`A homeowner sells her house for \$500,000. After everyone involved in the sale has been paid, she keeps about \$470,000.`,
+       right:`Right. About 6% of the price goes to the people who handle the sale. When every sale costs that much, people trade houses far less often than stocks.`},
+      {key:"cost", text:`A small business owner wants to sell a 10% stake in his company. Lawyers, accountants and an adviser will take a large share of whatever he receives.`,
+       right:`Right. Every sale of a stake like this costs a lot in fees, so such stakes change hands rarely.`},
+      {key:"search", text:`A pension fund wants to sell a \$3 million piece of a small, obscure municipal bond. Its dealer offers well below the last trade, explaining that it may be weeks before another client wants that bond.`,
+       right:`Right. Buyers for this bond are hard to find, so the dealer has to hold it, and bear the risk that its price moves, until one turns up. The low bid pays for that.`},
+      {key:"search", text:`A collector who needs cash this week has to sell a rare stamp for far less than its appraised value.`,
+       right:`Right. Few people want that particular stamp at any given moment, so selling quickly means accepting whoever happens to be there, at their price.`},
+      {key:"short", text:`A hedge fund thinks a small company's bonds are badly overpriced, but it owns none of them, and every dealer it calls says they have none available to lend.`,
+       right:`Right. With nothing to borrow, the fund cannot short the bonds, so its pessimistic view never reaches the price, which is set mostly by the optimists.`},
+      {key:"short", text:`During a market panic, regulators temporarily forbid investors to sell shares they do not own. Many analysts think some of those shares are overpriced but cannot act on it.`,
+       right:`Right. A ban on short-selling shuts the pessimists out of the market, so prices are set mostly by the optimists and bad news takes longer to show up in them.`},
+      {key:"info", text:`A week before a company reports its results, a board member's family trust offers to sell a large block of the company's bonds to a dealer. The dealer agrees only at a noticeably lower price.`,
+       right:`Right. The dealer has to wonder what the seller knows that he does not, so he will only buy at a discount. That fear of trading with someone better informed is what widens the spread.`},
+      {key:"info", text:`A buyer will only pay well below the book value for a used car, because he cannot tell whether this particular car has hidden problems.`,
+       right:`Right. The seller knows the car's history and the buyer does not, so the buyer protects himself with a lower price, and good cars become hard to sell at a fair price.`}
+    ];
+    /* k10c (Anh, 4 Oct 2026): k10 split by source so a student who tries each once meets all four.
+       Always short-selling; same title for all four, options shuffled, so the title gives nothing away. */
+    const s=pick(S.filter(x=>x.key==="short"));
+    const O={
+      cost:  {html:`High transaction costs`, wrong:`Nothing here takes a cut of the trade: no fee or commission eats into the price.`},
+      search:{html:`It is hard for buyers and sellers to find each other`, wrong:`There is someone on the other side here; finding a counterparty is not the problem.`},
+      short: {html:`It is hard to short-sell`, wrong:`Nobody here wants to bet against the asset, so the ability to short does not come into it.`},
+      info:  {html:`Some traders know more than others`, wrong:`Neither side here has reason to think the other knows more about the asset.`}
+    };
+    const opts=shuffle(Object.keys(O).map(k=>({html:O[k].html, correct:k===s.key, msg:k===s.key?s.right:O[k].wrong})));
+    return {mode:"choice",
+      text:s.text,
+      ask:"Which source of illiquidity is at work?",
+      options:opts,
+      steps:[
+        `An asset can be illiquid if transaction costs are high, if buyers and sellers are hard to match, if it is hard to short, or if some traders know more than others.`,
+        `Ask what stands in the way of trading in this particular situation.`,
+        `Here it is: <b>${O[s.key].html.toLowerCase()}</b>.`
+      ]};
+  }},
+
+{ id:"k10d", topic:"concept", name:"Where the illiquidity comes from", gen(){
+    /* Added 4 Oct 2026 (coverage review): Section 2's four sources of illiquidity had no
+       template. One situation is drawn; the four options are the note's four sources.   */
+    /* 4 Oct 2026 (Anh: make them less obvious): two scenarios per source, none naming its cue. */
+    const S=[
+      {key:"cost", text:`A homeowner sells her house for \$500,000. After everyone involved in the sale has been paid, she keeps about \$470,000.`,
+       right:`Right. About 6% of the price goes to the people who handle the sale. When every sale costs that much, people trade houses far less often than stocks.`},
+      {key:"cost", text:`A small business owner wants to sell a 10% stake in his company. Lawyers, accountants and an adviser will take a large share of whatever he receives.`,
+       right:`Right. Every sale of a stake like this costs a lot in fees, so such stakes change hands rarely.`},
+      {key:"search", text:`A pension fund wants to sell a \$3 million piece of a small, obscure municipal bond. Its dealer offers well below the last trade, explaining that it may be weeks before another client wants that bond.`,
+       right:`Right. Buyers for this bond are hard to find, so the dealer has to hold it, and bear the risk that its price moves, until one turns up. The low bid pays for that.`},
+      {key:"search", text:`A collector who needs cash this week has to sell a rare stamp for far less than its appraised value.`,
+       right:`Right. Few people want that particular stamp at any given moment, so selling quickly means accepting whoever happens to be there, at their price.`},
+      {key:"short", text:`A hedge fund thinks a small company's bonds are badly overpriced, but it owns none of them, and every dealer it calls says they have none available to lend.`,
+       right:`Right. With nothing to borrow, the fund cannot short the bonds, so its pessimistic view never reaches the price, which is set mostly by the optimists.`},
+      {key:"short", text:`During a market panic, regulators temporarily forbid investors to sell shares they do not own. Many analysts think some of those shares are overpriced but cannot act on it.`,
+       right:`Right. A ban on short-selling shuts the pessimists out of the market, so prices are set mostly by the optimists and bad news takes longer to show up in them.`},
+      {key:"info", text:`A week before a company reports its results, a board member's family trust offers to sell a large block of the company's bonds to a dealer. The dealer agrees only at a noticeably lower price.`,
+       right:`Right. The dealer has to wonder what the seller knows that he does not, so he will only buy at a discount. That fear of trading with someone better informed is what widens the spread.`},
+      {key:"info", text:`A buyer will only pay well below the book value for a used car, because he cannot tell whether this particular car has hidden problems.`,
+       right:`Right. The seller knows the car's history and the buyer does not, so the buyer protects himself with a lower price, and good cars become hard to sell at a fair price.`}
+    ];
+    /* k10d (Anh, 4 Oct 2026): k10 split by source so a student who tries each once meets all four.
+       Always traders who know more; same title for all four, options shuffled, so the title gives nothing away. */
+    const s=pick(S.filter(x=>x.key==="info"));
+    const O={
+      cost:  {html:`High transaction costs`, wrong:`Nothing here takes a cut of the trade: no fee or commission eats into the price.`},
+      search:{html:`It is hard for buyers and sellers to find each other`, wrong:`There is someone on the other side here; finding a counterparty is not the problem.`},
+      short: {html:`It is hard to short-sell`, wrong:`Nobody here wants to bet against the asset, so the ability to short does not come into it.`},
+      info:  {html:`Some traders know more than others`, wrong:`Neither side here has reason to think the other knows more about the asset.`}
+    };
+    const opts=shuffle(Object.keys(O).map(k=>({html:O[k].html, correct:k===s.key, msg:k===s.key?s.right:O[k].wrong})));
+    return {mode:"choice",
+      text:s.text,
+      ask:"Which source of illiquidity is at work?",
+      options:opts,
+      steps:[
+        `An asset can be illiquid if transaction costs are high, if buyers and sellers are hard to match, if it is hard to short, or if some traders know more than others.`,
+        `Ask what stands in the way of trading in this particular situation.`,
+        `Here it is: <b>${O[s.key].html.toLowerCase()}</b>.`
+      ]};
+  }},
+
+{ id:"k11", topic:"concept", also:["amihud"], name:"Measuring a bond that rarely trades", gen(){
+    /* Added 4 Oct 2026 (coverage review): Section 7 (the latent measure: why it is needed,
+       and that it runs the opposite way to Amihud) had no template. Two versions.          */
+    if (pick([true,false])){
+      const opts=shuffle([
+        {html:`The latent measure, built from who holds the bond`, correct:true,
+         msg:`Right. Amihud averages daily returns over dollar volume, and two trades are not enough to average. The latent measure looks at the owners instead, so it works even if the bond never trades.`},
+        {html:`The Amihud measure, averaged over the two days it traded`, correct:false,
+         msg:`Two observations are far too few to trust an average. That is exactly the problem the latent measure was built to get around.`},
+        {html:`Its quoted bid-ask spread, which shows how wide the market is`, correct:false,
+         msg:`A bond that trades twice a year may not have a live quote at all, and even a quote says nothing about depth.`},
+        {html:`The Amihud measure, using its trades over the past five years`, correct:false,
+         msg:`A handful of trades spread over five years is still far too few to average, and trades from years ago say little about how easily the bond trades today. The latent measure looks at who holds it now.`}
+      ]);
+      return {mode:"choice",
+        text:`A corporate bond traded only twice last year.`,
+        ask:"How can you gauge how liquid it is?",
+        options:opts,
+        steps:[
+          `Amihud needs many days of returns and volume to average.`,
+          `The latent measure is the holdings-weighted average portfolio turnover of the bond's owners.`,
+          `It needs no trades in the bond itself.`
+        ]};
+    }
+    const hi=pick([150,200,250,300]), lo=pick([20,30,40,50]);
+    const opts=shuffle([
+      {html:`P is more liquid, and should trade at the lower yield`, correct:true,
+       msg:`Right. A higher latent number means the bond sits with investors who trade a lot, so it is easier to trade. Better liquidity means a higher price and a lower yield.`},
+      {html:`Q is more liquid, and should trade at the lower yield`, correct:false,
+       msg:`That reads the latent measure the way you read Amihud. Amihud measures <em>il</em>liquidity, so a higher number is worse; the latent measure measures liquidity, so a higher number is better.`},
+      {html:`P is more liquid, and should trade at the higher yield`, correct:false,
+       msg:`P is the more liquid one, but liquidity is worth paying for: better liquidity means a higher price, and so a lower yield.`},
+      {html:`Q is more liquid, and should trade at the higher yield`, correct:false,
+       msg:`Both halves are backwards. The higher latent number is the more liquid bond, and the more liquid bond has the lower yield.`}
+    ]);
+    return {mode:"choice",
+      text:`Bond P has a latent liquidity measure of <b>${hi}%</b> a year; bond Q, otherwise similar, has <b>${lo}%</b>.`,
+      ask:"Which is more liquid, and which should trade at the lower yield?",
+      options:opts,
+      steps:[
+        `Latent liquidity = holdings-weighted portfolio turnover of the bond's owners.`,
+        `A higher number means more active owners, so a more liquid bond (the opposite direction to Amihud).`,
+        `Better liquidity = higher price = lower yield, so P has the lower yield.`
+      ]};
+  }},
+
+{ id:"k12", topic:"concept", also:["discount"], name:"Why China's discount is so much bigger", gen(){
+    /* Added 4 Oct 2026 (Anh). The note gives the two discounts (China about 80%, Israel about 20%)
+       and the two lock-ups (Chinese non-tradable shares could not go through the exchange at all;
+       the Bank of Israel options could not be traded before expiring in 3 or 6 months); the key
+       is the light-bulb argument applied to how long you are locked in.                        */
+    const opts=shuffle([
+      {html:`Israel's options were locked up for months, China's shares indefinitely`, correct:true,
+       msg:`Right. The Bank of Israel's options expire in 3 or 6 months, so you are stuck with them only briefly and are unlikely to need to sell before then. The Chinese non-tradable shares could not go through the exchange at all, so the chance that you would want to sell, and could not, was far larger. The longer you are locked in, the bigger the discount.`},
+      {html:`Chinese companies were riskier, so they needed a bigger discount`, correct:false,
+       msg:`The discount compares two claims on the <em>same</em> company, the tradable and the non-tradable shares. Whatever the company's risk, both carry it, so it cannot explain the gap between them.`},
+      {html:`Options cost much less than shares, so their discount is smaller`, correct:false,
+       msg:`Both discounts are percentages of the tradable price, so how many dollars the asset costs does not enter.`},
+      {html:`The Bank of Israel stands behind its options, so they cannot default`, correct:false,
+       msg:`That is about default risk, not about selling. A holder still could not sell the options before they expired.`}
+    ]);
+    return {mode:"choice",
+      text:`Non-tradable Chinese shares changed hands at about an 80% discount to their
+            exchange-traded counterparts. Non-tradable US dollar options issued by the Bank of Israel
+            were priced at only about a 20% discount to comparable exchange-traded options.`,
+      ask:"What is the most likely reason the Chinese discount is so much bigger?",
+      options:opts,
+      steps:[
+        `A liquidity discount pays you for the chance that you will need to sell and cannot.`,
+        `The Israeli options could not be traded before expiring in 3 or 6 months; the Chinese shares could not go through the exchange at all.`,
+        `The longer you are locked in, the more that chance matters, so the bigger the discount.`
+      ]};
+  }},
+
+{ id:"k13", topic:"concept", also:["onoff"], name:"Guessing the auction yield", gen(){
+    /* Added 4 Oct 2026 (Anh's question). The key is "uncertain": the on/off spread compares notes
+       with comparable coupons (the note says so), and the off-the-run's coupon is not given, so its
+       yield is not a clean benchmark for a new note issued near par when the curve is not flat.  */
+    const y=pick([4.00,4.25,4.50,4.75,5.00,5.25,5.50]);
+    const f=v=>v.toFixed(3).replace(/0$/,"");                 // 5.125%, 5.00%
+    const opts=[
+      {html:`${f(y+.125)}%`, correct:false,
+       msg:`That adds the spread. The new note will be the on-the-run, the more liquid one, so if anything it should yield less, not more. And there is a bigger problem: you do not know the off-the-run note's coupon.`},
+      {html:`${f(y)}%`, correct:false,
+       msg:`Same issuer and same maturity is not enough. Liquidity alone would push the new note's yield below the off-the-run's, and on top of that you do not know the off-the-run note's coupon.`},
+      {html:`Lower than ${f(y)}%, but not certain exactly where`, correct:false,
+       msg:`That would be right if the two notes had similar coupons, which is what the on/off comparison assumes. Here you know nothing about the off-the-run note's coupon. If it is far above or below today's rates, its yield can differ from a new note's for reasons that have nothing to do with liquidity, so you cannot even be sure the new note will clear below ${f(y)}%.`},
+      {html:`Uncertain`, correct:true,
+       msg:`Right. The on/off spread compares notes with comparable coupons. The new note will be issued with a coupon close to its yield, so it will sell near par, but the off-the-run note's coupon is not given: it could be far above or below today's rates. When the yield curve is not flat, a bond's yield to maturity depends on its coupon as well as its maturity, so this yield is not a clean benchmark for the new note.`}
+    ];
+    return {mode:"choice",
+      text:`The night before the 5-year T-note auction, you are told that an off-the-run T-note with five
+            years to maturity is currently trading at a yield of <b>${f(y)}%</b> p.a., compounded semi-annually. You also know that,
+            based on the most recent data, the 5-year on-the-run/off-the-run yield spread is about
+            <b>12.5 basis points</b>.`,
+      ask:"What do you expect the winning yield at the auction to be?",
+      options:opts,
+      steps:[
+        `The note being auctioned becomes the new on-the-run, and on-the-run notes trade at lower yields than comparable off-the-run notes.`,
+        `But "comparable" includes the coupon. The off-the-run note's coupon is not given, and when the curve is not flat, two notes with the same maturity but different coupons have different yields to maturity.`,
+        `So you cannot pin the winning yield down from this information, not even its direction relative to ${f(y)}%: uncertain.`
+      ]};
+  }},
+
+{ id:"k14", topic:"concept", also:["capm"], name:"Illiquidity and liquidity risk", gen(){
+    /* Added 4 Oct 2026 (Anh). Key: Students 1 and 3. Note Section 6: E[R - Rf] = E[c] + beta x premium,
+       so a higher expected cost raises the expected return (1 is right). Liquidity risk is how costs
+       vary over time, and what is priced is WHEN they rise relative to the market, not just how much
+       they move (2 is wrong; wording per Anh's correction). An asset that becomes MORE liquid when the
+       market dries up is one investors pay more for, i.e. a lower expected return (3 is right).
+       Options: the key plus three of the other six combinations, drawn each time (Anh).            */
+    const WHY={
+      1:`Student 1 is right: the expected return includes the expected transaction cost E[c<sub>i</sub>], so a higher cost means a higher expected return, all else equal.`,
+      2:`Student 2 is wrong: what matters is <em>when</em> transaction costs rise relative to the market, not just how much they move. Costs that swing a lot but rise only in good times do not call for a higher expected return.`,
+      3:`Student 3 is right: an asset whose costs fall exactly when the whole market dries up is one investors will pay more for, so its expected return is lower.`
+    };
+    const KEY=[1,3];
+    const name=s=>s.length===3?`All three students`:s.length===1?`Student ${s[0]} only`:`Students ${s[0]} and ${s[1]}`;
+    const ALL=[[1],[2],[3],[1,2],[1,3],[2,3],[1,2,3]];
+    const others=shuffle(ALL.filter(s=>s.join()!==KEY.join())).slice(0,3);
+    const opts=shuffle([KEY,...others].map(s=>{
+      const ok=s.join()===KEY.join();
+      if (ok) return {html:name(s), correct:true,
+        msg:`Right. A higher expected transaction cost E[c<sub>i</sub>] means a higher expected return, all else equal, and an asset whose costs fall exactly when the whole market dries up is one investors will pay more for, so its expected return is lower. Student 2 looks only at how <em>much</em> the costs vary; what is priced is <em>when</em> they rise relative to the market.`};
+      const parts=[];
+      if (s.includes(2)) parts.push(WHY[2]);
+      if (!s.includes(1)) parts.push(WHY[1]);
+      if (!s.includes(3)) parts.push(WHY[3]);
+      return {html:name(s), correct:false, msg:parts.join(" ")};
+    }));
+    return {mode:"choice",
+      text:`We have met two ideas about illiquidity: the effective transaction cost (measured by the
+            Amihud measure), and liquidity risk (how effective transaction costs vary over time).
+            Three students discuss them. <b>Student 1:</b> "A higher effective transaction cost always
+            leads to a higher expected return, holding all else constant." <b>Student 2:</b> "When
+            transaction costs vary a lot over time, there is more liquidity risk, which results in a
+            higher expected return." <b>Student 3:</b> "Transaction costs can vary in such a way that
+            brings about a smaller expected return, holding all else constant."`,
+      ask:"Which students are correct?",
+      options:opts,
+      steps:[
+        `E[R<sub>i</sub> &minus; R<sub>f</sub>] = E[c<sub>i</sub>] + &beta; &times; premium: a higher expected cost raises the expected return. Student 1 is right.`,
+        `Liquidity risk is about how transaction costs vary over time, and what is priced is when they rise relative to the market, not simply how much they move. Student 2 is wrong.`,
+        `An asset that becomes more liquid exactly when the market dries up lowers &beta;, so investors accept a lower expected return. Student 3 is right. So: Students 1 and 3.`
+      ]};
+  }}
+];
+
+const TOPICS = [
+  {key:"all", label:"Mixed"},
+  {key:"amihud", label:"Measuring it"},
+  {key:"onoff", label:"On/off-the-run"},
+  {key:"capm", label:"Liquidity risk"},
+  {key:"discount", label:"Discounts"},
+  {key:"concept", label:"Reason it out"},
+  {key:"error", label:"Find the mistake"}
+];
+
+/* ----------------------------------------------------------------- state */
+let active = "all", current = null, tries = 0;
+let peeked = false, solved = false, tallied = false;  // tallied = already counted in `attempted`
+const stats = {att:0, first:0, streak:0, peek:0};
+
+const $ = id => document.getElementById(id);
+
+function buildTopics(){
+  const box = $("topics");
+  TOPICS.forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = t.label;
+    b.setAttribute("aria-pressed", String(t.key===active));
+    b.onclick = ()=>{
+      active = t.key;
+      [...box.children].forEach(c=>c.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");
+      seqIdx = 0;                 // a new topic restarts the sequence
+      newQuestion();
+    };
+    box.appendChild(b);
+  });
+}
+
+const ALL_TEMPLATES = TEMPLATES.concat(CHOICE_TEMPLATES);
+
+/* A template's primary topic is `topic`; it may also list secondary topics in
+   `also`, so one item can appear under several chips. */
+function inTopic(t, key){
+  return t.topic === key || (Array.isArray(t.also) && t.also.includes(key));
+}
+
+/* ---- progress: distinct templates solved without opening the solution ---- */
+const PROG_KEY = "practice-progress:" + document.title;
+let mastered = new Set();
+try { mastered = new Set(JSON.parse(localStorage.getItem(PROG_KEY) || "[]")); }
+catch (e) { mastered = new Set(); }
+
+function saveProgress(){
+  try { localStorage.setItem(PROG_KEY, JSON.stringify([...mastered])); } catch (e) {}
+}
+function markMastered(id){
+  if (!id || mastered.has(id)) return;
+  mastered.add(id);
+  saveProgress();
+}
+
+/* Templates are drawn WITHOUT immediate repeats. Sampling with replacement
+   looks fine on the full bank, but a topic holding only three or four
+   templates repeats roughly one press in three, which reads as the button
+   being broken. Hold the most recent half of the pool out of the draw. */
+let recentIds = [];
+/* Questions seen this session, so the arrow keys can step back and forth through them. */
+let history = [], histIdx = -1;
+let navKey = false;      // true while an arrow key is doing the rendering
+let order = "shuffle";   // "shuffle" | "seq"
+let seqIdx = 0;
+
+function newQuestion(replay){
+  let q;
+  if (replay){ q = replay.q; }
+  else {
+  const pool = active==="all" ? ALL_TEMPLATES : ALL_TEMPLATES.filter(t=>inTopic(t,active));
+  let tpl;
+  if (order === "seq"){
+    /* walk the bank in order, wrapping at the end */
+    if (seqIdx >= pool.length) seqIdx = 0;
+    tpl = pool[seqIdx];
+    seqIdx = (seqIdx + 1) % pool.length;
+    $("seqPos").textContent = `${seqIdx === 0 ? pool.length : seqIdx} of ${pool.length}`;
+  } else {
+    const hold = Math.max(1, Math.floor(pool.length / 2));
+    let choices = pool.filter(t => !recentIds.slice(0, hold).includes(t.id));
+    if (!choices.length) choices = pool;        // pool of one, or all held out
+    tpl = pick(choices);
+    recentIds.unshift(tpl.id);
+    if (recentIds.length > 40) recentIds.length = 40;
+    $("seqPos").textContent = "";
+  }
+  q = tpl.gen();
+  q.name = tpl.name;
+  q.id   = tpl.id;
+  q.seqPos = $("seqPos").textContent;   // carried so stepping back shows its own position
+  if (q.mode !== "choice") q.distractors = usable(q.correct, q.cands, q.sep);
+  }
+  current = q;
+  if (replay){
+    tries = replay.tries; peeked = replay.peeked; solved = replay.solved; tallied = replay.tallied;
+  } else {
+    tries = 0; peeked = false; solved = false; tallied = false;
+    history = history.slice(0, histIdx + 1);           // a new draw discards anything ahead
+    history.push({q, tries:0, peeked:false, solved:false, tallied:false, fb:"", ans:""});
+    if (history.length > 50){ history.shift(); }
+    histIdx = history.length - 1;
+  }
+
+  const isChoice = q.mode === "choice";
+  $("qmeta").textContent = q.name;
+  $("qtext").innerHTML   = q.text;
+  $("qask").innerHTML    = q.ask;
+  /* Hide the input and Check individually, NOT the whole row -- the
+     "New question" button lives in that row and must stay reachable
+     on choice questions. */
+  $("ans").hidden   = isChoice;
+  $("check").hidden = isChoice;
+  $("opts").hidden     = !isChoice;
+  const box = $("opts");
+  box.innerHTML = "";              // always clear, even when the panel is hidden
+  if (isChoice){
+    q.options.forEach((o,k)=>{
+      const btn = document.createElement("button");
+      btn.className = "opt"; btn.innerHTML = o.html;
+      btn.onclick = () => pickOption(k);
+      box.appendChild(btn);
+    });
+  }
+  $("ans").value = "";
+  $("ans").placeholder = q.unit==="money" ? "e.g. 1234.56"
+                     : q.unit==="percent" ? "e.g. 12.34  (percent)"
+                     : "e.g. 18";
+  $("ans").disabled = false;
+  $("check").disabled = false;
+  $("fb").innerHTML = "";
+  $("steps").innerHTML = q.steps.map(s=>`<div>${s}</div>`).join("");
+  const d = $("soldetails"); d.hidden = false; d.open = false;
+  if (replay){
+    /* Put the question back exactly as it was left --- the feedback, what was typed, and
+       whether it had already been answered. The tallied/solved flags come back with it,
+       so revisiting a question never re-counts an attempt or re-awards mastery. */
+    $("fb").innerHTML = replay.fb || "";
+    $("ans").value    = replay.ans || "";
+    $("seqPos").textContent = q.seqPos || "";
+    if (isChoice && q.wrong){
+      [...$("opts").children].forEach((b,j)=>{
+        if (q.wrong.indexOf(j) >= 0){ b.classList.add("wrong"); b.disabled = true; }
+      });
+    }
+    if (solved || q.done){
+      if (isChoice){
+        [...$("opts").children].forEach((b,j)=>{ b.disabled = true;
+          if (q.options[j].correct) b.classList.add("right"); });
+      } else { $("ans").disabled = true; $("check").disabled = true; }
+    }
+    d.open = peeked || solved;
+  }
+  /* Arriving by arrow key must not park the cursor in the answer box: a restored answer
+     sitting there would swallow the next arrow press and strand the student. */
+  if (navKey) $("ans").blur();
+  else if (!isChoice && !$("ans").disabled) $("ans").focus();
+}
+
+function parseInput(raw){
+  const cleaned = raw.replace(/[$,%\s,]/g,"");
+  if (cleaned === "" ) return NaN;
+  return Number(cleaned);
+}
+
+function say(kind, title, body){
+  $("fb").innerHTML = `<div class="fb ${kind}"><strong>${title}</strong>${body}</div>`;
+}
+
+function pickOption(k){
+  const q = current;
+  if (q.done) return;
+  const o    = q.options[k];
+  const btns = [...$("opts").children];
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }
+
+  if (o.correct){
+    q.done = true; solved = true;
+    btns.forEach((b2,j)=>{ b2.disabled = true; if (q.options[j].correct) b2.classList.add("right"); });
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "It still counts as attempted, just not toward first-try accuracy or your streak. " + o.msg);
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok", tries===1 ? "Correct — first try." : "Correct.", o.msg);
+    }
+    $("soldetails").open = true;
+  } else {
+    stats.streak = 0;
+    btns[k].classList.add("wrong");
+    btns[k].disabled = true;
+    (q.wrong || (q.wrong = [])).push(k);   // remembered so a revisit keeps it eliminated
+    say("no","Not that one.", o.msg);
+  }
+  render();
+}
+
+function check(){
+  const raw = $("ans").value;
+  const parsed = parseInput(raw);
+  if (!Number.isFinite(parsed)){
+    say("hint","Enter a number","Type your answer as a number — you can include $ , or % and it will be ignored.");
+    return;
+  }
+  const q = current;
+  const val = q.unit==="percent" ? parsed/100 : parsed;
+  const TOL = q.tol || REL_MATCH;
+
+  /* Unit slips are formatting mistakes, not wrong answers, so they cost
+     neither an attempt nor first-try credit. Guarded so a genuinely
+     correct entry can never be mistaken for one. */
+  if (!near(val, q.correct, TOL)){
+    if (q.unit==="percent" && near(parsed, q.correct, TOL)){
+      say("hint","Right number, wrong units.",
+          `You entered <code>${raw}</code> as a decimal. This box wants a percent — enter <code>${(q.correct*100).toFixed(4).replace(/\.?0+$/,"")}</code> instead.`);
+      return;
+    }
+    if (near(val*100, q.correct, TOL) || near(val/100, q.correct, TOL)){
+      say("hint","Check your units.","Your figure is off by a factor of 100. Re-read what the box is asking for.");
+      return;
+    }
+  }
+
+  tries++;
+  if (!tallied){ tallied = true; stats.att++; }   // count each question once, right or wrong
+
+  if (near(val, q.correct, TOL)){
+    solved = true;
+    if (peeked){
+      stats.streak = 0;
+      say("ok","Correct — but you read the solution first.",
+          "That is a perfectly good way to learn, and it still counts as attempted. It does " +
+          "not count toward first-try accuracy or your streak, so those numbers stay honest. " +
+          "Try the next one before opening the solution.");
+    } else {
+      stats.streak++;
+      if (tries === 1) stats.first++;
+      markMastered(q.id);
+      say("ok","Correct.", tries===1 ? "First try — well done." : "Got there.");
+    }
+    $("check").disabled = true; $("ans").disabled = true;
+    $("soldetails").open = true;
+    render(); return;
+  }
+
+  stats.streak = 0;
+  const hit = q.distractors.find(d => near(val, d.val, TOL));
+  say("no", hit ? "Not quite — and I can see why." : "Not quite.",
+      hit ? hit.msg
+          : "That does not match any of the usual slips, so it may be an arithmetic error. Try again, or open the worked solution below.");
+  render();
+}
+
+function render(){
+  $("sAtt").textContent    = stats.att;
+  $("sFirst").textContent  = stats.first;
+  $("sAcc").textContent    = stats.att ? Math.round(stats.first/stats.att*100)+"%" : "—";
+  $("sStreak").textContent = stats.streak;
+  $("sPeek").textContent   = stats.peek;
+  const total = ALL_TEMPLATES.length;
+  $("pTotal").textContent  = total;
+  $("pDone").textContent   = mastered.size;
+  $("progfill").style.width = (total ? 100*mastered.size/total : 0).toFixed(1) + "%";
+}
+
+$("check").onclick = check;
+$("next").onclick  = () => newQuestion();   // arrow fn: never pass the click Event as `replay`
+
+/* ---- arrow keys: right for the next question, left for the previous one -------------
+   Ignored while the answer box is being typed in, where the arrows move the caret, and
+   ignored with a modifier held so the browser's own shortcuts still work.            */
+function snapshotQuestion(){
+  const h = history[histIdx];
+  if (!h) return;
+  h.tries = tries; h.peeked = peeked; h.solved = solved; h.tallied = tallied;
+  h.fb = $("fb").innerHTML; h.ans = $("ans").value;
+}
+function goBack(){
+  if (histIdx <= 0) return;
+  snapshotQuestion(); histIdx--;
+  navKey = true; newQuestion(history[histIdx]); navKey = false;
+}
+function goForward(){
+  snapshotQuestion();
+  navKey = true;
+  if (histIdx < history.length - 1){ histIdx++; newQuestion(history[histIdx]); }
+  else newQuestion();
+  navKey = false;
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  const t = e.target;
+  if (t && (t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  /* Inside the answer box the arrows belong to the caret --- but only while it still has
+     somewhere to go. Once it sits at the end you are pressing toward, the press is free,
+     so a half-typed answer never traps a student in the field. */
+  if (t && t.tagName === "INPUT" && !t.disabled){
+    const at = t.selectionStart, to = t.selectionEnd, n = String(t.value).length;
+    if (at === null || at !== to) return;                       // a selection: leave it alone
+    if (e.key === "ArrowRight" ? at < n : at > 0) return;
+  }
+  e.preventDefault();
+  if (e.key === "ArrowRight") goForward(); else goBack();
+});
+$("ans").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("check").disabled) check(); });
+$("soldetails").addEventListener("toggle", ()=>{
+  if ($("soldetails").open && !solved && !peeked){
+    peeked = true;
+    stats.peek++;
+    if (!tallied){ tallied = true; stats.att++; }  // opening it counts as engaging with the question
+    render();
+  }
+});
+
+function setOrder(o){
+  order = o; seqIdx = 0;
+  $("mShuffle").setAttribute("aria-pressed", String(o === "shuffle"));
+  $("mSeq").setAttribute("aria-pressed",     String(o === "seq"));
+  newQuestion();
+}
+$("mShuffle").onclick = () => setOrder("shuffle");
+$("mSeq").onclick     = () => setOrder("seq");
+
+$("pReset").onclick = () => {
+  if (!mastered.size) return;
+  mastered.clear(); saveProgress(); render();
+};
+
+buildTopics();
+newQuestion();
+render();
+</script>
+</body>
+</html>
