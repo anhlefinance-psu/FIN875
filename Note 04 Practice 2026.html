@@ -103,6 +103,12 @@
   .progreset{background:none; border:none; color:var(--muted); font-size:.8rem;
              padding:0; cursor:pointer; text-decoration:underline; font-weight:400}
   .progreset:hover{color:var(--fg)}
+  .qhead{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px}
+  .qhead .qmeta{margin-bottom:0}
+  .star{background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:999px;
+        padding:3px 11px; font-size:.8rem; font-weight:500; white-space:nowrap; flex:none}
+  .star[aria-pressed="true"]{color:var(--hint-fg); background:var(--hint-bg); border-color:var(--hint-line)}
+  .star:hover{border-color:var(--accent)}
   [hidden]{display:none !important}
 </style>
 </head>
@@ -124,7 +130,11 @@
 </div>
 
 <div class="card" id="card">
-  <div class="qmeta" id="qmeta">—</div>
+  <div class="qhead">
+    <div class="qmeta" id="qmeta">—</div>
+    <button class="star" id="star" type="button" aria-pressed="false"
+            title="Star this question to practise it again under the Starred chip">☆ Star</button>
+  </div>
   <div class="qtext" id="qtext">Loading…</div>
   <div class="ask" id="qask"></div>
   <div class="opts" id="opts" hidden></div>
@@ -1235,6 +1245,19 @@ function buildTopics(){
     };
     box.appendChild(b);
   });
+  /* the Starred chip: practise only the questions starred on this page */
+  const s = document.createElement("button");
+  s.className = "chip"; s.id = "chipStar";
+  s.setAttribute("aria-pressed", "false");
+  s.onclick = ()=>{
+    active = "starred";
+    [...box.children].forEach(c=>c.setAttribute("aria-pressed","false"));
+    s.setAttribute("aria-pressed","true");
+    seqIdx = 0;
+    newQuestion();
+  };
+  box.appendChild(s);
+  updateStarChip();
 }
 
 const ALL_TEMPLATES = TEMPLATES.concat(CHOICE_TEMPLATES);
@@ -1260,6 +1283,41 @@ function markMastered(id){
   saveProgress();
 }
 
+/* ---- starred questions: kept per template, so a starred question comes back with new
+   numbers. Starred automatically on a wrong answer or on opening the solution before
+   solving; the student can star or unstar any question by hand. ---- */
+const STAR_KEY = "practice-starred:" + document.title;
+let starred = new Set();
+try { starred = new Set(JSON.parse(localStorage.getItem(STAR_KEY) || "[]")); }
+catch (e) { starred = new Set(); }
+starred = new Set([...starred].filter(id => ALL_TEMPLATES.some(t => t.id === id)));
+
+function saveStars(){
+  try { localStorage.setItem(STAR_KEY, JSON.stringify([...starred])); } catch (e) {}
+}
+function updateStarChip(){
+  const c = document.getElementById("chipStar");   // made by buildTopics, not in the markup
+  if (c) c.textContent = "★ Starred (" + starred.size + ")";
+}
+function showStar(){
+  const on = !!(current && starred.has(current.id));
+  $("star").hidden = !current;
+  $("star").setAttribute("aria-pressed", String(on));
+  $("star").textContent = on ? "★ Starred" : "☆ Star";
+}
+function setStar(id, on){
+  if (!id) return;
+  if (on) starred.add(id); else starred.delete(id);
+  saveStars(); updateStarChip(); showStar();
+}
+function autoStar(){ if (current && !starred.has(current.id)) setStar(current.id, true); }
+
+function poolFor(key){
+  if (key === "all") return ALL_TEMPLATES;
+  if (key === "starred") return ALL_TEMPLATES.filter(t => starred.has(t.id));
+  return ALL_TEMPLATES.filter(t => inTopic(t, key));
+}
+
 /* Templates are drawn WITHOUT immediate repeats. Sampling with replacement
    looks fine on the full bank, but a topic holding only three or four
    templates repeats roughly one press in three, which reads as the button
@@ -1275,7 +1333,20 @@ function newQuestion(replay){
   let q;
   if (replay){ q = replay.q; }
   else {
-  const pool = active==="all" ? ALL_TEMPLATES : ALL_TEMPLATES.filter(t=>inTopic(t,active));
+  const pool = poolFor(active);
+  if (!pool.length){
+    current = null;
+    $("qmeta").textContent = "Starred";
+    $("qtext").innerHTML = "No starred questions yet. A question is starred when you answer it " +
+      "wrongly or open its solution before solving it, and you can star any question yourself with " +
+      "<b>☆ Star</b>. Pick another chip to practise.";
+    $("qask").innerHTML = "";
+    $("opts").hidden = true; $("opts").innerHTML = "";
+    $("ans").hidden = true; $("check").hidden = true; $("next").hidden = true;
+    $("fb").innerHTML = ""; $("soldetails").hidden = true; $("seqPos").textContent = "";
+    showStar();
+    return;
+  }
   let tpl;
   if (order === "seq"){
     /* walk the bank in order, wrapping at the end */
@@ -1318,6 +1389,8 @@ function newQuestion(replay){
      on choice questions. */
   $("ans").hidden   = isChoice;
   $("check").hidden = isChoice;
+  $("next").hidden  = false;
+  showStar();
   $("opts").hidden     = !isChoice;
   const box = $("opts");
   box.innerHTML = "";              // always clear, even when the panel is hidden
@@ -1402,6 +1475,7 @@ function pickOption(k){
     btns[k].classList.add("wrong");
     btns[k].disabled = true;
     (q.wrong || (q.wrong = [])).push(k);   // remembered so a revisit keeps it eliminated
+    autoStar();
     say("no","Not that one.", o.msg);
   }
   render();
@@ -1456,6 +1530,7 @@ function check(){
   }
 
   stats.streak = 0;
+  autoStar();
   const hit = q.distractors.find(d => near(val, d.val, TOL));
   say("no", hit ? "Not quite — and I can see why." : "Not quite.",
       hit ? hit.msg
@@ -1475,7 +1550,8 @@ function render(){
   $("progfill").style.width = (total ? 100*mastered.size/total : 0).toFixed(1) + "%";
 }
 
-$("check").onclick = check;
+$("check").onclick = () => { if (current) check(); };
+$("star").onclick  = () => { if (current) setStar(current.id, !starred.has(current.id)); };
 $("next").onclick  = () => newQuestion();   // arrow fn: never pass the click Event as `replay`
 
 /* ---- arrow keys: right for the next question, left for the previous one -------------
@@ -1520,6 +1596,7 @@ $("soldetails").addEventListener("toggle", ()=>{
   if ($("soldetails").open && !solved && !peeked){
     peeked = true;
     stats.peek++;
+    autoStar();
     if (!tallied){ tallied = true; stats.att++; }  // opening it counts as engaging with the question
     render();
   }
